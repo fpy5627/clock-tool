@@ -1180,9 +1180,11 @@ export default function HomePage() {
                   <motion.div
                     className="h-full rounded-[2px]"
                     style={{ 
-                      backgroundColor: themeColor.color,
+                      backgroundColor: timeLeft < 60 
+                        ? '#ef4444'
+                        : theme === 'dark' ? '#e5e7eb' : '#1f2937',
                       width: `${(timeLeft / initialTime) * 100}%`,
-                      transition: 'width 1s linear'
+                      transition: 'width 1s linear, background-color 0.3s ease'
                     }}
                   />
                 </div>
