@@ -24,6 +24,11 @@ export default async function RootLayout({
         )}
 
         <link rel="icon" href="/favicon.ico" />
+        
+        {/* Rajdhani Font - 超粗方正字体 */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
         {locales &&
           locales.map((loc) => (
