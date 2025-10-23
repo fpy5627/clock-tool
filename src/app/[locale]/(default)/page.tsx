@@ -1002,9 +1002,17 @@ export default function HomePage() {
             </div>
           ) : (
             /* 闹钟列表 */
-            <div className="w-full max-w-2xl mx-auto px-4">
-              {/* 闹钟列表 */}
-              <div className="space-y-3 mb-4">
+            <div className="w-full flex justify-center px-4">
+              <div 
+                className="w-full"
+                style={{
+                  width: 'var(--timer-width, auto)',
+                  minWidth: '300px',
+                  maxWidth: '90vw'
+                }}
+              >
+                {/* 闹钟列表 */}
+                <div className="space-y-3 mb-4">
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                     暂无闹钟，点击下方按钮添加
@@ -1016,7 +1024,7 @@ export default function HomePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className={`p-4 rounded-[8px] flex items-center justify-between ${
+                      className={`py-6 px-4 rounded-[8px] flex items-center justify-between ${
                         theme === 'dark' 
                           ? 'bg-white/5 hover:bg-white/10' 
                           : 'bg-gray-800/5 hover:bg-gray-800/10'
@@ -1037,13 +1045,13 @@ export default function HomePage() {
                           />
                         </button>
 
-                        {/* 时间和标签 */}
-                        <div>
+                        {/* 时间和重复类型 */}
+                        <div className="flex items-center gap-3">
                           <div className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                             {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
                           </div>
                           <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {alarm.label || '闹钟'} • {
+                            {
                               alarm.repeat === 'once' ? '单次' :
                               alarm.repeat === 'daily' ? '每天' :
                               alarm.repeat === 'weekdays' ? '工作日' :
@@ -1086,11 +1094,11 @@ export default function HomePage() {
                 <span className="font-medium">添加闹钟</span>
               </motion.button>
 
-              {/* 快捷闹钟按钮 - 仅在闹钟模式下显示 */}
+              {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
               <div className="mt-8">
-                <h4 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  快捷闹钟
-                </h4>
+                <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>
+                  快捷设置
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: '1分钟', seconds: 60 },
@@ -1139,6 +1147,7 @@ export default function HomePage() {
                     </motion.button>
                   ))}
                 </div>
+              </div>
               </div>
             </div>
           )}
@@ -1459,13 +1468,14 @@ export default function HomePage() {
                     <select
                       value={newAlarmHour}
                       onChange={(e) => setNewAlarmHour(parseInt(e.target.value))}
-                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer ${
+                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer text-black ${
                         theme === 'dark' 
-                          ? 'bg-slate-800 border-slate-700 text-white' 
-                          : 'bg-white border-gray-300 text-gray-900'
+                          ? 'bg-slate-800 border-slate-700' 
+                          : 'bg-white border-gray-300'
                       }`}
                       style={{ 
-                        WebkitTextFillColor: theme === 'dark' ? '#ffffff' : '#111827',
+                        color: '#000000 !important',
+                        WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
                         fontWeight: '500',
                         paddingLeft: '16px',
@@ -1476,11 +1486,11 @@ export default function HomePage() {
                         <option 
                           key={i} 
                           value={i} 
-                          className={theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-900'}
+                          className="bg-white text-black"
                           style={{ 
-                            backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
-                            color: theme === 'dark' ? '#ffffff' : '#111827',
-                            WebkitTextFillColor: theme === 'dark' ? '#ffffff' : '#111827'
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            WebkitTextFillColor: '#000000'
                           }}
                         >
                           {String(i).padStart(2, '0')}
@@ -1496,13 +1506,14 @@ export default function HomePage() {
                     <select
                       value={newAlarmMinute}
                       onChange={(e) => setNewAlarmMinute(parseInt(e.target.value))}
-                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer ${
+                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer text-black ${
                         theme === 'dark' 
-                          ? 'bg-slate-800 border-slate-700 text-white' 
-                          : 'bg-white border-gray-300 text-gray-900'
+                          ? 'bg-slate-800 border-slate-700' 
+                          : 'bg-white border-gray-300'
                       }`}
                       style={{ 
-                        WebkitTextFillColor: theme === 'dark' ? '#ffffff' : '#111827',
+                        color: '#000000 !important',
+                        WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
                         fontWeight: '500',
                         paddingLeft: '16px',
@@ -1513,11 +1524,11 @@ export default function HomePage() {
                         <option 
                           key={i} 
                           value={i} 
-                          className={theme === 'dark' ? 'bg-slate-800 text-white' : 'bg-white text-gray-900'}
+                          className="bg-white text-black"
                           style={{ 
-                            backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
-                            color: theme === 'dark' ? '#ffffff' : '#111827',
-                            WebkitTextFillColor: theme === 'dark' ? '#ffffff' : '#111827'
+                            backgroundColor: '#ffffff',
+                            color: '#000000',
+                            WebkitTextFillColor: '#000000'
                           }}
                         >
                           {String(i).padStart(2, '0')}
@@ -1537,13 +1548,14 @@ export default function HomePage() {
                     value={newAlarmLabel}
                     onChange={(e) => setNewAlarmLabel(e.target.value)}
                     placeholder="例如：起床、运动"
-                    className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black ${
                       theme === 'dark' 
-                        ? 'bg-slate-800 border-slate-700 placeholder:text-slate-400 text-white' 
-                        : 'bg-white border-gray-300 placeholder:text-gray-500 text-gray-900'
+                        ? 'bg-slate-800 border-slate-700 placeholder:text-slate-400' 
+                        : 'bg-white border-gray-300 placeholder:text-gray-500'
                     }`}
                     style={{ 
-                      WebkitTextFillColor: theme === 'dark' ? '#ffffff' : '#111827',
+                      color: '#000000 !important',
+                      WebkitTextFillColor: '#000000 !important',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
