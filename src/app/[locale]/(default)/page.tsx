@@ -468,6 +468,33 @@ export default function HomePage() {
     setRingingAlarmId(null);
   };
 
+  const snoozeAlarm = () => {
+    if (!ringingAlarmId) return;
+    
+    // 关闭当前响铃
+    setRingingAlarmId(null);
+    
+    // 创建一个5分钟后的临时闹钟
+    const now = new Date();
+    const snoozeTime = new Date(now.getTime() + 5 * 60 * 1000);
+    const snoozeAlarm: Alarm = {
+      id: `snooze-${Date.now()}`,
+      hour: snoozeTime.getHours(),
+      minute: snoozeTime.getMinutes(),
+      enabled: true,
+      repeat: 'once',
+      label: '稍后提醒',
+    };
+    
+    const updatedAlarms = [...alarms, snoozeAlarm];
+    setAlarms(updatedAlarms);
+    
+    // 保存到 localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+    }
+  };
+
   const shouldAlarmRing = (alarm: Alarm, now: Date): boolean => {
     if (!alarm.enabled) return false;
 
@@ -1581,10 +1608,10 @@ export default function HomePage() {
                         onClick={() => setNewAlarmRepeat(option.value as any)}
                         className={`px-4 py-2 rounded-[8px] transition-colors ${
                           newAlarmRepeat === option.value
-                            ? 'bg-blue-500 text-white'
+                            ? 'bg-[#669EF8] text-white'
                             : theme === 'dark'
-                            ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            ? 'bg-slate-800/40 text-slate-400 hover:bg-slate-800/60'
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                         }`}
                         style={{
                           fontSize: '16px',
@@ -1638,40 +1665,46 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-2xl p-12 max-w-md w-full text-center"
+              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-[8px] shadow-2xl p-12 max-w-md w-full aspect-square flex flex-col items-center justify-center relative"
             >
+              {/* 右上角关闭按钮 */}
+              <button
+                onClick={stopAlarmRinging}
+                className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 1 }}
-                className="mb-6"
+                className="mb-12"
               >
-                <AlarmClock className="w-24 h-24 text-white mx-auto" />
+                <AlarmClock className="w-40 h-40 text-white mx-auto" />
               </motion.div>
+
+              <div className="text-6xl font-bold text-white mb-3">
+                {(() => {
+                  const alarm = alarms.find(a => a.id === ringingAlarmId);
+                  return alarm 
+                    ? `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`
+                    : '00:00';
+                })()}
+              </div>
               
-              <h2 className="text-4xl font-bold text-white mb-4">闹钟响了！</h2>
-              
-              {(() => {
-                const alarm = alarms.find(a => a.id === ringingAlarmId);
-                if (alarm) {
-                  return (
-                    <>
-                      <div className="text-6xl font-bold text-white mb-2">
-                        {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
-                      </div>
-                      <div className="text-xl text-white/90 mb-8">
-                        {alarm.label || '闹钟'}
-                      </div>
-                    </>
-                  );
-                }
-                return null;
-              })()}
+              <div className="text-2xl text-white/90 mb-16">
+                {(() => {
+                  const alarm = alarms.find(a => a.id === ringingAlarmId);
+                  return alarm?.label || '时间到了';
+                })()}
+              </div>
               
               <button
-                onClick={stopAlarmRinging}
-                className="w-full px-8 py-4 bg-white text-red-500 rounded-xl font-bold text-lg hover:bg-gray-100 transition-colors"
+                onClick={snoozeAlarm}
+                className="px-6 py-4 bg-white text-red-500 rounded-[12px] font-black text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                style={{ letterSpacing: '0.1em', fontWeight: '950' }}
               >
-                关闭
+                5分钟后再提醒
               </button>
             </motion.div>
           </motion.div>
