@@ -89,11 +89,13 @@ export default function HomePage() {
   // 闹钟相关
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [showAddAlarm, setShowAddAlarm] = useState(false);
+  const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
   const [newAlarmHour, setNewAlarmHour] = useState(7);
   const [newAlarmMinute, setNewAlarmMinute] = useState(0);
   const [newAlarmRepeat, setNewAlarmRepeat] = useState<'once' | 'daily' | 'weekdays' | 'weekends'>('daily');
   const [newAlarmLabel, setNewAlarmLabel] = useState('');
   const [ringingAlarmId, setRingingAlarmId] = useState<string | null>(null);
+  const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -337,9 +339,13 @@ export default function HomePage() {
   useEffect(() => {
     alarmCheckIntervalRef.current = setInterval(() => {
       const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
       alarms.forEach(alarm => {
         if (shouldAlarmRing(alarm, now)) {
           setRingingAlarmId(alarm.id);
+          setRingingAlarm(alarm); // 保存完整的闹钟对象
           playNotificationSound();
           showDesktopNotification('闹钟', alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
           
@@ -348,6 +354,15 @@ export default function HomePage() {
             setTimeout(() => {
               deleteAlarm(alarm.id);
             }, 1000);
+          }
+        } else if (alarm.repeat === 'once' && alarm.enabled) {
+          // 自动关闭过期的单次闹钟
+          const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
+          const currentTimeInMinutes = currentHour * 60 + currentMinute;
+          
+          // 如果当前时间已经超过闹钟时间，自动关闭闹钟
+          if (currentTimeInMinutes > alarmTimeInMinutes) {
+            toggleAlarm(alarm.id);
           }
         }
       });
@@ -427,21 +442,54 @@ export default function HomePage() {
 
   // 闹钟相关函数
   const addAlarm = () => {
-    const newAlarm: Alarm = {
-      id: Date.now().toString(),
-      hour: newAlarmHour,
-      minute: newAlarmMinute,
-      enabled: true,
-      repeat: newAlarmRepeat,
-      label: newAlarmLabel || `${String(newAlarmHour).padStart(2, '0')}:${String(newAlarmMinute).padStart(2, '0')}`,
-    };
-    setAlarms([...alarms, newAlarm]);
-    setShowAddAlarm(false);
-    setNewAlarmLabel('');
-    // 保存到 localStorage
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('timer-alarms', JSON.stringify([...alarms, newAlarm]));
+    if (editingAlarmId) {
+      // 编辑模式
+      const updatedAlarms = alarms.map(alarm =>
+        alarm.id === editingAlarmId
+          ? {
+              ...alarm,
+              hour: newAlarmHour,
+              minute: newAlarmMinute,
+              repeat: newAlarmRepeat,
+              label: newAlarmLabel,
+            }
+          : alarm
+      );
+      setAlarms(updatedAlarms);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+      }
+    } else {
+      // 添加模式
+      const newAlarm: Alarm = {
+        id: Date.now().toString(),
+        hour: newAlarmHour,
+        minute: newAlarmMinute,
+        enabled: true,
+        repeat: newAlarmRepeat,
+        label: newAlarmLabel,
+      };
+      const updatedAlarms = [...alarms, newAlarm];
+      setAlarms(updatedAlarms);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+      }
     }
+    setShowAddAlarm(false);
+    setEditingAlarmId(null);
+    setNewAlarmLabel('');
+    setNewAlarmHour(7);
+    setNewAlarmMinute(0);
+    setNewAlarmRepeat('daily');
+  };
+
+  const editAlarm = (alarm: Alarm) => {
+    setEditingAlarmId(alarm.id);
+    setNewAlarmHour(alarm.hour);
+    setNewAlarmMinute(alarm.minute);
+    setNewAlarmRepeat(alarm.repeat);
+    setNewAlarmLabel(alarm.label || '');
+    setShowAddAlarm(true);
   };
 
   const deleteAlarm = (id: string) => {
@@ -466,6 +514,7 @@ export default function HomePage() {
 
   const stopAlarmRinging = () => {
     setRingingAlarmId(null);
+    setRingingAlarm(null);
   };
 
   const snoozeAlarm = () => {
@@ -473,6 +522,7 @@ export default function HomePage() {
     
     // 关闭当前响铃
     setRingingAlarmId(null);
+    setRingingAlarm(null);
     
     // 创建一个5分钟后的临时闹钟
     const now = new Date();
@@ -1039,7 +1089,7 @@ export default function HomePage() {
                 }}
               >
                 {/* 闹钟列表 */}
-                <div className="space-y-3 mb-4">
+                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto scrollbar-thin">
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                     暂无闹钟，点击下方按钮添加
@@ -1073,17 +1123,21 @@ export default function HomePage() {
                         </button>
 
                         {/* 时间和重复类型 */}
-                        <div className="flex items-center gap-3">
-                          <div className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                        <div 
+                          className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" 
+                          onClick={() => editAlarm(alarm)}
+                        >
+                          <div className={`text-3xl font-bold flex-shrink-0 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-gray-900 hover:text-blue-600'} transition-colors`}>
                             {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
                           </div>
-                          <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <div className={`text-sm truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                             {
                               alarm.repeat === 'once' ? '单次' :
                               alarm.repeat === 'daily' ? '每天' :
                               alarm.repeat === 'weekdays' ? '工作日' :
                               '周末'
                             }
+                            {alarm.label && ` | ${alarm.label}`}
                           </div>
                         </div>
                       </div>
@@ -1110,7 +1164,15 @@ export default function HomePage() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setShowAddAlarm(true)}
+                onClick={() => {
+                  const now = new Date();
+                  setNewAlarmHour(now.getHours());
+                  setNewAlarmMinute(now.getMinutes());
+                  setNewAlarmRepeat('daily');
+                  setNewAlarmLabel('');
+                  setEditingAlarmId(null);
+                  setShowAddAlarm(true);
+                }}
                 className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors ${
                   theme === 'dark' 
                     ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' 
@@ -1468,7 +1530,14 @@ export default function HomePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-            onClick={() => setShowAddAlarm(false)}
+            onClick={() => {
+              setShowAddAlarm(false);
+              setEditingAlarmId(null);
+              setNewAlarmLabel('');
+              setNewAlarmHour(7);
+              setNewAlarmMinute(0);
+              setNewAlarmRepeat('daily');
+            }}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -1478,9 +1547,18 @@ export default function HomePage() {
               className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-[8px] shadow-2xl p-8 max-w-md w-full`}
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>添加闹钟</h2>
+                <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  {editingAlarmId ? '编辑闹钟' : '添加闹钟'}
+                </h2>
                 <button
-                  onClick={() => setShowAddAlarm(false)}
+                  onClick={() => {
+                    setShowAddAlarm(false);
+                    setEditingAlarmId(null);
+                    setNewAlarmLabel('');
+                    setNewAlarmHour(7);
+                    setNewAlarmMinute(0);
+                    setNewAlarmRepeat('daily');
+                  }}
                   className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'} rounded-[8px] transition-colors`}
                 >
                   <X className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`} />
@@ -1494,10 +1572,18 @@ export default function HomePage() {
                     <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
                       小时
                     </label>
-                    <select
-                      value={newAlarmHour}
-                      onChange={(e) => setNewAlarmHour(parseInt(e.target.value))}
-                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer text-black ${
+                    <input
+                      type="number"
+                      min="0"
+                      max="23"
+                      value={String(newAlarmHour).padStart(2, '0')}
+                      onChange={(e) => {
+                        let value = parseInt(e.target.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 23) value = 23;
+                        setNewAlarmHour(value);
+                      }}
+                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black no-spinner ${
                         theme === 'dark' 
                           ? 'bg-slate-800 border-slate-700' 
                           : 'bg-white border-gray-300'
@@ -1506,36 +1592,27 @@ export default function HomePage() {
                         color: '#000000 !important',
                         WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
-                        fontWeight: '500',
-                        paddingLeft: '16px',
-                        paddingRight: '40px'
+                        fontWeight: '500'
                       }}
-                    >
-                      {Array.from({ length: 24 }, (_, i) => (
-                        <option 
-                          key={i} 
-                          value={i} 
-                          className="bg-white text-black"
-                          style={{ 
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            WebkitTextFillColor: '#000000'
-                          }}
-                        >
-                          {String(i).padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div className="flex-1">
                     <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
                       分钟
                     </label>
-                    <select
-                      value={newAlarmMinute}
-                      onChange={(e) => setNewAlarmMinute(parseInt(e.target.value))}
-                      className={`w-full py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent cursor-pointer text-black ${
+                    <input
+                      type="number"
+                      min="0"
+                      max="59"
+                      value={String(newAlarmMinute).padStart(2, '0')}
+                      onChange={(e) => {
+                        let value = parseInt(e.target.value) || 0;
+                        if (value < 0) value = 0;
+                        if (value > 59) value = 59;
+                        setNewAlarmMinute(value);
+                      }}
+                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black no-spinner ${
                         theme === 'dark' 
                           ? 'bg-slate-800 border-slate-700' 
                           : 'bg-white border-gray-300'
@@ -1544,26 +1621,9 @@ export default function HomePage() {
                         color: '#000000 !important',
                         WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
-                        fontWeight: '500',
-                        paddingLeft: '16px',
-                        paddingRight: '40px'
+                        fontWeight: '500'
                       }}
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <option 
-                          key={i} 
-                          value={i} 
-                          className="bg-white text-black"
-                          style={{ 
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            WebkitTextFillColor: '#000000'
-                          }}
-                        >
-                          {String(i).padStart(2, '0')}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
 
@@ -1627,7 +1687,14 @@ export default function HomePage() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => setShowAddAlarm(false)}
+                  onClick={() => {
+                    setShowAddAlarm(false);
+                    setEditingAlarmId(null);
+                    setNewAlarmLabel('');
+                    setNewAlarmHour(7);
+                    setNewAlarmMinute(0);
+                    setNewAlarmRepeat('daily');
+                  }}
                   className={`flex-1 px-6 py-3 ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-200 hover:bg-gray-300'} ${theme === 'dark' ? 'text-white' : 'text-gray-900'} rounded-[8px] transition-colors`}
                   style={{
                     fontSize: '16px',
@@ -1684,27 +1751,21 @@ export default function HomePage() {
               </motion.div>
 
               <div className="text-6xl font-bold text-white mb-3">
-                {(() => {
-                  const alarm = alarms.find(a => a.id === ringingAlarmId);
-                  return alarm 
-                    ? `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`
-                    : '00:00';
-                })()}
+                {ringingAlarm 
+                  ? `${String(ringingAlarm.hour).padStart(2, '0')}:${String(ringingAlarm.minute).padStart(2, '0')}`
+                  : '00:00'}
               </div>
               
-              <div className="text-2xl text-white/90 mb-16">
-                {(() => {
-                  const alarm = alarms.find(a => a.id === ringingAlarmId);
-                  return alarm?.label || '时间到了';
-                })()}
+              <div className="text-2xl text-white/90 mb-16 max-w-[90%] text-center break-words">
+                {ringingAlarm?.label || '时间到了'}
               </div>
               
               <button
                 onClick={snoozeAlarm}
-                className="px-6 py-4 bg-white text-red-500 rounded-[12px] font-black text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                className="w-full py-4 bg-white text-red-500 rounded-[12px] font-black text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 style={{ letterSpacing: '0.1em', fontWeight: '950' }}
               >
-                5分钟后再提醒
+                5分钟后提醒
               </button>
             </motion.div>
           </motion.div>
