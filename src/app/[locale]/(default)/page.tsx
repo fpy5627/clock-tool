@@ -103,6 +103,8 @@ export default function HomePage() {
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isHoveringControls = useRef(false);
   const alarmCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastToastRef = useRef<{ id: string; time: number } | null>(null);
+  const lastClickRef = useRef<{ action: string; time: number } | null>(null);
 
   useEffect(() => {
     if (isRunning) {
@@ -388,6 +390,39 @@ export default function HomePage() {
       }
     };
   }, [alarms]);
+
+  // 防止重复显示toast的辅助函数
+  const showToast = (type: 'success' | 'info', title: string, description: string, id: string) => {
+    const now = Date.now();
+    
+    // 如果在500ms内显示了相同ID的toast，则忽略
+    if (lastToastRef.current && lastToastRef.current.id === id && (now - lastToastRef.current.time) < 500) {
+      return;
+    }
+    
+    // 先关闭之前的toast（如果存在）
+    toast.dismiss(id);
+    
+    // 更新最后一次toast的记录
+    lastToastRef.current = { id, time: now };
+    
+    // 短暂延迟后显示新toast，确保之前的已关闭
+    setTimeout(() => {
+      if (type === 'success') {
+        toast.success(title, {
+          description,
+          duration: 2000,
+          id,
+        });
+      } else {
+        toast.info(title, {
+          description,
+          duration: 2000,
+          id,
+        });
+      }
+    }, 10);
+  };
 
   const playNotificationSound = () => {
     try {
@@ -1115,14 +1150,25 @@ export default function HomePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className={`py-6 px-4 rounded-[8px] flex items-start justify-between overflow-hidden no-horizontal-scroll ${
+                      className={`py-6 px-4 rounded-[8px] flex items-start justify-between ${
                         theme === 'dark' 
                           ? 'bg-white/5 hover:bg-white/10' 
                           : 'bg-gray-800/5 hover:bg-gray-800/10'
-                      } transition-colors ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
-                      style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
+                      } transition-all ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
+                      style={{ 
+                        width: '100%', 
+                        maxWidth: '100%', 
+                        boxSizing: 'border-box',
+                        overflow: expandedAlarmId === alarm.id ? 'visible' : 'hidden'
+                      }}
                     >
-                      <div className="flex items-start gap-4" style={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden' }}>
+                      <div 
+                        className="flex items-start gap-4" 
+                        style={{ 
+                          flex: '1 1 0', 
+                          minWidth: 0
+                        }}
+                      >
                         {/* 开关 */}
                         <button
                           onClick={() => toggleAlarm(alarm.id)}
@@ -1138,43 +1184,56 @@ export default function HomePage() {
                         </button>
 
                         {/* 时间和重复类型 */}
-                        <div className="flex flex-col gap-2" style={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden' }}>
+                        <div 
+                          className="flex flex-col gap-2" 
+                          style={{ 
+                            flex: '1 1 0', 
+                            minWidth: 0
+                          }}
+                        >
                           <div 
                             className="flex items-center gap-3 cursor-pointer" 
                             onClick={() => editAlarm(alarm)}
-                            style={{ overflow: 'hidden' }}
                           >
                             <div className={`text-3xl font-bold flex-shrink-0 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-gray-900 hover:text-blue-600'} transition-colors`}>
                               {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
                             </div>
-                            <div className={`text-sm flex-shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                              {
-                                alarm.repeat === 'once' ? '单次' :
-                                alarm.repeat === 'daily' ? '每天' :
-                                alarm.repeat === 'weekdays' ? '工作日' :
-                                '周末'
-                              }
+                            <div 
+                              className="flex items-center min-w-0 gap-2"
+                            >
+                              {/* 重复类型 - 不换行 */}
+                              <span className={`text-sm flex-shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {alarm.repeat === 'once' ? '单次' :
+                                 alarm.repeat === 'daily' ? '每天' :
+                                 alarm.repeat === 'weekdays' ? '工作日' :
+                                 '周末'}
+                              </span>
+                              
+                              {/* 标签 - 可点击展开 */}
+                              {alarm.label && (
+                                <>
+                                  <span className={`flex-shrink-0 ${theme === 'dark' ? 'text-gray-600' : 'text-gray-400'}`}>|</span>
+                                  <span 
+                                    className={`text-sm cursor-pointer ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'} transition-colors ${
+                                      expandedAlarmId === alarm.id ? '' : 'truncate'
+                                    }`}
+                                    style={expandedAlarmId === alarm.id ? {
+                                      whiteSpace: 'normal',
+                                      wordBreak: 'break-word',
+                                      overflowWrap: 'break-word'
+                                    } : {}}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setExpandedAlarmId(expandedAlarmId === alarm.id ? null : alarm.id);
+                                    }}
+                                    title={expandedAlarmId === alarm.id ? '点击收起' : '点击展开查看完整内容'}
+                                  >
+                                    {alarm.label}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
-                          {alarm.label && (
-                            <div 
-                              className={`text-sm cursor-pointer transition-all ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'}`}
-                              style={{ 
-                                overflow: expandedAlarmId === alarm.id ? 'visible' : 'hidden',
-                                textOverflow: expandedAlarmId === alarm.id ? 'clip' : 'ellipsis',
-                                whiteSpace: expandedAlarmId === alarm.id ? 'normal' : 'nowrap',
-                                wordBreak: expandedAlarmId === alarm.id ? 'break-word' : 'normal',
-                                overflowWrap: expandedAlarmId === alarm.id ? 'break-word' : 'normal'
-                              }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setExpandedAlarmId(expandedAlarmId === alarm.id ? null : alarm.id);
-                              }}
-                              title={expandedAlarmId === alarm.id ? '点击收起' : '点击展开'}
-                            >
-                              {alarm.label}
-                            </div>
-                          )}
                         </div>
                       </div>
 
@@ -1238,9 +1297,17 @@ export default function HomePage() {
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
+                        // 防抖：检查是否在500ms内点击了相同的按钮
+                        const actionKey = `preset-${preset.seconds}`;
+                        const now = Date.now();
+                        if (lastClickRef.current && lastClickRef.current.action === actionKey && (now - lastClickRef.current.time) < 500) {
+                          return;
+                        }
+                        lastClickRef.current = { action: actionKey, time: now };
+                        
                         // 计算当前时间加上指定秒数后的时间
-                        const now = new Date();
-                        const futureTime = new Date(now.getTime() + preset.seconds * 1000);
+                        const currentTime = new Date();
+                        const futureTime = new Date(currentTime.getTime() + preset.seconds * 1000);
                         const hour = futureTime.getHours();
                         const minute = futureTime.getMinutes();
                         
@@ -1251,10 +1318,12 @@ export default function HomePage() {
                         
                         if (existingAlarm) {
                           // 如果已存在，显示提示信息
-                          toast.info('该时间的闹钟已存在', {
-                            description: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 的闹钟已设置`,
-                            duration: 2000,
-                          });
+                          showToast(
+                            'info',
+                            '该时间的闹钟已存在',
+                            `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 的闹钟已设置`,
+                            `alarm-exists-${hour}-${minute}`
+                          );
                           return;
                         }
                         
@@ -1277,10 +1346,12 @@ export default function HomePage() {
                         }
                         
                         // 显示成功提示
-                        toast.success(`${preset.label}闹钟设置成功`, {
-                          description: `将在 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 提醒您`,
-                          duration: 2000,
-                        });
+                        showToast(
+                          'success',
+                          `${preset.label}闹钟设置成功`,
+                          `将在 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 提醒您`,
+                          `alarm-success-${hour}-${minute}`
+                        );
                       }}
                       className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all ${
                         theme === 'dark'
