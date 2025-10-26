@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -148,7 +149,7 @@ export default function HomePage() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // 鼠标移动显示控制按钮
+  // 鼠标移动显示控制按钮（仅在全屏模式下自动隐藏）
   useEffect(() => {
     const handleMouseMove = () => {
       setShowControls(true);
@@ -158,12 +159,14 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
       
-      // 2秒后隐藏控制按钮（仅当鼠标不在按钮上时）
-      hideControlsTimeoutRef.current = setTimeout(() => {
-        if (!isHoveringControls.current) {
-          setShowControls(false);
-        }
-      }, 2000);
+      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
+      if (isFullscreen && mode !== 'alarm') {
+        hideControlsTimeoutRef.current = setTimeout(() => {
+          if (!isHoveringControls.current) {
+            setShowControls(false);
+          }
+        }, 1500);
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -177,7 +180,17 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
     };
-  }, []);
+  }, [isFullscreen, mode]);
+
+  // 非全屏模式或闹钟模式下始终显示控制按钮
+  useEffect(() => {
+    if (!isFullscreen || mode === 'alarm') {
+      setShowControls(true);
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+    }
+  }, [isFullscreen, mode]);
 
   // 更新日期时间
   useEffect(() => {
@@ -869,7 +882,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-4 left-4 flex gap-2 z-50"
+                className="fixed top-6 left-6 flex gap-3 z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -877,40 +890,40 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('timer')}
-                  className={`p-3 rounded-lg transition-colors backdrop-blur-sm ${
+                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'timer' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white/60'
+                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
+                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title="倒计时"
                 >
-                  <Timer className="w-6 h-6" />
+                  <Timer className="w-7 h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('stopwatch')}
-                  className={`p-3 rounded-lg transition-colors backdrop-blur-sm ${
+                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'stopwatch' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white/60'
+                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
+                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title="秒表"
                 >
-                  <Clock className="w-6 h-6" />
+                  <Clock className="w-7 h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('alarm')}
-                  className={`p-3 rounded-lg transition-colors backdrop-blur-sm ${
+                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'alarm' 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-white/10 hover:bg-white/20 text-white/60'
+                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
+                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title="闹钟"
                 >
-                  <AlarmClock className="w-6 h-6" />
+                  <AlarmClock className="w-7 h-7" />
                 </motion.button>
               </motion.div>
 
@@ -920,7 +933,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-4 right-4 flex gap-2 z-50"
+                className="fixed top-6 right-6 flex gap-3 z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -928,23 +941,23 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-colors"
+                  className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
                   title={soundEnabled ? '关闭声音' : '开启声音'}
                 >
                   {soundEnabled ? (
-                    <Volume2 className="w-6 h-6 text-white" />
+                    <Volume2 className="w-7 h-7 text-white" />
                   ) : (
-                    <VolumeX className="w-6 h-6 text-white" />
+                    <VolumeX className="w-7 h-7 text-white" />
                   )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
-                  className="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-lg transition-colors"
+                  className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
                   title="退出全屏"
                 >
-                  <X className="w-6 h-6 text-white" />
+                  <X className="w-7 h-7 text-white" />
                 </motion.button>
               </motion.div>
             </>
@@ -1231,6 +1244,20 @@ export default function HomePage() {
                         const hour = futureTime.getHours();
                         const minute = futureTime.getMinutes();
                         
+                        // 检查是否已存在相同时间的闹钟
+                        const existingAlarm = alarms.find(
+                          alarm => alarm.hour === hour && alarm.minute === minute && alarm.repeat === 'once'
+                        );
+                        
+                        if (existingAlarm) {
+                          // 如果已存在，显示提示信息
+                          toast.info('该时间的闹钟已存在', {
+                            description: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 的闹钟已设置`,
+                            duration: 2000,
+                          });
+                          return;
+                        }
+                        
                         // 创建新闹钟
                         const newAlarm: Alarm = {
                           id: Date.now().toString(),
@@ -1248,6 +1275,12 @@ export default function HomePage() {
                         if (typeof window !== 'undefined') {
                           localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
                         }
+                        
+                        // 显示成功提示
+                        toast.success(`${preset.label}闹钟设置成功`, {
+                          description: `将在 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 提醒您`,
+                          duration: 2000,
+                        });
                       }}
                       className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all ${
                         theme === 'dark'

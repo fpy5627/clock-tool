@@ -8,6 +8,7 @@ import { Metadata } from "next";
 import { NextAuthSessionProvider } from "@/auth/session";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/providers/theme";
+import { Toaster } from "sonner";
 
 export async function generateMetadata({
   params,
@@ -45,7 +46,23 @@ export default async function LocaleLayout({
     <NextIntlClientProvider messages={messages}>
       <NextAuthSessionProvider>
         <AppContextProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster 
+              richColors 
+              position="top-center" 
+              expand={true}
+              offset="80px"
+              toastOptions={{
+                style: {
+                  fontSize: '16px',
+                  padding: '16px 24px',
+                  minWidth: '320px',
+                },
+                className: 'toast-custom',
+              }}
+            />
+          </ThemeProvider>
         </AppContextProvider>
       </NextAuthSessionProvider>
     </NextIntlClientProvider>
