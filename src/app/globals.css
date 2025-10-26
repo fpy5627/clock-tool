@@ -54,3 +54,27 @@ pre {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
+
+/* 禁用横向滚动 */
+.no-horizontal-scroll {
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 强制文本截断和换行 */
+.force-text-truncate {
+  display: block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  word-break: break-all !important;
+}
+
+.force-text-wrap {
+  display: block !important;
+  overflow-wrap: anywhere !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+  white-space: pre-wrap !important;
+}

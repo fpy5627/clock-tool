@@ -96,6 +96,7 @@ export default function HomePage() {
   const [newAlarmLabel, setNewAlarmLabel] = useState('');
   const [ringingAlarmId, setRingingAlarmId] = useState<string | null>(null);
   const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
+  const [expandedAlarmId, setExpandedAlarmId] = useState<string | null>(null);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1079,17 +1080,17 @@ export default function HomePage() {
             </div>
           ) : (
             /* 闹钟列表 */
-            <div className="w-full flex justify-center px-4">
+            <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
               <div 
-                className="w-full"
+                className="w-full overflow-x-hidden no-horizontal-scroll"
                 style={{
-                  width: 'var(--timer-width, auto)',
+                  width: '100%',
                   minWidth: '300px',
-                  maxWidth: '90vw'
+                  maxWidth: 'min(var(--timer-width, 672px), 90vw)'
                 }}
               >
                 {/* 闹钟列表 */}
-                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto scrollbar-thin">
+                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                     暂无闹钟，点击下方按钮添加
@@ -1101,17 +1102,18 @@ export default function HomePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className={`py-6 px-4 rounded-[8px] flex items-center justify-between ${
+                      className={`py-6 px-4 rounded-[8px] flex items-start justify-between overflow-hidden no-horizontal-scroll ${
                         theme === 'dark' 
                           ? 'bg-white/5 hover:bg-white/10' 
                           : 'bg-gray-800/5 hover:bg-gray-800/10'
                       } transition-colors ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
+                      style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}
                     >
-                      <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-start gap-4" style={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden' }}>
                         {/* 开关 */}
                         <button
                           onClick={() => toggleAlarm(alarm.id)}
-                          className={`w-12 h-7 rounded-full transition-colors ${
+                          className={`w-12 h-7 rounded-full transition-colors flex-shrink-0 mt-1.5 ${
                             alarm.enabled 
                               ? 'bg-blue-500' 
                               : theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
@@ -1123,22 +1125,43 @@ export default function HomePage() {
                         </button>
 
                         {/* 时间和重复类型 */}
-                        <div 
-                          className="flex items-center gap-3 cursor-pointer flex-1 min-w-0" 
-                          onClick={() => editAlarm(alarm)}
-                        >
-                          <div className={`text-3xl font-bold flex-shrink-0 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-gray-900 hover:text-blue-600'} transition-colors`}>
-                            {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
+                        <div className="flex flex-col gap-2" style={{ flex: '1 1 0', minWidth: 0, overflow: 'hidden' }}>
+                          <div 
+                            className="flex items-center gap-3 cursor-pointer" 
+                            onClick={() => editAlarm(alarm)}
+                            style={{ overflow: 'hidden' }}
+                          >
+                            <div className={`text-3xl font-bold flex-shrink-0 ${theme === 'dark' ? 'text-white hover:text-blue-400' : 'text-gray-900 hover:text-blue-600'} transition-colors`}>
+                              {String(alarm.hour).padStart(2, '0')}:{String(alarm.minute).padStart(2, '0')}
+                            </div>
+                            <div className={`text-sm flex-shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {
+                                alarm.repeat === 'once' ? '单次' :
+                                alarm.repeat === 'daily' ? '每天' :
+                                alarm.repeat === 'weekdays' ? '工作日' :
+                                '周末'
+                              }
+                            </div>
                           </div>
-                          <div className={`text-sm truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                            {
-                              alarm.repeat === 'once' ? '单次' :
-                              alarm.repeat === 'daily' ? '每天' :
-                              alarm.repeat === 'weekdays' ? '工作日' :
-                              '周末'
-                            }
-                            {alarm.label && ` | ${alarm.label}`}
-                          </div>
+                          {alarm.label && (
+                            <div 
+                              className={`text-sm cursor-pointer transition-all ${theme === 'dark' ? 'text-gray-400 hover:text-gray-300' : 'text-gray-600 hover:text-gray-700'}`}
+                              style={{ 
+                                overflow: expandedAlarmId === alarm.id ? 'visible' : 'hidden',
+                                textOverflow: expandedAlarmId === alarm.id ? 'clip' : 'ellipsis',
+                                whiteSpace: expandedAlarmId === alarm.id ? 'normal' : 'nowrap',
+                                wordBreak: expandedAlarmId === alarm.id ? 'break-word' : 'normal',
+                                overflowWrap: expandedAlarmId === alarm.id ? 'break-word' : 'normal'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedAlarmId(expandedAlarmId === alarm.id ? null : alarm.id);
+                              }}
+                              title={expandedAlarmId === alarm.id ? '点击收起' : '点击展开'}
+                            >
+                              {alarm.label}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1147,7 +1170,7 @@ export default function HomePage() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={() => deleteAlarm(alarm.id)}
-                        className={`p-2 rounded-lg transition-colors ${
+                        className={`p-2 rounded-lg transition-colors flex-shrink-0 mt-1 ${
                           theme === 'dark' 
                             ? 'hover:bg-red-500/20 text-red-400' 
                             : 'hover:bg-red-500/20 text-red-600'
@@ -1726,43 +1749,49 @@ export default function HomePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6 sm:p-8 md:p-12 lg:p-16"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-[8px] shadow-2xl p-12 max-w-md w-full aspect-square flex flex-col items-center justify-center relative"
+              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-[8px] shadow-2xl p-8 sm:p-10 md:p-12 w-full max-w-[90vw] sm:max-w-lg md:max-w-xl lg:max-w-2xl aspect-square flex flex-col items-center justify-center relative overflow-hidden"
             >
               {/* 右上角关闭按钮 */}
               <button
                 onClick={stopAlarmRinging}
-                className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 hover:bg-white/20 rounded-full transition-colors"
               >
-                <X className="w-6 h-6 text-white" />
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </button>
 
               <motion.div
                 animate={{ scale: [1, 1.2, 1] }}
                 transition={{ repeat: Infinity, duration: 1 }}
-                className="mb-12"
+                className="mb-6 sm:mb-8 md:mb-12"
               >
-                <AlarmClock className="w-40 h-40 text-white mx-auto" />
+                <AlarmClock className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 text-white mx-auto" />
               </motion.div>
 
-              <div className="text-6xl font-bold text-white mb-3">
+              <div className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-5 md:mb-6">
                 {ringingAlarm 
                   ? `${String(ringingAlarm.hour).padStart(2, '0')}:${String(ringingAlarm.minute).padStart(2, '0')}`
                   : '00:00'}
               </div>
               
-              <div className="text-2xl text-white/90 mb-16 max-w-[90%] text-center break-words">
+              <div 
+                className="text-lg sm:text-xl md:text-2xl text-white/90 w-full px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 mb-6 sm:mb-8 md:mb-12 text-center break-words overflow-hidden"
+                style={{ 
+                  wordWrap: 'break-word', 
+                  overflowWrap: 'break-word'
+                }}
+              >
                 {ringingAlarm?.label || '时间到了'}
               </div>
               
               <button
                 onClick={snoozeAlarm}
-                className="w-full py-4 bg-white text-red-500 rounded-[12px] font-black text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
+                className="w-full py-3 sm:py-3.5 md:py-4 bg-white text-red-500 rounded-[12px] font-black text-lg sm:text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 style={{ letterSpacing: '0.1em', fontWeight: '950' }}
               >
                 5分钟后提醒
