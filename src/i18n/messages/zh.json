@@ -168,6 +168,18 @@
       "losangeles": "洛杉矶",
       "chicago": "芝加哥"
     },
+    "countries": {
+      "china": "中国",
+      "japan": "日本",
+      "korea": "韩国",
+      "singapore": "新加坡",
+      "australia": "澳大利亚",
+      "uae": "阿联酋",
+      "russia": "俄罗斯",
+      "uk": "英国",
+      "france": "法国",
+      "usa": "美国"
+    },
     "weekdays": {
       "sunday": "周日",
       "monday": "周一",

@@ -168,6 +168,18 @@
       "losangeles": "Los Angeles",
       "chicago": "Chicago"
     },
+    "countries": {
+      "china": "China",
+      "japan": "Japan",
+      "korea": "South Korea",
+      "singapore": "Singapore",
+      "australia": "Australia",
+      "uae": "UAE",
+      "russia": "Russia",
+      "uk": "UK",
+      "france": "France",
+      "usa": "USA"
+    },
     "weekdays": {
       "sunday": "Sun",
       "monday": "Mon",

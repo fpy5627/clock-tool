@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -38,18 +38,18 @@ const THEME_COLORS = [
 
 // 世界时间城市列表（包含天气信息）
 const WORLD_CITIES = [
-  { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22 },
-  { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18 },
-  { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16 },
-  { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28 },
-  { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24 },
-  { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32 },
-  { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8 },
-  { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12 },
-  { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14 },
-  { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15 },
-  { key: 'losangeles', timezone: 'America/Los_Angeles', offset: -8, weatherCode: '113', temp: 22 },
-  { key: 'chicago', timezone: 'America/Chicago', offset: -6, weatherCode: '119', temp: 13 },
+  { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22, countryKey: 'china' },
+  { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18, countryKey: 'japan' },
+  { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16, countryKey: 'korea' },
+  { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28, countryKey: 'singapore' },
+  { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24, countryKey: 'australia' },
+  { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32, countryKey: 'uae' },
+  { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8, countryKey: 'russia' },
+  { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12, countryKey: 'uk' },
+  { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14, countryKey: 'france' },
+  { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15, countryKey: 'usa' },
+  { key: 'losangeles', timezone: 'America/Los_Angeles', offset: -8, weatherCode: '113', temp: 22, countryKey: 'usa' },
+  { key: 'chicago', timezone: 'America/Chicago', offset: -6, weatherCode: '119', temp: 13, countryKey: 'usa' },
 ];
 
 // 闹钟类型定义
@@ -64,6 +64,7 @@ interface Alarm {
 
 export default function HomePage() {
   const t = useTranslations('clock');
+  const locale = useLocale();
   
   // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
   const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
@@ -346,44 +347,78 @@ export default function HomePage() {
   useEffect(() => {
     const fetchWeatherAndLocation = async () => {
       try {
-        // 获取IP定位
-        const locationRes = await fetch('https://ipapi.co/json/');
+        // 根据当前语言设置API语言参数
+        const langMap: Record<string, string> = {
+          'zh': 'zh-CN',
+          'en': 'en',
+        };
+        const apiLang = langMap[locale] || 'en';
+        
+        // 获取IP定位 (使用支持多语言的ip-api.com)
+        const locationRes = await fetch(`http://ip-api.com/json/?lang=${apiLang}`);
         const locationData = await locationRes.json();
-        const city = locationData.city || locationData.region || 'Beijing';
-        const timezone = locationData.timezone || 'Asia/Shanghai';
-        const country = locationData.country_name || 'China';
         
-        // 保存用户位置信息
-        setUserLocation({
-          city,
-          timezone,
-          country
-        });
-        
-        // 获取天气数据 (使用wttr.in API)
-        const weatherRes = await fetch(`https://wttr.in/${city}?format=j1`);
-        const weatherData = await weatherRes.json();
-        
-        if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
-          const current = weatherData.current_condition[0];
-          setWeather({
-            temp: parseInt(current.temp_C),
-            condition: current.weatherDesc[0].value,
-            icon: current.weatherCode
+        if (locationData.status === 'success') {
+          const city = locationData.city || locationData.regionName || '北京';
+          const timezone = locationData.timezone || 'Asia/Shanghai';
+          let country = locationData.country || '中国';
+          
+          // 特殊地区映射到国家（根据语言）
+          const regionToCountryMap: Record<string, Record<string, string>> = {
+            'zh-CN': {
+              '香港': '中国',
+              '澳门': '中国',
+              '台湾': '中国',
+            },
+            'en': {
+              'Hong Kong': 'China',
+              'Macao': 'China',
+              'Taiwan': 'China',
+            }
+          };
+          
+          // 如果当前country在映射表中，则替换为对应的国家
+          if (regionToCountryMap[apiLang] && regionToCountryMap[apiLang][country]) {
+            country = regionToCountryMap[apiLang][country];
+          }
+          
+          // 保存用户位置信息
+          setUserLocation({
+            city,
+            timezone,
+            country
           });
+          
+          // 获取天气数据 (使用wttr.in API)
+          const weatherRes = await fetch(`https://wttr.in/${locationData.city || 'Beijing'}?format=j1`);
+          const weatherData = await weatherRes.json();
+          
+          if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
+            const current = weatherData.current_condition[0];
+            setWeather({
+              temp: parseInt(current.temp_C),
+              condition: current.weatherDesc[0].value,
+              icon: current.weatherCode
+            });
+          }
+        } else {
+          throw new Error('Location API failed');
         }
       } catch (error) {
         console.error('Failed to fetch weather:', error);
-        // 设置默认天气和位置
+        // 设置默认天气和位置（根据语言）
+        const defaultLocation = locale === 'zh' 
+          ? { city: '北京', country: '中国' }
+          : { city: 'Beijing', country: 'China' };
+        
         setWeather({
           temp: 21,
           condition: 'Partly cloudy',
           icon: '116'
         });
         setUserLocation({
-          city: 'Beijing',
-          timezone: 'Asia/Shanghai',
-          country: 'China'
+          ...defaultLocation,
+          timezone: 'Asia/Shanghai'
         });
       }
     };
@@ -393,7 +428,7 @@ export default function HomePage() {
     const weatherInterval = setInterval(fetchWeatherAndLocation, 30 * 60 * 1000);
     
     return () => clearInterval(weatherInterval);
-  }, []);
+  }, [locale]);
 
   // 检查闹钟
   useEffect(() => {
@@ -1233,8 +1268,8 @@ export default function HomePage() {
                         {showDate && <span>{dateStr}</span>}
                         {showDate && showWeekday && <span>&nbsp;</span>}
                         {showWeekday && <span>{weekdayStr}</span>}
-                      </>
-                    );
+    </>
+  );
                   })()}
                 </div>
               </motion.div>
@@ -1371,13 +1406,13 @@ export default function HomePage() {
               )}
               
               {/* 闹钟列表 */}
-              <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
-                <div 
-                  className="w-full overflow-x-hidden no-horizontal-scroll"
-                  style={{
-                    width: '100%',
-                    minWidth: '300px',
-                    maxWidth: 'min(var(--timer-width, 672px), 90vw)'
+            <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
+              <div 
+                className="w-full overflow-x-hidden no-horizontal-scroll"
+                style={{
+                  width: '100%',
+                  minWidth: '300px',
+                  maxWidth: 'min(var(--timer-width, 672px), 90vw)'
                 }}
               >
                 {/* 闹钟列表 */}
@@ -1633,14 +1668,14 @@ export default function HomePage() {
             </>
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
-            <div className="w-full px-4 overflow-x-hidden mt-8 sm:mt-12 md:mt-16">
+            <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
                 {userLocation && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`mb-10 sm:mb-12 py-16 sm:py-20 md:py-24 lg:py-28 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
+                    className={`py-14 sm:py-16 md:py-18 lg:py-20 xl:py-22 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
                       theme === 'dark' 
                         ? 'bg-slate-800/50 border border-slate-700' 
                         : 'bg-white border border-gray-200'
@@ -1648,16 +1683,17 @@ export default function HomePage() {
                     style={{
                       width: '100%',
                       minWidth: '300px',
-                      maxWidth: 'min(672px, 90vw)'
+                      maxWidth: 'min(1400px, 95vw)',
+                      marginBottom: '48px'
                     }}
                   >
                     <div className="w-full">
                       {/* 顶部：城市和天气图标 */}
-                      <div className="flex items-center justify-between mb-6">
-                        <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold ${
+                      <div className="flex items-center justify-between mb-7">
+                        <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                           theme === 'dark' ? 'text-white' : 'text-gray-900'
                         }`}>
-                          {userLocation.city}, {userLocation.country}
+                          {userLocation.city} | {userLocation.country}
                         </h2>
                         {weather && (
                           <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12">
@@ -1728,7 +1764,7 @@ export default function HomePage() {
                       </div>
                       
                       {/* 分隔线 */}
-                      <div className={`border-t mb-6 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                      <div className={`border-t mb-7 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                       
                       {/* 底部：温度和本地时间 */}
                       <div className="flex items-center justify-between">
@@ -1752,16 +1788,17 @@ export default function HomePage() {
                   </motion.div>
                 )}
                 
-                <div className="w-full flex justify-center px-4">
+                <div className="w-full flex justify-center">
                   <div 
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8"
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
                     style={{
                       width: '100%',
                       minWidth: '300px',
-                      maxWidth: 'min(672px, 90vw)'
+                      maxWidth: 'min(1400px, 95vw)',
+                      gap: '24px'
                     }}
                   >
-                    {WORLD_CITIES.map((city) => {
+                  {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                     const hours = cityTime.getHours();
@@ -1806,7 +1843,7 @@ export default function HomePage() {
                       >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className={`text-base sm:text-lg font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                            {t(`cities.${city.key}`)}
+                            {t(`cities.${city.key}`)} | {t(`countries.${city.countryKey}`)}
                           </h3>
                           {isNight ? (
                             <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
@@ -1834,14 +1871,14 @@ export default function HomePage() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-1">
                             <div className="w-5 h-5">
-                              {getWeatherIcon(city.weatherCode)}
+                            {getWeatherIcon(city.weatherCode)}
                             </div>
                             <span className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                               {city.temp}°C
                             </span>
                           </div>
                           <div className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
-                            {diffText}
+                          {diffText}
                           </div>
                         </div>
                       </motion.div>
