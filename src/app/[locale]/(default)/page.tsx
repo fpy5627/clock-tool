@@ -4,51 +4,52 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslations } from 'next-intl';
 
 // 预设时间选项
 const PRESET_TIMES = [
-  { label: '1分钟', seconds: 60 },
-  { label: '3分钟', seconds: 180 },
-  { label: '5分钟', seconds: 300 },
-  { label: '10分钟', seconds: 600 },
-  { label: '15分钟', seconds: 900 },
-  { label: '25分钟', seconds: 1500 },
-  { label: '30分钟', seconds: 1800 },
-  { label: '45分钟', seconds: 2700 },
-  { label: '1小时', seconds: 3600 },
+  { key: '1min', seconds: 60 },
+  { key: '3min', seconds: 180 },
+  { key: '5min', seconds: 300 },
+  { key: '10min', seconds: 600 },
+  { key: '15min', seconds: 900 },
+  { key: '25min', seconds: 1500 },
+  { key: '30min', seconds: 1800 },
+  { key: '45min', seconds: 2700 },
+  { key: '1hour', seconds: 3600 },
 ];
 
 // 声音选项
 const SOUND_OPTIONS = [
-  { id: 'bell', name: '铃铛', frequency: 800 },
-  { id: 'chime', name: '提示音', frequency: 1000 },
-  { id: 'beep', name: '哔哔声', frequency: 600 },
-  { id: 'digital', name: '电子音', frequency: 1200 },
+  { id: 'bell', key: 'bell', frequency: 800 },
+  { id: 'chime', key: 'chime', frequency: 1000 },
+  { id: 'beep', key: 'beep', frequency: 600 },
+  { id: 'digital', key: 'digital', frequency: 1200 },
 ];
 
 // 主题颜色选项
 const THEME_COLORS = [
-  { id: 'blue', name: '蓝色', color: '#3b82f6' },
-  { id: 'purple', name: '紫色', color: '#a855f7' },
-  { id: 'green', name: '绿色', color: '#22c55e' },
-  { id: 'orange', name: '橙色', color: '#f97316' },
-  { id: 'pink', name: '粉色', color: '#ec4899' },
+  { id: 'blue', key: 'blue', color: '#3b82f6' },
+  { id: 'purple', key: 'purple', color: '#a855f7' },
+  { id: 'green', key: 'green', color: '#22c55e' },
+  { id: 'orange', key: 'orange', color: '#f97316' },
+  { id: 'pink', key: 'pink', color: '#ec4899' },
 ];
 
-// 世界时间城市列表
+// 世界时间城市列表（包含天气信息）
 const WORLD_CITIES = [
-  { name: '北京', timezone: 'Asia/Shanghai', offset: 8 },
-  { name: '东京', timezone: 'Asia/Tokyo', offset: 9 },
-  { name: '首尔', timezone: 'Asia/Seoul', offset: 9 },
-  { name: '新加坡', timezone: 'Asia/Singapore', offset: 8 },
-  { name: '悉尼', timezone: 'Australia/Sydney', offset: 10 },
-  { name: '迪拜', timezone: 'Asia/Dubai', offset: 4 },
-  { name: '莫斯科', timezone: 'Europe/Moscow', offset: 3 },
-  { name: '伦敦', timezone: 'Europe/London', offset: 0 },
-  { name: '巴黎', timezone: 'Europe/Paris', offset: 1 },
-  { name: '纽约', timezone: 'America/New_York', offset: -5 },
-  { name: '洛杉矶', timezone: 'America/Los_Angeles', offset: -8 },
-  { name: '芝加哥', timezone: 'America/Chicago', offset: -6 },
+  { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22 },
+  { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18 },
+  { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16 },
+  { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28 },
+  { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24 },
+  { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32 },
+  { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8 },
+  { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12 },
+  { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14 },
+  { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15 },
+  { key: 'losangeles', timezone: 'America/Los_Angeles', offset: -8, weatherCode: '113', temp: 22 },
+  { key: 'chicago', timezone: 'America/Chicago', offset: -6, weatherCode: '119', temp: 13 },
 ];
 
 // 闹钟类型定义
@@ -62,6 +63,8 @@ interface Alarm {
 }
 
 export default function HomePage() {
+  const t = useTranslations('clock');
+  
   // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
   const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
   
@@ -138,7 +141,7 @@ export default function HomePage() {
                 playNotificationSound();
               }
               // 桌面通知
-              showDesktopNotification('⏰ 倒计时结束', '您设定的倒计时已完成！');
+              showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
               return 0;
             }
             return prev - 1;
@@ -389,7 +392,7 @@ export default function HomePage() {
             setRingingAlarmId(alarm.id);
             setRingingAlarm(alarm); // 保存完整的闹钟对象
             playNotificationSound();
-            showDesktopNotification('闹钟', alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
+            showDesktopNotification(t('notifications.alarm_title'), alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
             
             // 如果是单次闹钟，响铃后删除
             if (alarm.repeat === 'once') {
@@ -643,17 +646,12 @@ export default function HomePage() {
       const minutes = Math.floor(duration / 60);
       const seconds = duration % 60;
       
-      let durationText = '';
-      if (minutes > 0) {
-        durationText = `${minutes}分${seconds}秒`;
-      } else {
-        durationText = `${seconds}秒`;
-      }
+      const durationText = minutes > 0 ? `${minutes}分${seconds}秒` : `${seconds}秒`;
       
       showToast(
         'info',
-        '闹钟已关闭',
-        `响铃时长：${durationText}`,
+        t('notifications.alarm_closed'),
+        t('notifications.ring_duration', { duration: durationText }),
         `alarm-stop-${Date.now()}`
       );
     }
@@ -674,17 +672,12 @@ export default function HomePage() {
       const minutes = Math.floor(duration / 60);
       const seconds = duration % 60;
       
-      let durationText = '';
-      if (minutes > 0) {
-        durationText = `${minutes}分${seconds}秒`;
-      } else {
-        durationText = `${seconds}秒`;
-      }
+      const durationText = minutes > 0 ? `${minutes}分${seconds}秒` : `${seconds}秒`;
       
       showToast(
         'success',
-        '已设置稍后提醒',
-        `响铃时长：${durationText}，将在5分钟后再次提醒`,
+        t('notifications.alarm_snooze'),
+        t('notifications.snooze_desc', { duration: durationText }),
         `alarm-snooze-${Date.now()}`
       );
     }
@@ -705,7 +698,7 @@ export default function HomePage() {
       minute: snoozeTime.getMinutes(),
       enabled: true,
       repeat: 'once',
-      label: '稍后提醒',
+      label: t('alarm.snooze_label'),
     };
     
     const updatedAlarms = [...alarms, snoozeAlarmItem];
@@ -799,7 +792,15 @@ export default function HomePage() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     const day = currentDate.getDate();
-    const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const weekdays = [
+      t('weekdays.sunday'), 
+      t('weekdays.monday'), 
+      t('weekdays.tuesday'), 
+      t('weekdays.wednesday'), 
+      t('weekdays.thursday'), 
+      t('weekdays.friday'), 
+      t('weekdays.saturday')
+    ];
     const weekday = weekdays[currentDate.getDay()];
     
     return {
@@ -813,11 +814,8 @@ export default function HomePage() {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     
-    if (minutes > 0) {
-      return `已响铃 ${minutes}分${secs}秒`;
-    } else {
-      return `已响铃 ${secs}秒`;
-    }
+    const duration = minutes > 0 ? `${minutes}分${secs}秒` : `${secs}秒`;
+    return t('alarm.ringing', { duration });
   };
 
   // 根据天气代码返回图标
@@ -916,7 +914,7 @@ export default function HomePage() {
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
                       : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
                   }`}
-                  title="倒计时"
+                  title={t('modes.timer')}
                 >
                   <Timer className="w-5 h-5" />
                 </motion.button>
@@ -931,7 +929,7 @@ export default function HomePage() {
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
                       : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
                   }`}
-                  title="秒表"
+                  title={t('modes.stopwatch')}
                 >
                   <Clock className="w-5 h-5" />
                 </motion.button>
@@ -946,7 +944,7 @@ export default function HomePage() {
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
                       : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
                   }`}
-                  title="闹钟"
+                  title={t('modes.alarm')}
                 >
                   <AlarmClock className="w-5 h-5" />
                 </motion.button>
@@ -961,7 +959,7 @@ export default function HomePage() {
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
                       : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
                   }`}
-                  title="世界时间"
+                  title={t('modes.worldclock')}
                 >
                   <Globe className="w-5 h-5" />
                 </motion.button>
@@ -992,7 +990,7 @@ export default function HomePage() {
                     }
                   }}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
-                  title={mode === 'alarm' ? '添加闹钟' : '自定义时间'}
+                  title={mode === 'alarm' ? t('buttons.add_alarm') : t('tooltips.custom_time')}
                 >
                   <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
@@ -1001,7 +999,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setNotificationEnabled(!notificationEnabled)}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
-                  title={notificationEnabled ? '关闭桌面通知' : '开启桌面通知'}
+                  title={notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
                 >
                   {notificationEnabled ? (
                     <Bell className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
@@ -1014,7 +1012,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
-                  title={soundEnabled ? '关闭声音' : '开启声音'}
+                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
                     <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
@@ -1027,7 +1025,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
-                  title={theme === 'dark' ? '切换到明亮模式' : '切换到夜间模式'}
+                  title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
                 >
                   {theme === 'dark' ? (
                     <Sun className="w-5 h-5 text-white" />
@@ -1040,7 +1038,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowSettingsPanel(!showSettingsPanel)}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
-                  title="设置"
+                  title={t('buttons.settings')}
                 >
                   <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
@@ -1049,7 +1047,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
                   className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
-                  title="全屏模式"
+                  title={t('tooltips.fullscreen')}
                 >
                   <Maximize className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
@@ -1081,7 +1079,7 @@ export default function HomePage() {
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
-                  title="倒计时"
+                  title={t('modes.timer')}
                 >
                   <Timer className="w-7 h-7" />
                 </motion.button>
@@ -1094,7 +1092,7 @@ export default function HomePage() {
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
-                  title="秒表"
+                  title={t('modes.stopwatch')}
                 >
                   <Clock className="w-7 h-7" />
                 </motion.button>
@@ -1107,7 +1105,7 @@ export default function HomePage() {
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
-                  title="闹钟"
+                  title={t('modes.alarm')}
                 >
                   <AlarmClock className="w-7 h-7" />
                 </motion.button>
@@ -1120,7 +1118,7 @@ export default function HomePage() {
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
-                  title="世界时间"
+                  title={t('modes.worldclock')}
                 >
                   <Globe className="w-7 h-7" />
                 </motion.button>
@@ -1141,7 +1139,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
-                  title={soundEnabled ? '关闭声音' : '开启声音'}
+                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
                     <Volume2 className="w-7 h-7 text-white" />
@@ -1154,7 +1152,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
                   className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
-                  title="退出全屏"
+                  title={t('tooltips.exit_fullscreen')}
                 >
                   <X className="w-7 h-7 text-white" />
                 </motion.button>
@@ -1286,7 +1284,7 @@ export default function HomePage() {
                       : 'text-2xl sm:text-3xl'
                   }`}
                 >
-                  时间到！
+                  {t('timer.time_up')}
                 </motion.div>
               )}
             </div>
@@ -1305,7 +1303,7 @@ export default function HomePage() {
                 <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
-                    暂无闹钟，点击下方按钮添加
+                    {t('alarm.no_alarms')}
                   </div>
                 ) : (
                   // 按时间排序闹钟列表
@@ -1384,10 +1382,10 @@ export default function HomePage() {
                             >
                               {/* 重复类型 - 不换行 */}
                               <span className={`text-sm flex-shrink-0 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                                {alarm.repeat === 'once' ? '单次' :
-                                 alarm.repeat === 'daily' ? '每天' :
-                                 alarm.repeat === 'weekdays' ? '工作日' :
-                                 '周末'}
+                                {alarm.repeat === 'once' ? t('alarm.repeat_once') :
+                                 alarm.repeat === 'daily' ? t('alarm.repeat_daily') :
+                                 alarm.repeat === 'weekdays' ? t('alarm.repeat_weekdays') :
+                                 t('alarm.repeat_weekends')}
                               </span>
                               
                               {/* 标签 - 可点击展开 */}
@@ -1407,7 +1405,7 @@ export default function HomePage() {
                                       e.stopPropagation();
                                       setExpandedAlarmId(expandedAlarmId === alarm.id ? null : alarm.id);
                                     }}
-                                    title={expandedAlarmId === alarm.id ? '点击收起' : '点击展开查看完整内容'}
+                                    title={expandedAlarmId === alarm.id ? t('alarm.click_collapse') : t('alarm.click_expand')}
                                   >
                                     {alarm.label}
                                   </span>
@@ -1454,24 +1452,24 @@ export default function HomePage() {
                     ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' 
                     : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-600'
                 }`}
-              >
-                <Plus className="w-5 h-5" />
-                <span className="font-medium">添加闹钟</span>
-              </motion.button>
+                >
+                  <Plus className="w-5 h-5" />
+                  <span className="font-medium">{t('buttons.add_alarm')}</span>
+                </motion.button>
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
               <div className="mt-8">
                 <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>
-                  快捷设置
+                  {t('alarm.quick_add')}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { label: '1分钟', seconds: 60 },
-                    { label: '3分钟', seconds: 180 },
-                    { label: '5分钟', seconds: 300 },
-                    { label: '15分钟', seconds: 900 },
-                    { label: '30分钟', seconds: 1800 },
-                    { label: '1小时', seconds: 3600 },
+                    { key: '1min', seconds: 60 },
+                    { key: '3min', seconds: 180 },
+                    { key: '5min', seconds: 300 },
+                    { key: '15min', seconds: 900 },
+                    { key: '30min', seconds: 1800 },
+                    { key: '1hour', seconds: 3600 },
                   ].map((preset) => (
                     <motion.button
                       key={preset.seconds}
@@ -1500,10 +1498,11 @@ export default function HomePage() {
                         if (existingAlarm) {
                           // 如果已存在，显示提示信息并滚动到该闹钟
                           setLastAddedAlarmId(existingAlarm.id);
+                          const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                           showToast(
                             'info',
-                            '该时间的闹钟已存在',
-                            `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 的闹钟已设置`,
+                            t('notifications.alarm_exists'),
+                            t('notifications.alarm_exists_desc', { time: timeStr }),
                             `alarm-exists-${hour}-${minute}`
                           );
                           return;
@@ -1516,7 +1515,7 @@ export default function HomePage() {
                           minute: minute,
                           enabled: true,
                           repeat: 'once',
-                          label: preset.label,
+                          label: t(`presets.${preset.key}`),
                         };
                         
                         const updatedAlarms = [...alarms, newAlarm];
@@ -1529,10 +1528,11 @@ export default function HomePage() {
                         }
                         
                         // 显示成功提示
+                        const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                         showToast(
                           'success',
-                          `${preset.label}闹钟设置成功`,
-                          `将在 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} 提醒您`,
+                          t('notifications.alarm_success', { preset: t(`presets.${preset.key}`) }),
+                          t('notifications.alarm_success_desc', { time: timeStr }),
                           `alarm-success-${hour}-${minute}`
                         );
                       }}
@@ -1542,7 +1542,7 @@ export default function HomePage() {
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
-                      {preset.label}
+                      {t(`presets.${preset.key}`)}
                     </motion.button>
                   ))}
                 </div>
@@ -1568,18 +1568,34 @@ export default function HomePage() {
                     const minutes = cityTime.getMinutes();
                     const seconds = cityTime.getSeconds();
                     
+                    // 获取日期
+                    const year = cityTime.getFullYear();
+                    const month = cityTime.getMonth() + 1;
+                    const day = cityTime.getDate();
+                    const weekdays = [
+                      t('weekdays.sunday'), 
+                      t('weekdays.monday'), 
+                      t('weekdays.tuesday'), 
+                      t('weekdays.wednesday'), 
+                      t('weekdays.thursday'), 
+                      t('weekdays.friday'), 
+                      t('weekdays.saturday')
+                    ];
+                    const weekday = weekdays[cityTime.getDay()];
+                    
                     // 计算与本地时间的时差
                     const localOffset = -now.getTimezoneOffset() / 60;
                     const timeDiff = city.offset - localOffset;
-                    const diffText = timeDiff === 0 ? '本地时间' : 
-                                   timeDiff > 0 ? `+${timeDiff}小时` : `${timeDiff}小时`;
+                    const diffText = timeDiff === 0 ? t('worldclock.local_time') : 
+                                   timeDiff > 0 ? t('worldclock.time_diff', { diff: `+${timeDiff}` }) : 
+                                   t('worldclock.time_diff', { diff: timeDiff });
                     
                     // 判断是白天还是夜晚
                     const isNight = hours < 6 || hours >= 18;
                     
                     return (
                       <motion.div
-                        key={city.name}
+                        key={city.key}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={`p-6 rounded-xl transition-all ${
@@ -1594,7 +1610,7 @@ export default function HomePage() {
                       >
                         <div className="flex items-center justify-between mb-3">
                           <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                            {city.name}
+                            {t(`cities.${city.key}`)}
                           </h3>
                           {isNight ? (
                             <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} />
@@ -1610,6 +1626,19 @@ export default function HomePage() {
                           }}
                         >
                           {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                        </div>
+                        
+                        <div className={`text-base font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                          {year}年{month}月{day}日 {weekday}
+                        </div>
+                        
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-center gap-1">
+                            {getWeatherIcon(city.weatherCode)}
+                            <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                              {city.temp}°C
+                            </span>
+                          </div>
                         </div>
                         
                         <div className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
@@ -1639,7 +1668,7 @@ export default function HomePage() {
                 {/* 百分比显示 */}
                 <div className="flex justify-between items-center mb-2 px-2">
                   <span className={`text-sm sm:text-base font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                    进度
+                    {t('timer.progress')}
                   </span>
                   <span className={`text-sm sm:text-base font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
                     {Math.round((timeLeft / initialTime) * 100)}%
@@ -1705,7 +1734,7 @@ export default function HomePage() {
                               ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                               : 'w-4 h-4 sm:w-5 sm:h-5'
                           } />
-                          <span>暂停</span>
+                          <span>{t('buttons.pause')}</span>
                         </>
                       ) : (
                         <>
@@ -1714,7 +1743,7 @@ export default function HomePage() {
                               ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                               : 'w-4 h-4 sm:w-5 sm:h-5'
                           } />
-                          <span>开始</span>
+                          <span>{t('buttons.start')}</span>
                         </>
                       )}
                     </motion.button>
@@ -1734,7 +1763,7 @@ export default function HomePage() {
                           ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                           : 'w-4 h-4 sm:w-5 sm:h-5'
                       } />
-                      <span>重置</span>
+                      <span>{t('buttons.reset')}</span>
                     </motion.button>
 
                     <motion.button
@@ -1757,7 +1786,7 @@ export default function HomePage() {
                           ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                           : 'w-4 h-4 sm:w-5 sm:h-5'
                       } />
-                      <span>设置</span>
+                      <span>{t('buttons.settings')}</span>
                     </motion.button>
                   </>
                 )}
@@ -1785,7 +1814,7 @@ export default function HomePage() {
                     maxWidth: '90vw'
                   }}
                 >
-                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>快捷设置</p>
+                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>{t('timer.quick_settings')}</p>
                   <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
                     {PRESET_TIMES.map((preset) => (
                       <motion.button
@@ -1801,7 +1830,7 @@ export default function HomePage() {
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                         }`}
                       >
-                        {preset.label}
+                        {t(`presets.${preset.key}`)}
                       </motion.button>
                     ))}
                   </div>
@@ -1831,7 +1860,7 @@ export default function HomePage() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  {mode === 'timer' ? '自定义倒计时' : '设置秒表时间'}
+                  {mode === 'timer' ? t('modals.custom_timer') : t('modals.set_stopwatch')}
                 </h2>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -1844,7 +1873,7 @@ export default function HomePage() {
               <div className="space-y-4 mb-6">
                 <div>
                   <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                    分钟
+                    {t('modals.minutes')}
                   </label>
                   <input
                     type="number"
@@ -1865,7 +1894,7 @@ export default function HomePage() {
 
                 <div>
                   <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                    秒
+                    {t('modals.seconds')}
                   </label>
                   <input
                     type="number"
@@ -1890,13 +1919,13 @@ export default function HomePage() {
                   onClick={() => setShowEditModal(false)}
                   className={`flex-1 px-6 py-3 ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-200 hover:bg-gray-300'} ${theme === 'dark' ? 'text-white' : 'text-gray-900'} rounded-lg font-semibold transition-colors`}
                 >
-                  取消
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={applyCustomTime}
                   className="flex-1 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
                 >
-                  确定
+                  {t('buttons.confirm')}
                 </button>
               </div>
             </motion.div>
@@ -1930,7 +1959,7 @@ export default function HomePage() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  {editingAlarmId ? '编辑闹钟' : '添加闹钟'}
+                  {editingAlarmId ? t('alarm.edit_alarm') : t('alarm.add_alarm')}
                 </h2>
                 <button
                   onClick={() => {
@@ -1952,7 +1981,7 @@ export default function HomePage() {
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                      小时
+                      {t('alarm.hour')}
                     </label>
                     <input
                       type="number"
@@ -1981,7 +2010,7 @@ export default function HomePage() {
 
                   <div className="flex-1">
                     <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                      分钟
+                      {t('alarm.minute')}
                     </label>
                     <input
                       type="number"
@@ -2012,13 +2041,13 @@ export default function HomePage() {
                 {/* 标签 */}
                 <div>
                   <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                    标签（可选）
+                    {t('alarm.label')}
                   </label>
                   <input
                     type="text"
                     value={newAlarmLabel}
                     onChange={(e) => setNewAlarmLabel(e.target.value)}
-                    placeholder="例如：起床、运动"
+                    placeholder={t('alarm.label_placeholder')}
                     className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black ${
                       theme === 'dark' 
                         ? 'bg-slate-800 border-slate-700 placeholder:text-slate-400' 
@@ -2036,14 +2065,14 @@ export default function HomePage() {
                 {/* 重复设置 */}
                 <div>
                   <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-2`}>
-                    重复
+                    {t('alarm.repeat')}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'once', label: '单次' },
-                      { value: 'daily', label: '每天' },
-                      { value: 'weekdays', label: '工作日' },
-                      { value: 'weekends', label: '周末' },
+                      { value: 'once', key: 'repeat_once' },
+                      { value: 'daily', key: 'repeat_daily' },
+                      { value: 'weekdays', key: 'repeat_weekdays' },
+                      { value: 'weekends', key: 'repeat_weekends' },
                     ].map((option) => (
                       <button
                         key={option.value}
@@ -2060,7 +2089,7 @@ export default function HomePage() {
                           fontWeight: '500'
                         }}
                       >
-                        {option.label}
+                        {t(`alarm.${option.key}`)}
                       </button>
                     ))}
                   </div>
@@ -2083,7 +2112,7 @@ export default function HomePage() {
                     fontWeight: '500'
                   }}
                 >
-                  取消
+                  {t('buttons.cancel')}
                 </button>
                 <button
                   onClick={addAlarm}
@@ -2093,7 +2122,7 @@ export default function HomePage() {
                     fontWeight: '500'
                   }}
                 >
-                  确定
+                  {t('buttons.confirm')}
                 </button>
               </div>
             </motion.div>
@@ -2146,7 +2175,7 @@ export default function HomePage() {
                   overflowWrap: 'break-word'
                 }}
               >
-                {ringingAlarm?.label || '时间到了'}
+                {ringingAlarm?.label || t('alarm.time_now')}
               </div>
 
               {/* 响铃时长 */}
@@ -2159,7 +2188,7 @@ export default function HomePage() {
                 className="w-full py-3 sm:py-3.5 md:py-4 bg-white text-red-500 rounded-[12px] font-black text-lg sm:text-xl hover:bg-white hover:shadow-2xl transition-all duration-300 hover:scale-105"
                 style={{ letterSpacing: '0.1em', fontWeight: '950' }}
               >
-                5分钟后提醒
+                {t('alarm.snooze_button')}
               </button>
             </motion.div>
           </motion.div>
@@ -2178,7 +2207,7 @@ export default function HomePage() {
           >
             <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl p-6`}>
               <div className="flex justify-between items-center mb-6">
-                <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>设置</h3>
+                <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('settings_panel.title')}</h3>
                 <button
                   onClick={() => setShowSettingsPanel(false)}
                   className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'} rounded-lg transition-colors`}
@@ -2190,7 +2219,7 @@ export default function HomePage() {
               {/* 主题颜色选择 */}
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
-                  主题颜色
+                  {t('settings_panel.theme_color')}
                 </label>
                 <div className="grid grid-cols-5 gap-2">
                   {THEME_COLORS.map((color) => (
@@ -2201,7 +2230,7 @@ export default function HomePage() {
                         selectedColor === color.id ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
                       }`}
                       style={{ backgroundColor: color.color }}
-                      title={color.name}
+                      title={t(`colors.${color.key}`)}
                     />
                   ))}
                 </div>
@@ -2210,7 +2239,7 @@ export default function HomePage() {
               {/* 提示音选择 */}
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
-                  提示音
+                  {t('settings_panel.sound')}
                 </label>
                 <div className="space-y-2">
                   {SOUND_OPTIONS.map((sound) => (
@@ -2243,7 +2272,7 @@ export default function HomePage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      {sound.name}
+                      {t(`sounds.${sound.key}`)}
                     </button>
                   ))}
                 </div>
@@ -2254,7 +2283,7 @@ export default function HomePage() {
                 {/* 进度环开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    显示进度条
+                    {t('settings_panel.show_progress')}
                   </label>
                   <button
                     onClick={() => setProgressVisible(!progressVisible)}
@@ -2273,7 +2302,7 @@ export default function HomePage() {
                 {/* 天气图标开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    显示天气图标
+                    {t('settings_panel.show_weather_icon')}
                   </label>
                   <button
                     onClick={() => setShowWeatherIcon(!showWeatherIcon)}
@@ -2292,7 +2321,7 @@ export default function HomePage() {
                 {/* 气温开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    显示气温
+                    {t('settings_panel.show_temperature')}
                   </label>
                   <button
                     onClick={() => setShowTemperature(!showTemperature)}
@@ -2311,7 +2340,7 @@ export default function HomePage() {
                 {/* 日期开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    显示日期
+                    {t('settings_panel.show_date')}
                   </label>
                   <button
                     onClick={() => setShowDate(!showDate)}
@@ -2330,7 +2359,7 @@ export default function HomePage() {
                 {/* 周几开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    显示周几
+                    {t('settings_panel.show_weekday')}
                   </label>
                   <button
                     onClick={() => setShowWeekday(!showWeekday)}

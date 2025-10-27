@@ -128,5 +128,139 @@
     "contact_tip": "Other ways to contact us",
     "rating_tip": "How do you feel about ShipAny?",
     "placeholder": "Leave your words here..."
+  },
+  "clock": {
+    "presets": {
+      "1min": "1 Minute",
+      "3min": "3 Minutes",
+      "5min": "5 Minutes",
+      "10min": "10 Minutes",
+      "15min": "15 Minutes",
+      "25min": "25 Minutes",
+      "30min": "30 Minutes",
+      "45min": "45 Minutes",
+      "1hour": "1 Hour"
+    },
+    "sounds": {
+      "bell": "Bell",
+      "chime": "Chime",
+      "beep": "Beep",
+      "digital": "Digital"
+    },
+    "colors": {
+      "blue": "Blue",
+      "purple": "Purple",
+      "green": "Green",
+      "orange": "Orange",
+      "pink": "Pink"
+    },
+    "cities": {
+      "beijing": "Beijing",
+      "tokyo": "Tokyo",
+      "seoul": "Seoul",
+      "singapore": "Singapore",
+      "sydney": "Sydney",
+      "dubai": "Dubai",
+      "moscow": "Moscow",
+      "london": "London",
+      "paris": "Paris",
+      "newyork": "New York",
+      "losangeles": "Los Angeles",
+      "chicago": "Chicago"
+    },
+    "weekdays": {
+      "sunday": "Sun",
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    },
+    "modes": {
+      "timer": "Timer",
+      "stopwatch": "Stopwatch",
+      "alarm": "Alarm",
+      "worldclock": "World Clock"
+    },
+    "buttons": {
+      "start": "Start",
+      "pause": "Pause",
+      "reset": "Reset",
+      "settings": "Settings",
+      "add_alarm": "Add Alarm",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "tooltips": {
+      "close_sound": "Mute",
+      "open_sound": "Unmute",
+      "close_notification": "Turn off notifications",
+      "open_notification": "Turn on notifications",
+      "switch_to_light": "Switch to light mode",
+      "switch_to_dark": "Switch to dark mode",
+      "fullscreen": "Fullscreen",
+      "exit_fullscreen": "Exit fullscreen",
+      "custom_time": "Custom time"
+    },
+    "notifications": {
+      "timer_end": "⏰ Timer Finished",
+      "timer_end_desc": "Your timer has completed!",
+      "alarm_title": "Alarm",
+      "alarm_closed": "Alarm dismissed",
+      "alarm_snooze": "Alarm snoozed",
+      "alarm_exists": "Alarm already exists for this time",
+      "alarm_success": "{preset} alarm set successfully",
+      "alarm_success_desc": "Will remind you at {time}",
+      "alarm_exists_desc": "Alarm already set for {time}",
+      "ring_duration": "Duration: {duration}",
+      "snooze_desc": "Duration: {duration}, will remind again in 5 minutes"
+    },
+    "timer": {
+      "time_up": "Time's Up!",
+      "progress": "Progress",
+      "quick_settings": "Quick Settings"
+    },
+    "alarm": {
+      "no_alarms": "No alarms yet, click button below to add",
+      "add_alarm": "Add Alarm",
+      "edit_alarm": "Edit Alarm",
+      "hour": "Hour",
+      "minute": "Minute",
+      "label": "Label (Optional)",
+      "label_placeholder": "e.g.: Wake up, Exercise",
+      "repeat": "Repeat",
+      "repeat_once": "Once",
+      "repeat_daily": "Daily",
+      "repeat_weekdays": "Weekdays",
+      "repeat_weekends": "Weekends",
+      "quick_add": "Quick Add",
+      "time_now": "Time's up",
+      "snooze_label": "Snooze",
+      "snooze_button": "Remind in 5 minutes",
+      "ringing": "Ringing for {duration}",
+      "click_expand": "Click to expand",
+      "click_collapse": "Click to collapse"
+    },
+    "worldclock": {
+      "local_time": "Local time",
+      "time_diff": "{diff} hours"
+    },
+    "settings_panel": {
+      "title": "Settings",
+      "theme_color": "Theme Color",
+      "sound": "Sound",
+      "show_progress": "Show progress bar",
+      "show_weather_icon": "Show weather icon",
+      "show_temperature": "Show temperature",
+      "show_date": "Show date",
+      "show_weekday": "Show weekday"
+    },
+    "modals": {
+      "custom_timer": "Custom Timer",
+      "set_stopwatch": "Set Stopwatch Time",
+      "minutes": "Minutes",
+      "seconds": "Seconds"
+    }
   }
 }

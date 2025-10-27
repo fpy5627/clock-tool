@@ -128,5 +128,139 @@
     "contact_tip": "其他联系方式",
     "rating_tip": "您对 ShipAny 的看法如何？",
     "placeholder": "在这里留下您的反馈..."
+  },
+  "clock": {
+    "presets": {
+      "1min": "1分钟",
+      "3min": "3分钟",
+      "5min": "5分钟",
+      "10min": "10分钟",
+      "15min": "15分钟",
+      "25min": "25分钟",
+      "30min": "30分钟",
+      "45min": "45分钟",
+      "1hour": "1小时"
+    },
+    "sounds": {
+      "bell": "铃铛",
+      "chime": "提示音",
+      "beep": "哔哔声",
+      "digital": "电子音"
+    },
+    "colors": {
+      "blue": "蓝色",
+      "purple": "紫色",
+      "green": "绿色",
+      "orange": "橙色",
+      "pink": "粉色"
+    },
+    "cities": {
+      "beijing": "北京",
+      "tokyo": "东京",
+      "seoul": "首尔",
+      "singapore": "新加坡",
+      "sydney": "悉尼",
+      "dubai": "迪拜",
+      "moscow": "莫斯科",
+      "london": "伦敦",
+      "paris": "巴黎",
+      "newyork": "纽约",
+      "losangeles": "洛杉矶",
+      "chicago": "芝加哥"
+    },
+    "weekdays": {
+      "sunday": "周日",
+      "monday": "周一",
+      "tuesday": "周二",
+      "wednesday": "周三",
+      "thursday": "周四",
+      "friday": "周五",
+      "saturday": "周六"
+    },
+    "modes": {
+      "timer": "倒计时",
+      "stopwatch": "秒表",
+      "alarm": "闹钟",
+      "worldclock": "世界时间"
+    },
+    "buttons": {
+      "start": "开始",
+      "pause": "暂停",
+      "reset": "重置",
+      "settings": "设置",
+      "add_alarm": "添加闹钟",
+      "cancel": "取消",
+      "confirm": "确定"
+    },
+    "tooltips": {
+      "close_sound": "关闭声音",
+      "open_sound": "开启声音",
+      "close_notification": "关闭桌面通知",
+      "open_notification": "开启桌面通知",
+      "switch_to_light": "切换到明亮模式",
+      "switch_to_dark": "切换到夜间模式",
+      "fullscreen": "全屏模式",
+      "exit_fullscreen": "退出全屏",
+      "custom_time": "自定义时间"
+    },
+    "notifications": {
+      "timer_end": "⏰ 倒计时结束",
+      "timer_end_desc": "您设定的倒计时已完成！",
+      "alarm_title": "闹钟",
+      "alarm_closed": "闹钟已关闭",
+      "alarm_snooze": "已设置稍后提醒",
+      "alarm_exists": "该时间的闹钟已存在",
+      "alarm_success": "{preset}闹钟设置成功",
+      "alarm_success_desc": "将在 {time} 提醒您",
+      "alarm_exists_desc": "{time} 的闹钟已设置",
+      "ring_duration": "响铃时长：{duration}",
+      "snooze_desc": "响铃时长：{duration}，将在5分钟后再次提醒"
+    },
+    "timer": {
+      "time_up": "时间到！",
+      "progress": "进度",
+      "quick_settings": "快捷设置"
+    },
+    "alarm": {
+      "no_alarms": "暂无闹钟，点击下方按钮添加",
+      "add_alarm": "添加闹钟",
+      "edit_alarm": "编辑闹钟",
+      "hour": "小时",
+      "minute": "分钟",
+      "label": "标签（可选）",
+      "label_placeholder": "例如：起床、运动",
+      "repeat": "重复",
+      "repeat_once": "单次",
+      "repeat_daily": "每天",
+      "repeat_weekdays": "工作日",
+      "repeat_weekends": "周末",
+      "quick_add": "快捷设置",
+      "time_now": "时间到了",
+      "snooze_label": "稍后提醒",
+      "snooze_button": "5分钟后提醒",
+      "ringing": "已响铃 {duration}",
+      "click_expand": "点击展开查看完整内容",
+      "click_collapse": "点击收起"
+    },
+    "worldclock": {
+      "local_time": "本地时间",
+      "time_diff": "{diff}小时"
+    },
+    "settings_panel": {
+      "title": "设置",
+      "theme_color": "主题颜色",
+      "sound": "提示音",
+      "show_progress": "显示进度条",
+      "show_weather_icon": "显示天气图标",
+      "show_temperature": "显示气温",
+      "show_date": "显示日期",
+      "show_weekday": "显示周几"
+    },
+    "modals": {
+      "custom_timer": "自定义倒计时",
+      "set_stopwatch": "设置秒表时间",
+      "minutes": "分钟",
+      "seconds": "秒"
+    }
   }
 }
