@@ -244,7 +244,8 @@
     },
     "worldclock": {
       "local_time": "本地时间",
-      "time_diff": "{diff}小时"
+      "time_diff": "{diff}小时",
+      "today": "今天"
     },
     "settings_panel": {
       "title": "设置",

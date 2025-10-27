@@ -106,6 +106,13 @@ export default function HomePage() {
     icon: string;
   } | null>(null);
   
+  // 用户位置相关状态
+  const [userLocation, setUserLocation] = useState<{
+    city: string;
+    timezone: string;
+    country: string;
+  } | null>(null);
+  
   // 闹钟相关
   const [alarms, setAlarms] = useState<Alarm[]>([]);
   const [showAddAlarm, setShowAddAlarm] = useState(false);
@@ -335,14 +342,23 @@ export default function HomePage() {
     };
   }, [timeLeft, stopwatchTime, mode, isFullscreen]);
 
-  // 获取天气数据
+  // 获取天气和位置数据
   useEffect(() => {
-    const fetchWeather = async () => {
+    const fetchWeatherAndLocation = async () => {
       try {
         // 获取IP定位
         const locationRes = await fetch('https://ipapi.co/json/');
         const locationData = await locationRes.json();
         const city = locationData.city || locationData.region || 'Beijing';
+        const timezone = locationData.timezone || 'Asia/Shanghai';
+        const country = locationData.country_name || 'China';
+        
+        // 保存用户位置信息
+        setUserLocation({
+          city,
+          timezone,
+          country
+        });
         
         // 获取天气数据 (使用wttr.in API)
         const weatherRes = await fetch(`https://wttr.in/${city}?format=j1`);
@@ -358,18 +374,23 @@ export default function HomePage() {
         }
       } catch (error) {
         console.error('Failed to fetch weather:', error);
-        // 设置默认天气
+        // 设置默认天气和位置
         setWeather({
           temp: 21,
           condition: 'Partly cloudy',
           icon: '116'
         });
+        setUserLocation({
+          city: 'Beijing',
+          timezone: 'Asia/Shanghai',
+          country: 'China'
+        });
       }
     };
 
-    fetchWeather();
-    // 每30分钟更新一次天气
-    const weatherInterval = setInterval(fetchWeather, 30 * 60 * 1000);
+    fetchWeatherAndLocation();
+    // 每30分钟更新一次天气和位置
+    const weatherInterval = setInterval(fetchWeatherAndLocation, 30 * 60 * 1000);
     
     return () => clearInterval(weatherInterval);
   }, []);
@@ -821,7 +842,7 @@ export default function HomePage() {
   // 根据天气代码返回图标
   const getWeatherIcon = (code: string) => {
     const iconProps = { 
-      className: `w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}` 
+      className: `w-full h-full ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}` 
     };
     
     // wttr.in 天气代码映射
@@ -1166,56 +1187,6 @@ export default function HomePage() {
           animate={{ opacity: 1 }}
           className="w-full flex flex-col items-center justify-center"
         >
-          {/* 日期和天气显示 - 非全屏时显示 */}
-          {!isFullscreen && (
-            <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center justify-between"
-                style={{
-                  width: 'var(--timer-width, auto)',
-                  minWidth: '300px',
-                  maxWidth: '90vw'
-                }}
-              >
-                {/* 左侧：天气图标和温度 */}
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  {weather && (showWeatherIcon || showTemperature) ? (
-                    <>
-                      {showWeatherIcon && getWeatherIcon(weather.icon)}
-                      {showTemperature && (
-                        <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                          {weather.temp}°C
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
-                  )}
-                </div>
-                
-                {/* 右侧：日期 */}
-                <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
-                  style={{
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {(() => {
-                    const { dateStr, weekdayStr } = formatDate();
-                    return (
-                      <>
-                        {showDate && <span>{dateStr}</span>}
-                        {showDate && showWeekday && <span>&nbsp;</span>}
-                        {showWeekday && <span>{weekdayStr}</span>}
-    </>
-  );
-                  })()}
-                </div>
-              </motion.div>
-            </div>
-          )}
-
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
             <div className="text-center w-full flex items-center justify-center px-2 sm:px-4">
@@ -1551,16 +1522,111 @@ export default function HomePage() {
             </div>
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
-            <div className="w-full flex justify-center px-4 overflow-x-hidden">
-              <div 
-                className="w-full"
-                style={{
-                  width: '100%',
-                  minWidth: '300px',
-                  maxWidth: 'min(var(--timer-width, 900px), 95vw)'
-                }}
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            <div className="w-full px-4 sm:px-6 lg:px-8 overflow-x-hidden mt-8 sm:mt-12 md:mt-16">
+              <div className="w-full max-w-[1920px] mx-auto">
+                {/* 用户当前时间卡片 */}
+                {userLocation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`mb-10 sm:mb-12 py-16 sm:py-20 md:py-24 lg:py-28 px-8 sm:px-10 md:px-12 rounded-3xl ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/50 border border-slate-700' 
+                        : 'bg-white border border-gray-200'
+                    } shadow-2xl`}
+                  >
+                    <div className="flex flex-col items-center gap-8 sm:gap-10 md:gap-12">
+                      {/* 城市和国家 */}
+                      <h2 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold ${
+                        theme === 'dark' ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {userLocation.city}, {userLocation.country}
+                      </h2>
+                      
+                      {/* 大时间显示 */}
+                      <div 
+                        className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold"
+                        style={{
+                          fontFamily: '"Rajdhani", sans-serif',
+                          fontWeight: '700',
+                          letterSpacing: '0.02em',
+                          color: theme === 'dark' ? '#e5e7eb' : '#1f2937',
+                        }}
+                      >
+                        {(() => {
+                          const now = new Date();
+                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
+                          const hours = String(userTime.getHours()).padStart(2, '0');
+                          const minutes = String(userTime.getMinutes()).padStart(2, '0');
+                          const seconds = String(userTime.getSeconds()).padStart(2, '0');
+                          return (
+                            <span className="flex items-center gap-[0.08em]">
+                              <span>{hours}</span>
+                              <span className="inline-flex flex-col justify-center gap-[0.15em]">
+                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                              </span>
+                              <span>{minutes}</span>
+                              <span className="inline-flex flex-col justify-center gap-[0.15em]">
+                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                              </span>
+                              <span className="text-[0.5em]">{seconds}</span>
+                            </span>
+                          );
+                        })()}
+                      </div>
+                      
+                      {/* 日期、天气和温度信息 */}
+                      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+                        {/* 日期显示 */}
+                        <div className={`text-xl sm:text-2xl md:text-3xl font-medium ${
+                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                        }`}>
+                          {(() => {
+                            const now = new Date();
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
+                            const year = userTime.getFullYear();
+                            const month = userTime.getMonth() + 1;
+                            const day = userTime.getDate();
+                            const weekdays = [
+                              t('weekdays.sunday'), 
+                              t('weekdays.monday'), 
+                              t('weekdays.tuesday'), 
+                              t('weekdays.wednesday'), 
+                              t('weekdays.thursday'), 
+                              t('weekdays.friday'), 
+                              t('weekdays.saturday')
+                            ];
+                            const weekday = weekdays[userTime.getDay()];
+                            return `${year}年${month}月${day}日 ${weekday}`;
+                          })()}
+                        </div>
+                        
+                        {/* 天气和温度 */}
+                        {weather && (
+                          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl ${
+                            theme === 'dark' 
+                              ? 'bg-slate-700/50 border border-slate-600' 
+                              : 'bg-gray-100 border border-gray-300'
+                          }`}>
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                              {getWeatherIcon(weather.icon)}
+                            </div>
+                            <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
+                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            }`}>
+                              {weather.temp}°C
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                    </div>
+                  </motion.div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-8">
                   {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
@@ -1598,7 +1664,7 @@ export default function HomePage() {
                         key={city.key}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`p-6 rounded-xl transition-all ${
+                        className={`p-3 sm:p-4 rounded-lg transition-all ${
                           theme === 'dark' 
                             ? isNight 
                               ? 'bg-slate-800/50 border border-slate-700' 
@@ -1606,20 +1672,20 @@ export default function HomePage() {
                             : isNight
                               ? 'bg-slate-100 border border-slate-300'
                               : 'bg-blue-50 border border-blue-200'
-                        }`}
+                        } shadow-md hover:shadow-lg`}
                       >
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <h3 className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                             {t(`cities.${city.key}`)}
                           </h3>
                           {isNight ? (
-                            <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} />
+                            <Moon className={`w-4 h-4 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} />
                           ) : (
-                            <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-500'}`} />
+                            <Sun className={`w-4 h-4 ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-500'}`} />
                           )}
                         </div>
                         
-                        <div className={`text-4xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                        <div className={`text-2xl sm:text-3xl font-bold mb-1.5 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
                           style={{
                             fontFamily: '"Rajdhani", sans-serif',
                             letterSpacing: '0.05em',
@@ -1628,20 +1694,20 @@ export default function HomePage() {
                           {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                         </div>
                         
-                        <div className={`text-base font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                        <div className={`text-xs font-medium mb-1.5 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                           {year}年{month}月{day}日 {weekday}
                         </div>
                         
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 mb-1">
+                          <div className="w-4 h-4">
                             {getWeatherIcon(city.weatherCode)}
-                            <span className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                              {city.temp}°C
-                            </span>
                           </div>
+                          <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                            {city.temp}°C
+                          </span>
                         </div>
                         
-                        <div className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                        <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                           {diffText}
                         </div>
                       </motion.div>
