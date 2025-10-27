@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 
 // 预设时间选项
@@ -35,6 +35,22 @@ const THEME_COLORS = [
   { id: 'pink', name: '粉色', color: '#ec4899' },
 ];
 
+// 世界时间城市列表
+const WORLD_CITIES = [
+  { name: '北京', timezone: 'Asia/Shanghai', offset: 8 },
+  { name: '东京', timezone: 'Asia/Tokyo', offset: 9 },
+  { name: '首尔', timezone: 'Asia/Seoul', offset: 9 },
+  { name: '新加坡', timezone: 'Asia/Singapore', offset: 8 },
+  { name: '悉尼', timezone: 'Australia/Sydney', offset: 10 },
+  { name: '迪拜', timezone: 'Asia/Dubai', offset: 4 },
+  { name: '莫斯科', timezone: 'Europe/Moscow', offset: 3 },
+  { name: '伦敦', timezone: 'Europe/London', offset: 0 },
+  { name: '巴黎', timezone: 'Europe/Paris', offset: 1 },
+  { name: '纽约', timezone: 'America/New_York', offset: -5 },
+  { name: '洛杉矶', timezone: 'America/Los_Angeles', offset: -8 },
+  { name: '芝加哥', timezone: 'America/Chicago', offset: -6 },
+];
+
 // 闹钟类型定义
 interface Alarm {
   id: string;
@@ -46,8 +62,8 @@ interface Alarm {
 }
 
 export default function HomePage() {
-  // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟
-  const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm'>('timer');
+  // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
+  const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
   
   // 倒计时相关
   const [timeLeft, setTimeLeft] = useState(1800); // Default 30 minutes
@@ -99,6 +115,7 @@ export default function HomePage() {
   const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
   const [expandedAlarmId, setExpandedAlarmId] = useState<string | null>(null);
   const [currentRingingDuration, setCurrentRingingDuration] = useState<number>(0);
+  const [lastAddedAlarmId, setLastAddedAlarmId] = useState<string | null>(null);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -427,6 +444,26 @@ export default function HomePage() {
     };
   }, [ringingAlarmId]);
 
+  // 自动滚动到最后添加的闹钟
+  useEffect(() => {
+    if (lastAddedAlarmId && mode === 'alarm') {
+      // 延迟一下，确保DOM已经渲染
+      setTimeout(() => {
+        const element = document.getElementById(`alarm-${lastAddedAlarmId}`);
+        if (element) {
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center'
+          });
+          // 清除标记
+          setTimeout(() => {
+            setLastAddedAlarmId(null);
+          }, 1000);
+        }
+      }, 100);
+    }
+  }, [lastAddedAlarmId, alarms, mode]);
+
   // 防止重复显示toast的辅助函数
   const showToast = (type: 'success' | 'info', title: string, description: string, id: string) => {
     const now = Date.now();
@@ -509,7 +546,7 @@ export default function HomePage() {
     }
   };
 
-  const switchMode = (newMode: 'timer' | 'stopwatch' | 'alarm') => {
+  const switchMode = (newMode: 'timer' | 'stopwatch' | 'alarm' | 'worldclock') => {
     setIsRunning(false);
     setMode(newMode);
     if (newMode === 'timer') {
@@ -541,6 +578,7 @@ export default function HomePage() {
           : alarm
       );
       setAlarms(updatedAlarms);
+      setLastAddedAlarmId(editingAlarmId); // 编辑后也滚动到该位置
       if (typeof window !== 'undefined') {
         localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
       }
@@ -556,6 +594,7 @@ export default function HomePage() {
       };
       const updatedAlarms = [...alarms, newAlarm];
       setAlarms(updatedAlarms);
+      setLastAddedAlarmId(newAlarm.id); // 设置最后添加的闹钟ID
       if (typeof window !== 'undefined') {
         localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
       }
@@ -660,7 +699,7 @@ export default function HomePage() {
     // 创建一个5分钟后的临时闹钟
     const now = new Date();
     const snoozeTime = new Date(now.getTime() + 5 * 60 * 1000);
-    const snoozeAlarm: Alarm = {
+    const snoozeAlarmItem: Alarm = {
       id: `snooze-${Date.now()}`,
       hour: snoozeTime.getHours(),
       minute: snoozeTime.getMinutes(),
@@ -669,8 +708,9 @@ export default function HomePage() {
       label: '稍后提醒',
     };
     
-    const updatedAlarms = [...alarms, snoozeAlarm];
+    const updatedAlarms = [...alarms, snoozeAlarmItem];
     setAlarms(updatedAlarms);
+    // 不设置 lastAddedAlarmId，避免自动滚动和切换界面
     
     // 保存到 localStorage
     if (typeof window !== 'undefined') {
@@ -910,6 +950,21 @@ export default function HomePage() {
                 >
                   <AlarmClock className="w-5 h-5" />
                 </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => switchMode('worldclock')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    mode === 'worldclock' 
+                      ? 'bg-blue-500 text-white' 
+                      : theme === 'dark'
+                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
+                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
+                  }`}
+                  title="世界时间"
+                >
+                  <Globe className="w-5 h-5" />
+                </motion.button>
               </motion.div>
 
               {/* 右上角：功能按钮 */}
@@ -1056,6 +1111,19 @@ export default function HomePage() {
                 >
                   <AlarmClock className="w-7 h-7" />
                 </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => switchMode('worldclock')}
+                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                    mode === 'worldclock' 
+                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
+                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
+                  }`}
+                  title="世界时间"
+                >
+                  <Globe className="w-7 h-7" />
+                </motion.button>
               </motion.div>
 
               {/* 右上角：功能按钮 */}
@@ -1150,8 +1218,8 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Time Display or Alarm List */}
-          {mode !== 'alarm' ? (
+          {/* Time Display or Alarm List or World Clock */}
+          {(mode === 'timer' || mode === 'stopwatch') ? (
             <div className="text-center w-full flex items-center justify-center px-2 sm:px-4">
               <div 
                 id="timer-display"
@@ -1222,7 +1290,7 @@ export default function HomePage() {
                 </motion.div>
               )}
             </div>
-          ) : (
+          ) : mode === 'alarm' ? (
             /* 闹钟列表 */
             <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
               <div 
@@ -1240,17 +1308,34 @@ export default function HomePage() {
                     暂无闹钟，点击下方按钮添加
                   </div>
                 ) : (
-                  alarms.map((alarm) => (
+                  // 按时间排序闹钟列表
+                  [...alarms].sort((a, b) => {
+                    // 先按小时排序，再按分钟排序
+                    if (a.hour !== b.hour) {
+                      return a.hour - b.hour;
+                    }
+                    return a.minute - b.minute;
+                  }).map((alarm) => (
                     <motion.div
                       key={alarm.id}
+                      id={`alarm-${alarm.id}`}
                       initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
+                      animate={{ 
+                        opacity: 1, 
+                        y: 0,
+                        scale: lastAddedAlarmId === alarm.id ? [1, 1.02, 1] : 1
+                      }}
                       exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        scale: { duration: 0.5, times: [0, 0.5, 1] }
+                      }}
                       className={`py-6 px-4 rounded-[8px] flex items-start justify-between ${
                         theme === 'dark' 
                           ? 'bg-white/5 hover:bg-white/10' 
                           : 'bg-gray-800/5 hover:bg-gray-800/10'
-                      } transition-all ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''}`}
+                      } transition-all ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''} ${
+                        lastAddedAlarmId === alarm.id ? 'ring-2 ring-blue-400' : ''
+                      }`}
                       style={{ 
                         width: '100%', 
                         maxWidth: '100%', 
@@ -1413,7 +1498,8 @@ export default function HomePage() {
                         );
                         
                         if (existingAlarm) {
-                          // 如果已存在，显示提示信息
+                          // 如果已存在，显示提示信息并滚动到该闹钟
+                          setLastAddedAlarmId(existingAlarm.id);
                           showToast(
                             'info',
                             '该时间的闹钟已存在',
@@ -1435,6 +1521,7 @@ export default function HomePage() {
                         
                         const updatedAlarms = [...alarms, newAlarm];
                         setAlarms(updatedAlarms);
+                        setLastAddedAlarmId(newAlarm.id); // 设置最后添加的闹钟ID
                         
                         // 保存到 localStorage
                         if (typeof window !== 'undefined') {
@@ -1462,7 +1549,79 @@ export default function HomePage() {
               </div>
               </div>
             </div>
-          )}
+          ) : mode === 'worldclock' ? (
+            /* 世界时间 */
+            <div className="w-full flex justify-center px-4 overflow-x-hidden">
+              <div 
+                className="w-full"
+                style={{
+                  width: '100%',
+                  minWidth: '300px',
+                  maxWidth: 'min(var(--timer-width, 900px), 95vw)'
+                }}
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                  {WORLD_CITIES.map((city) => {
+                    const now = new Date();
+                    const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
+                    const hours = cityTime.getHours();
+                    const minutes = cityTime.getMinutes();
+                    const seconds = cityTime.getSeconds();
+                    
+                    // 计算与本地时间的时差
+                    const localOffset = -now.getTimezoneOffset() / 60;
+                    const timeDiff = city.offset - localOffset;
+                    const diffText = timeDiff === 0 ? '本地时间' : 
+                                   timeDiff > 0 ? `+${timeDiff}小时` : `${timeDiff}小时`;
+                    
+                    // 判断是白天还是夜晚
+                    const isNight = hours < 6 || hours >= 18;
+                    
+                    return (
+                      <motion.div
+                        key={city.name}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`p-6 rounded-xl transition-all ${
+                          theme === 'dark' 
+                            ? isNight 
+                              ? 'bg-slate-800/50 border border-slate-700' 
+                              : 'bg-blue-500/10 border border-blue-500/30'
+                            : isNight
+                              ? 'bg-slate-100 border border-slate-300'
+                              : 'bg-blue-50 border border-blue-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                            {city.name}
+                          </h3>
+                          {isNight ? (
+                            <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`} />
+                          ) : (
+                            <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-yellow-400' : 'text-yellow-500'}`} />
+                          )}
+                        </div>
+                        
+                        <div className={`text-4xl font-bold mb-2 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}
+                          style={{
+                            fontFamily: '"Rajdhani", sans-serif',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                        </div>
+                        
+                        <div className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                          {diffText}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {/* 进度条 - 仅非全屏模式显示 */}
           {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
@@ -1520,7 +1679,7 @@ export default function HomePage() {
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                {mode !== 'alarm' && (
+                {(mode === 'timer' || mode === 'stopwatch') && (
                   <>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
