@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
+import { useTheme } from 'next-themes';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -104,6 +105,10 @@ interface Alarm {
 export default function HomePage() {
   const t = useTranslations('clock');
   const locale = useLocale();
+  const params = useParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
   
   // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
   const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
@@ -127,7 +132,6 @@ export default function HomePage() {
   const [showCardBorder, setShowCardBorder] = useState(true); // 控制大卡片边框显示（全屏模式下）
   
   // 新增功能状态
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [selectedSound, setSelectedSound] = useState('bell');
   const [selectedColor, setSelectedColor] = useState('blue');
   const [notificationEnabled, setNotificationEnabled] = useState(false);
@@ -345,7 +349,7 @@ export default function HomePage() {
       const savedShowWeekday = localStorage.getItem('timer-show-weekday');
       const savedAlarms = localStorage.getItem('timer-alarms');
       
-      if (savedTheme) setTheme(savedTheme as 'light' | 'dark');
+      // theme 由 next-themes 自动管理，无需手动加载
       if (savedSound) setSelectedSound(savedSound);
       if (savedColor) setSelectedColor(savedColor);
       if (savedNotification) setNotificationEnabled(savedNotification === 'true');
@@ -370,10 +374,9 @@ export default function HomePage() {
     }
   }, []);
 
-  // 保存设置到 localStorage
+  // 保存设置到 localStorage (theme 由 next-themes 自动管理)
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('timer-theme', theme);
       localStorage.setItem('timer-sound', selectedSound);
       localStorage.setItem('timer-color', selectedColor);
       localStorage.setItem('timer-notification', String(notificationEnabled));
@@ -383,7 +386,7 @@ export default function HomePage() {
       localStorage.setItem('timer-show-date', String(showDate));
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
-  }, [theme, selectedSound, selectedColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+  }, [selectedSound, selectedColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
 
   // 保存上次使用的时长
   useEffect(() => {
@@ -1116,7 +1119,9 @@ export default function HomePage() {
               onClick={() => switchMode('timer')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'timer' 
-                  ? 'bg-blue-500 text-white' 
+                  ? theme === 'dark'
+                    ? 'bg-blue-600/80 text-white'
+                    : 'bg-blue-400/90 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1129,7 +1134,9 @@ export default function HomePage() {
               onClick={() => switchMode('stopwatch')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'stopwatch' 
-                  ? 'bg-blue-500 text-white' 
+                  ? theme === 'dark'
+                    ? 'bg-blue-600/80 text-white'
+                    : 'bg-blue-400/90 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1142,7 +1149,9 @@ export default function HomePage() {
               onClick={() => switchMode('alarm')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'alarm' 
-                  ? 'bg-blue-500 text-white' 
+                  ? theme === 'dark'
+                    ? 'bg-blue-600/80 text-white'
+                    : 'bg-blue-400/90 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1155,7 +1164,9 @@ export default function HomePage() {
               onClick={() => switchMode('worldclock')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'worldclock' 
-                  ? 'bg-blue-500 text-white' 
+                  ? theme === 'dark'
+                    ? 'bg-blue-600/80 text-white'
+                    : 'bg-blue-400/90 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1171,7 +1182,9 @@ export default function HomePage() {
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 showMobileMenu
-                  ? 'bg-blue-500 text-white' 
+                  ? theme === 'dark'
+                    ? 'bg-blue-600/80 text-white'
+                    : 'bg-blue-400/90 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1189,107 +1202,100 @@ export default function HomePage() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`border-t ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className={`border-t ${theme === 'dark' ? 'border-slate-700/50' : 'border-gray-200/50'}`}
               >
-                <div className="grid grid-cols-2 gap-2 p-3">
+                <div className="grid grid-cols-2 gap-3 p-4">
                   {/* 桌面通知开关 */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setNotificationEnabled(!notificationEnabled)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       notificationEnabled
-                        ? 'bg-blue-500 text-white' 
+                        ? theme === 'dark'
+                          ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80 text-white shadow-lg shadow-blue-600/30'
+                          : 'bg-gradient-to-br from-blue-400/90 to-blue-500/90 text-white shadow-lg shadow-blue-400/30'
                         : theme === 'dark'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                     }`}
                   >
-                    {notificationEnabled ? (
-                      <Bell className="w-4 h-4" />
-                    ) : (
-                      <BellOff className="w-4 h-4" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
+                    <div className={`p-2 rounded-lg ${notificationEnabled ? 'bg-white/20' : theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      {notificationEnabled ? (
+                        <Bell className="w-5 h-5" />
+                      ) : (
+                        <BellOff className="w-5 h-5" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {notificationEnabled ? '通知开' : '通知关'}
                     </span>
                   </motion.button>
                   
                   {/* 声音开关 */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setSoundEnabled(!soundEnabled)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       soundEnabled
-                        ? 'bg-blue-500 text-white' 
+                        ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg shadow-green-500/30' 
                         : theme === 'dark'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                     }`}
                   >
-                    {soundEnabled ? (
-                      <Volume2 className="w-4 h-4" />
-                    ) : (
-                      <VolumeX className="w-4 h-4" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
-                    </span>
-                  </motion.button>
-                  
-                  {/* 主题切换 */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
-                      theme === 'dark'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {theme === 'dark' ? (
-                      <Sun className="w-4 h-4" />
-                    ) : (
-                      <Moon className="w-4 h-4" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
+                    <div className={`p-2 rounded-lg ${soundEnabled ? 'bg-white/20' : theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      {soundEnabled ? (
+                        <Volume2 className="w-5 h-5" />
+                      ) : (
+                        <VolumeX className="w-5 h-5" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {soundEnabled ? '声音开' : '声音关'}
                     </span>
                   </motion.button>
                   
                   {/* 设置面板 */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       showSettingsPanel
-                        ? 'bg-blue-500 text-white' 
+                        ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/30' 
                         : theme === 'dark'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                     }`}
                   >
-                    <Settings className="w-4 h-4" />
-                    <span className="text-sm font-medium">{t('buttons.settings')}</span>
+                    <div className={`p-2 rounded-lg ${showSettingsPanel ? 'bg-white/20' : theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      <Settings className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      设置
+                    </span>
                   </motion.button>
                   
                   {/* 全屏模式 */}
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={toggleFullscreen}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all col-span-2 ${
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       theme === 'dark'
-                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                     }`}
                   >
-                    <Maximize className="w-4 h-4" />
-                    <span className="text-sm font-medium">{t('tooltips.fullscreen')}</span>
+                    <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      <Maximize className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      全屏
+                    </span>
                   </motion.button>
                 </div>
               </motion.div>
@@ -1435,7 +1441,10 @@ export default function HomePage() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  onClick={() => {
+                    // 使用 next-themes 的 setTheme
+                    setTheme(theme === 'dark' ? 'light' : 'dark');
+                  }}
                   className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
                 >
@@ -2607,7 +2616,9 @@ export default function HomePage() {
                         onClick={() => setPresetTime(preset.seconds)}
                         className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all ${
                           initialTime === preset.seconds
-                            ? 'bg-blue-500 text-white shadow-md'
+                            ? theme === 'dark'
+                              ? 'bg-blue-600/80 text-white shadow-md'
+                              : 'bg-blue-400/90 text-white shadow-md'
                             : theme === 'dark'
                             ? 'bg-white/10 text-slate-300 hover:bg-white/20'
                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
