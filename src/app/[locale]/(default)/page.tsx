@@ -131,6 +131,7 @@ export default function HomePage() {
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [progressVisible, setProgressVisible] = useState(true);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -239,16 +240,32 @@ export default function HomePage() {
   // 全屏功能
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFullscreenActive = !!(
+        document.fullscreenElement || 
+        (document as any).webkitFullscreenElement || 
+        (document as any).mozFullScreenElement || 
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFullscreenActive);
     };
 
+    // 监听各种全屏事件
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
   }, []);
 
-  // 鼠标移动显示控制按钮（仅在全屏模式下自动隐藏）
+  // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
   useEffect(() => {
-    const handleMouseMove = () => {
+    const handleInteraction = () => {
       setShowControls(true);
       
       // 清除之前的定时器
@@ -266,13 +283,19 @@ export default function HomePage() {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
+    // 监听鼠标移动事件（桌面端）
+    window.addEventListener('mousemove', handleInteraction);
+    // 监听触摸事件（移动端）
+    window.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('touchmove', handleInteraction);
     
     // 初始显示控制按钮
-    handleMouseMove();
+    handleInteraction();
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('touchmove', handleInteraction);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
@@ -900,14 +923,49 @@ export default function HomePage() {
   };
 
   const toggleFullscreen = async () => {
-    if (!document.fullscreenElement) {
+    // 检查是否支持全屏API
+    if (!document.fullscreenEnabled && !(document as any).webkitFullscreenEnabled) {
+      // 移动端不支持全屏API时，使用模拟全屏
+      setIsFullscreen(!isFullscreen);
+      return;
+    }
+
+    if (!document.fullscreenElement && !(document as any).webkitFullscreenElement) {
       try {
-        await document.documentElement.requestFullscreen();
+        // 尝试标准全屏API
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          // Safari支持
+          await (document.documentElement as any).webkitRequestFullscreen();
+        } else if ((document.documentElement as any).mozRequestFullScreen) {
+          // Firefox支持
+          await (document.documentElement as any).mozRequestFullScreen();
+        } else if ((document.documentElement as any).msRequestFullscreen) {
+          // IE/Edge支持
+          await (document.documentElement as any).msRequestFullscreen();
+        }
       } catch (error) {
-        console.log('Fullscreen not available');
+        console.log('Fullscreen not available, using simulated fullscreen');
+        // 如果全屏API不可用，使用模拟全屏
+        setIsFullscreen(!isFullscreen);
       }
     } else {
-      await document.exitFullscreen();
+      try {
+        // 退出全屏
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          await (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      } catch (error) {
+        console.log('Exit fullscreen failed');
+        setIsFullscreen(false);
+      }
     }
   };
 
@@ -1050,6 +1108,7 @@ export default function HomePage() {
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
         <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+          {/* 主要功能按钮 */}
           <div className="flex items-center justify-around py-3 px-2">
             <button
               onClick={() => switchMode('timer')}
@@ -1103,7 +1162,137 @@ export default function HomePage() {
               <Globe className="w-5 h-5" />
               <span className="text-xs font-medium">{t('modes.worldclock')}</span>
             </button>
+            {/* 移动端菜单按钮 */}
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                showMobileMenu
+                  ? 'bg-blue-500 text-white' 
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('buttons.menu')}</span>
+            </motion.button>
           </div>
+          
+          {/* 移动端折叠菜单 */}
+          <AnimatePresence>
+            {showMobileMenu && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`border-t ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}
+              >
+                <div className="grid grid-cols-2 gap-2 p-3">
+                  {/* 桌面通知开关 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setNotificationEnabled(!notificationEnabled)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      notificationEnabled
+                        ? 'bg-blue-500 text-white' 
+                        : theme === 'dark'
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {notificationEnabled ? (
+                      <Bell className="w-4 h-4" />
+                    ) : (
+                      <BellOff className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
+                    </span>
+                  </motion.button>
+                  
+                  {/* 声音开关 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      soundEnabled
+                        ? 'bg-blue-500 text-white' 
+                        : theme === 'dark'
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {soundEnabled ? (
+                      <Volume2 className="w-4 h-4" />
+                    ) : (
+                      <VolumeX className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
+                    </span>
+                  </motion.button>
+                  
+                  {/* 主题切换 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      theme === 'dark'
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {theme === 'dark' ? (
+                      <Sun className="w-4 h-4" />
+                    ) : (
+                      <Moon className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
+                    </span>
+                  </motion.button>
+                  
+                  {/* 设置面板 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
+                      showSettingsPanel
+                        ? 'bg-blue-500 text-white' 
+                        : theme === 'dark'
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span className="text-sm font-medium">{t('buttons.settings')}</span>
+                  </motion.button>
+                  
+                  {/* 全屏模式 */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={toggleFullscreen}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all col-span-2 ${
+                      theme === 'dark'
+                        ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Maximize className="w-4 h-4" />
+                    <span className="text-sm font-medium">{t('tooltips.fullscreen')}</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
