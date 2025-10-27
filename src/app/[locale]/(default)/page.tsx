@@ -85,6 +85,7 @@ export default function HomePage() {
   const [customSeconds, setCustomSeconds] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showExtraInfo, setShowExtraInfo] = useState(true); // 控制额外信息显示（全屏模式下）
   
   // 新增功能状态
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -388,18 +389,18 @@ export default function HomePage() {
             timezone,
             country
           });
-          
-          // 获取天气数据 (使用wttr.in API)
+        
+        // 获取天气数据 (使用wttr.in API)
           const weatherRes = await fetch(`https://wttr.in/${locationData.city || 'Beijing'}?format=j1`);
-          const weatherData = await weatherRes.json();
-          
-          if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
-            const current = weatherData.current_condition[0];
-            setWeather({
-              temp: parseInt(current.temp_C),
-              condition: current.weatherDesc[0].value,
-              icon: current.weatherCode
-            });
+        const weatherData = await weatherRes.json();
+        
+        if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
+          const current = weatherData.current_condition[0];
+          setWeather({
+            temp: parseInt(current.temp_C),
+            condition: current.weatherDesc[0].value,
+            icon: current.weatherCode
+          });
           }
         } else {
           throw new Error('Location API failed');
@@ -1688,18 +1689,25 @@ export default function HomePage() {
                     }}
                   >
                     <div className="w-full">
-                      {/* 顶部：城市和天气图标 */}
+                      {/* 顶部：城市和白天/黑夜图标 */}
                       <div className="flex items-center justify-between mb-7">
                         <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                           theme === 'dark' ? 'text-white' : 'text-gray-900'
                         }`}>
                           {userLocation.city} | {userLocation.country}
                         </h2>
-                        {weather && (
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12">
-                            {getWeatherIcon(weather.icon)}
-                          </div>
-                        )}
+                        {(() => {
+                          const now = new Date();
+                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
+                          const hours = userTime.getHours();
+                          const isNight = hours < 6 || hours >= 18;
+                          
+                          return isNight ? (
+                            <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                          ) : (
+                            <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                          );
+                        })()}
                       </div>
                       
                       {/* 分隔线 */}
@@ -1763,13 +1771,13 @@ export default function HomePage() {
                         })()}
                       </div>
                       
-                      {/* 分隔线 */}
-                      <div className={`border-t mb-7 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
-                      
-                      {/* 底部：温度和本地时间 */}
+                      {/* 底部：温度和定位信息 */}
                       <div className="flex items-center justify-between">
                         {weather && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                              {getWeatherIcon(weather.icon)}
+                            </div>
                             <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
                               theme === 'dark' ? 'text-white' : 'text-gray-900'
                             }`}>
@@ -1777,10 +1785,15 @@ export default function HomePage() {
                             </span>
                           </div>
                         )}
-                        <div className={`text-sm sm:text-base md:text-lg font-normal ${
-                          theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                        }`}>
-                          {t('worldclock.local_time')}
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                          }`} />
+                          <span className={`text-sm sm:text-base md:text-lg font-normal ${
+                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                          }`}>
+                            {userLocation.city}
+                          </span>
                         </div>
                       </div>
                       
@@ -1791,13 +1804,13 @@ export default function HomePage() {
                 <div className="w-full flex justify-center">
                   <div 
                     className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
-                    style={{
-                      width: '100%',
-                      minWidth: '300px',
+                style={{
+                  width: '100%',
+                  minWidth: '300px',
                       maxWidth: 'min(1400px, 95vw)',
                       gap: '24px'
-                    }}
-                  >
+                }}
+              >
                   {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
