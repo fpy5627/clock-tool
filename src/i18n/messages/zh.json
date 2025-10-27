@@ -166,7 +166,9 @@
       "paris": "巴黎",
       "newyork": "纽约",
       "losangeles": "洛杉矶",
-      "chicago": "芝加哥"
+      "chicago": "芝加哥",
+      "greenwich": "格林尼治",
+      "mumbai": "孟买"
     },
     "countries": {
       "china": "中国",
@@ -178,7 +180,8 @@
       "russia": "俄罗斯",
       "uk": "英国",
       "france": "法国",
-      "usa": "美国"
+      "usa": "美国",
+      "india": "印度"
     },
     "weekdays": {
       "sunday": "周日",
@@ -257,7 +260,24 @@
     "worldclock": {
       "local_time": "本地时间",
       "time_diff": "{diff}小时",
-      "today": "今天"
+      "today": "今天",
+      "more": "更多",
+      "add_timezone": "添加时区",
+      "search_placeholder": "搜索城市或时区...",
+      "no_results": "未找到结果",
+      "select": "选择",
+      "remove": "删除",
+      "search_mode": "搜索选择",
+      "manual_mode": "手动输入",
+      "city_name": "城市名称",
+      "city_placeholder": "例如：北京",
+      "country_name": "国家/地区",
+      "country_placeholder": "例如：中国",
+      "timezone_label": "时区",
+      "timezone_placeholder": "例如：Asia/Shanghai",
+      "add_custom": "添加自定义时区",
+      "timezone_hint": "请输入 IANA 时区标识符",
+      "required_fields": "请填写所有必填字段"
     },
     "settings_panel": {
       "title": "设置",

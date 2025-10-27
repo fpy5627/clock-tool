@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -42,15 +42,51 @@ const WORLD_CITIES = [
   { key: 'losangeles', timezone: 'America/Los_Angeles', offset: -8, weatherCode: '113', temp: 22, countryKey: 'usa' },
   { key: 'chicago', timezone: 'America/Chicago', offset: -6, weatherCode: '119', temp: 13, countryKey: 'usa' },
   { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15, countryKey: 'usa' },
+  { key: 'greenwich', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 10, countryKey: 'uk' },
   { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12, countryKey: 'uk' },
   { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14, countryKey: 'france' },
   { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8, countryKey: 'russia' },
   { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32, countryKey: 'uae' },
+  { key: 'mumbai', timezone: 'Asia/Kolkata', offset: 5.5, weatherCode: '116', temp: 30, countryKey: 'india' },
   { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22, countryKey: 'china' },
   { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28, countryKey: 'singapore' },
   { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18, countryKey: 'japan' },
   { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16, countryKey: 'korea' },
   { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24, countryKey: 'australia' },
+];
+
+// 更多时区选项（供用户选择）
+const MORE_TIMEZONES = [
+  { name: '雅加达', nameEn: 'Jakarta', timezone: 'Asia/Jakarta', country: '印度尼西亚', countryEn: 'Indonesia' },
+  { name: '曼谷', nameEn: 'Bangkok', timezone: 'Asia/Bangkok', country: '泰国', countryEn: 'Thailand' },
+  { name: '河内', nameEn: 'Hanoi', timezone: 'Asia/Ho_Chi_Minh', country: '越南', countryEn: 'Vietnam' },
+  { name: '吉隆坡', nameEn: 'Kuala Lumpur', timezone: 'Asia/Kuala_Lumpur', country: '马来西亚', countryEn: 'Malaysia' },
+  { name: '马尼拉', nameEn: 'Manila', timezone: 'Asia/Manila', country: '菲律宾', countryEn: 'Philippines' },
+  { name: '台北', nameEn: 'Taipei', timezone: 'Asia/Taipei', country: '中国', countryEn: 'China' },
+  { name: '香港', nameEn: 'Hong Kong', timezone: 'Asia/Hong_Kong', country: '中国', countryEn: 'China' },
+  { name: '上海', nameEn: 'Shanghai', timezone: 'Asia/Shanghai', country: '中国', countryEn: 'China' },
+  { name: '奥克兰', nameEn: 'Auckland', timezone: 'Pacific/Auckland', country: '新西兰', countryEn: 'New Zealand' },
+  { name: '墨尔本', nameEn: 'Melbourne', timezone: 'Australia/Melbourne', country: '澳大利亚', countryEn: 'Australia' },
+  { name: '布里斯班', nameEn: 'Brisbane', timezone: 'Australia/Brisbane', country: '澳大利亚', countryEn: 'Australia' },
+  { name: '珀斯', nameEn: 'Perth', timezone: 'Australia/Perth', country: '澳大利亚', countryEn: 'Australia' },
+  { name: '德里', nameEn: 'Delhi', timezone: 'Asia/Kolkata', country: '印度', countryEn: 'India' },
+  { name: '卡拉奇', nameEn: 'Karachi', timezone: 'Asia/Karachi', country: '巴基斯坦', countryEn: 'Pakistan' },
+  { name: '开罗', nameEn: 'Cairo', timezone: 'Africa/Cairo', country: '埃及', countryEn: 'Egypt' },
+  { name: '伊斯坦布尔', nameEn: 'Istanbul', timezone: 'Europe/Istanbul', country: '土耳其', countryEn: 'Turkey' },
+  { name: '柏林', nameEn: 'Berlin', timezone: 'Europe/Berlin', country: '德国', countryEn: 'Germany' },
+  { name: '罗马', nameEn: 'Rome', timezone: 'Europe/Rome', country: '意大利', countryEn: 'Italy' },
+  { name: '马德里', nameEn: 'Madrid', timezone: 'Europe/Madrid', country: '西班牙', countryEn: 'Spain' },
+  { name: '阿姆斯特丹', nameEn: 'Amsterdam', timezone: 'Europe/Amsterdam', country: '荷兰', countryEn: 'Netherlands' },
+  { name: '布鲁塞尔', nameEn: 'Brussels', timezone: 'Europe/Brussels', country: '比利时', countryEn: 'Belgium' },
+  { name: '苏黎世', nameEn: 'Zurich', timezone: 'Europe/Zurich', country: '瑞士', countryEn: 'Switzerland' },
+  { name: '斯德哥尔摩', nameEn: 'Stockholm', timezone: 'Europe/Stockholm', country: '瑞典', countryEn: 'Sweden' },
+  { name: '多伦多', nameEn: 'Toronto', timezone: 'America/Toronto', country: '加拿大', countryEn: 'Canada' },
+  { name: '温哥华', nameEn: 'Vancouver', timezone: 'America/Vancouver', country: '加拿大', countryEn: 'Canada' },
+  { name: '蒙特利尔', nameEn: 'Montreal', timezone: 'America/Montreal', country: '加拿大', countryEn: 'Canada' },
+  { name: '墨西哥城', nameEn: 'Mexico City', timezone: 'America/Mexico_City', country: '墨西哥', countryEn: 'Mexico' },
+  { name: '圣保罗', nameEn: 'São Paulo', timezone: 'America/Sao_Paulo', country: '巴西', countryEn: 'Brazil' },
+  { name: '布宜诺斯艾利斯', nameEn: 'Buenos Aires', timezone: 'America/Argentina/Buenos_Aires', country: '阿根廷', countryEn: 'Argentina' },
+  { name: '圣地亚哥', nameEn: 'Santiago', timezone: 'America/Santiago', country: '智利', countryEn: 'Chile' },
 ];
 
 // 闹钟类型定义
@@ -124,6 +160,23 @@ export default function HomePage() {
     weatherCode: string;
     temp: number;
   } | null>(null);
+  
+  // 自定义添加的城市列表
+  const [customCities, setCustomCities] = useState<Array<{
+    name: string;
+    timezone: string;
+    country: string;
+  }>>([]);
+  
+  // 时区选择模态框
+  const [showTimezoneModal, setShowTimezoneModal] = useState(false);
+  const [timezoneSearch, setTimezoneSearch] = useState('');
+  const [inputMode, setInputMode] = useState<'search' | 'manual'>('search'); // 搜索模式或手动输入模式
+  
+  // 手动输入的状态
+  const [manualCityName, setManualCityName] = useState('');
+  const [manualCountryName, setManualCountryName] = useState('');
+  const [manualTimezone, setManualTimezone] = useState('');
   
   // 闹钟相关
   const [alarms, setAlarms] = useState<Alarm[]>([]);
@@ -1988,6 +2041,136 @@ export default function HomePage() {
                       </motion.div>
                     );
                   })}
+                  
+                  {/* 自定义添加的城市卡片 */}
+                  {customCities.map((customCity, index) => {
+                    const now = new Date();
+                    const cityTime = new Date(now.toLocaleString('en-US', { timeZone: customCity.timezone }));
+                    const hours = cityTime.getHours();
+                    const minutes = cityTime.getMinutes();
+                    const seconds = cityTime.getSeconds();
+                    
+                    // 获取日期
+                    const year = cityTime.getFullYear();
+                    const month = cityTime.getMonth() + 1;
+                    const day = cityTime.getDate();
+                    const weekdays = [
+                      t('weekdays.sunday'), 
+                      t('weekdays.monday'), 
+                      t('weekdays.tuesday'), 
+                      t('weekdays.wednesday'), 
+                      t('weekdays.thursday'), 
+                      t('weekdays.friday'), 
+                      t('weekdays.saturday')
+                    ];
+                    const weekday = weekdays[cityTime.getDay()];
+                    
+                    // 计算与本地时间的时差
+                    const localOffset = -now.getTimezoneOffset() / 60;
+                    const cityOffset = cityTime.getTimezoneOffset() / -60;
+                    const timeDiff = cityOffset - localOffset;
+                    const diffText = timeDiff === 0 ? t('worldclock.local_time') : 
+                                   timeDiff > 0 ? t('worldclock.time_diff', { diff: `+${timeDiff}` }) : 
+                                   t('worldclock.time_diff', { diff: timeDiff });
+                    
+                    // 判断是白天还是夜晚
+                    const isNight = hours < 6 || hours >= 18;
+                    
+                    return (
+                      <motion.div
+                        key={`custom-${index}`}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onClick={() => {
+                          setSelectedCity({
+                            city: customCity.name,
+                            timezone: customCity.timezone,
+                            country: customCity.country,
+                            weatherCode: '116',
+                            temp: 20
+                          });
+                        }}
+                        className={`p-4 rounded-xl transition-all cursor-pointer relative ${
+                          theme === 'dark' 
+                              ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
+                            : 'bg-white border border-gray-200 hover:bg-gray-50'
+                        } shadow-lg hover:shadow-xl`}
+                      >
+                        {/* 删除按钮 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCustomCities(customCities.filter((_, i) => i !== index));
+                          }}
+                          className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
+                            theme === 'dark'
+                              ? 'hover:bg-red-900/30 text-red-400'
+                              : 'hover:bg-red-100 text-red-600'
+                          }`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                        
+                        <div className="flex items-center justify-between mb-3 pr-6">
+                          <h3 className={`text-base sm:text-lg font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                            {customCity.name} | {customCity.country}
+                          </h3>
+                          {isNight ? (
+                            <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
+                          ) : (
+                            <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-yellow-600/70' : 'text-yellow-600/80'}`} />
+                          )}
+                        </div>
+                        
+                        {/* 分隔线 */}
+                        <div className={`border-t mb-3 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        
+                        <div className={`text-3xl sm:text-4xl font-bold mb-4 text-center ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}
+                          style={{
+                            fontFamily: '"Rajdhani", sans-serif',
+                            letterSpacing: '0.05em',
+                          }}
+                        >
+                          {String(hours).padStart(2, '0')}:{String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                        </div>
+                        
+                        <div className={`text-sm sm:text-base font-medium mb-4 text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
+                          {year}年{month}月{day}日 {weekday}
+                        </div>
+                        
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1">
+                            <div className="w-5 h-5">
+                              <Cloud className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`} />
+                            </div>
+                            <span className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                              --°C
+                            </span>
+                          </div>
+                          <div className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
+                            {diffText}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                  
+                  {/* "更多"按钮卡片 */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setShowTimezoneModal(true)}
+                    className={`p-4 rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px] ${
+                      theme === 'dark' 
+                        ? 'bg-slate-800/30 border-2 border-dashed border-slate-600 hover:bg-slate-800/50 hover:border-slate-500' 
+                        : 'bg-gray-50 border-2 border-dashed border-gray-300 hover:bg-gray-100 hover:border-gray-400'
+                    }`}
+                  >
+                    <Plus className={`w-12 h-12 mb-3 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`} />
+                    <span className={`text-lg font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('worldclock.more')}
+                    </span>
+                  </motion.div>
                 </div>
                     </motion.div>
                   )}
@@ -2720,6 +2903,328 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* 时区选择模态框 */}
+      <AnimatePresence>
+        {showTimezoneModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowTimezoneModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden ${
+                theme === 'dark' ? 'bg-slate-800' : 'bg-white'
+              }`}
+            >
+              {/* 模态框头部 */}
+              <div className={`flex items-center justify-between p-6 border-b ${
+                theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
+              }`}>
+                <h2 className={`text-2xl font-bold ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {t('worldclock.add_timezone')}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowTimezoneModal(false);
+                    setInputMode('search');
+                    setTimezoneSearch('');
+                    setManualCityName('');
+                    setManualCountryName('');
+                    setManualTimezone('');
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    theme === 'dark'
+                      ? 'hover:bg-slate-700 text-slate-400'
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              {/* 模式切换按钮 */}
+              <div className={`flex gap-2 p-4 border-b ${
+                theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
+              }`}>
+                <button
+                  onClick={() => setInputMode('search')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                    inputMode === 'search'
+                      ? (theme === 'dark'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white')
+                      : (theme === 'dark'
+                          ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+                  }`}
+                >
+                  <Search className="w-4 h-4 inline-block mr-2" />
+                  {t('worldclock.search_mode')}
+                </button>
+                <button
+                  onClick={() => setInputMode('manual')}
+                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                    inputMode === 'manual'
+                      ? (theme === 'dark'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white')
+                      : (theme === 'dark'
+                          ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200')
+                  }`}
+                >
+                  <Plus className="w-4 h-4 inline-block mr-2" />
+                  {t('worldclock.manual_mode')}
+                </button>
+              </div>
+              
+              {inputMode === 'search' ? (
+                <>
+                  {/* 搜索框 */}
+                  <div className={`p-6 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+                <div className="relative">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-gray-400'
+                  }`} />
+                  <input
+                    type="text"
+                    value={timezoneSearch}
+                    onChange={(e) => setTimezoneSearch(e.target.value)}
+                    placeholder={t('worldclock.search_placeholder')}
+                    className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                      theme === 'dark'
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                  />
+                </div>
+              </div>
+              
+              {/* 时区列表 */}
+              <div className="overflow-y-auto max-h-[50vh] p-4">
+                {(() => {
+                  const searchLower = timezoneSearch.toLowerCase();
+                  const filteredTimezones = MORE_TIMEZONES.filter(tz => {
+                    const cityName = locale === 'zh' ? tz.name : tz.nameEn;
+                    const countryName = locale === 'zh' ? tz.country : tz.countryEn;
+                    return cityName.toLowerCase().includes(searchLower) || 
+                           countryName.toLowerCase().includes(searchLower) ||
+                           tz.timezone.toLowerCase().includes(searchLower);
+                  });
+                  
+                  if (filteredTimezones.length === 0) {
+                    return (
+                      <div className="text-center py-12">
+                        <Globe className={`w-16 h-16 mx-auto mb-4 ${
+                          theme === 'dark' ? 'text-slate-600' : 'text-gray-300'
+                        }`} />
+                        <p className={`text-lg ${
+                          theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                        }`}>
+                          {t('worldclock.no_results')}
+                        </p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="grid gap-2">
+                      {filteredTimezones.map((tz, index) => {
+                        const cityName = locale === 'zh' ? tz.name : tz.nameEn;
+                        const countryName = locale === 'zh' ? tz.country : tz.countryEn;
+                        
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              const alreadyExists = customCities.some(
+                                city => city.timezone === tz.timezone
+                              );
+                              
+                              if (!alreadyExists) {
+                                setCustomCities([...customCities, {
+                                  name: cityName,
+                                  timezone: tz.timezone,
+                                  country: countryName
+                                }]);
+                              }
+                              
+                              setShowTimezoneModal(false);
+                              setTimezoneSearch('');
+                            }}
+                            className={`w-full p-4 rounded-lg text-left transition-colors ${
+                              theme === 'dark'
+                                ? 'hover:bg-slate-700 border border-slate-700'
+                                : 'hover:bg-gray-50 border border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className={`text-lg font-semibold ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                }`}>
+                                  {cityName}
+                                </h3>
+                                <p className={`text-sm ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                                }`}>
+                                  {countryName} • {tz.timezone}
+                                </p>
+                              </div>
+                              <Plus className={`w-5 h-5 ${
+                                theme === 'dark' ? 'text-slate-400' : 'text-gray-400'
+                              }`} />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </div>
+                </>
+              ) : (
+                /* 手动输入模式 */
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* 城市名称输入 */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
+                        {t('worldclock.city_name')} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={manualCityName}
+                        onChange={(e) => setManualCityName(e.target.value)}
+                        placeholder={t('worldclock.city_placeholder')}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          theme === 'dark'
+                            ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      />
+                    </div>
+                    
+                    {/* 国家/地区输入 */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
+                        {t('worldclock.country_name')} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={manualCountryName}
+                        onChange={(e) => setManualCountryName(e.target.value)}
+                        placeholder={t('worldclock.country_placeholder')}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          theme === 'dark'
+                            ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      />
+                    </div>
+                    
+                    {/* 时区输入 */}
+                    <div>
+                      <label className={`block text-sm font-medium mb-2 ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
+                        {t('worldclock.timezone_label')} <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={manualTimezone}
+                        onChange={(e) => setManualTimezone(e.target.value)}
+                        placeholder={t('worldclock.timezone_placeholder')}
+                        className={`w-full px-4 py-3 rounded-lg border ${
+                          theme === 'dark'
+                            ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                      />
+                      <p className={`mt-2 text-sm ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                      }`}>
+                        {t('worldclock.timezone_hint')}
+                      </p>
+                    </div>
+                    
+                    {/* 常用时区参考 */}
+                    <div className={`p-4 rounded-lg ${
+                      theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'
+                    }`}>
+                      <p className={`text-sm font-medium mb-2 ${
+                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                      }`}>
+                        常用时区参考：
+                      </p>
+                      <div className={`text-xs space-y-1 ${
+                        theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                      }`}>
+                        <p>• 亚洲/上海: Asia/Shanghai</p>
+                        <p>• 美国/纽约: America/New_York</p>
+                        <p>• 欧洲/伦敦: Europe/London</p>
+                        <p>• 亚洲/东京: Asia/Tokyo</p>
+                        <p>• 澳洲/悉尼: Australia/Sydney</p>
+                      </div>
+                    </div>
+                    
+                    {/* 添加按钮 */}
+                    <button
+                      onClick={() => {
+                        if (!manualCityName || !manualCountryName || !manualTimezone) {
+                          toast.error(t('worldclock.required_fields'));
+                          return;
+                        }
+                        
+                        // 验证时区格式
+                        try {
+                          new Date().toLocaleString('en-US', { timeZone: manualTimezone });
+                          
+                          setCustomCities([...customCities, {
+                            name: manualCityName,
+                            timezone: manualTimezone,
+                            country: manualCountryName
+                          }]);
+                          
+                          setShowTimezoneModal(false);
+                          setManualCityName('');
+                          setManualCountryName('');
+                          setManualTimezone('');
+                          setInputMode('search');
+                          
+                          toast.success(`已添加 ${manualCityName}`);
+                        } catch (error) {
+                          toast.error('时区格式无效，请输入正确的 IANA 时区标识符');
+                        }
+                      }}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                        theme === 'dark'
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white'
+                      }`}
+                    >
+                      {t('worldclock.add_custom')}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

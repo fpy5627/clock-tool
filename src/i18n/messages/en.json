@@ -166,7 +166,9 @@
       "paris": "Paris",
       "newyork": "New York",
       "losangeles": "Los Angeles",
-      "chicago": "Chicago"
+      "chicago": "Chicago",
+      "greenwich": "Greenwich",
+      "mumbai": "Mumbai"
     },
     "countries": {
       "china": "China",
@@ -178,7 +180,8 @@
       "russia": "Russia",
       "uk": "UK",
       "france": "France",
-      "usa": "USA"
+      "usa": "USA",
+      "india": "India"
     },
     "weekdays": {
       "sunday": "Sun",
@@ -257,7 +260,24 @@
     "worldclock": {
       "local_time": "Local time",
       "time_diff": "{diff} hours",
-      "today": "Today"
+      "today": "Today",
+      "more": "More",
+      "add_timezone": "Add Timezone",
+      "search_placeholder": "Search city or timezone...",
+      "no_results": "No results found",
+      "select": "Select",
+      "remove": "Remove",
+      "search_mode": "Search & Select",
+      "manual_mode": "Manual Input",
+      "city_name": "City Name",
+      "city_placeholder": "e.g., Beijing",
+      "country_name": "Country/Region",
+      "country_placeholder": "e.g., China",
+      "timezone_label": "Timezone",
+      "timezone_placeholder": "e.g., Asia/Shanghai",
+      "add_custom": "Add Custom Timezone",
+      "timezone_hint": "Please enter IANA timezone identifier",
+      "required_fields": "Please fill in all required fields"
     },
     "settings_panel": {
       "title": "Settings",
