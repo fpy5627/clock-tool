@@ -215,6 +215,11 @@ export default function HomePage() {
           // 倒计时模式
           setTimeLeft((prev) => {
             if (prev <= 1) {
+              // 立即清除定时器，防止重复执行
+              if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+              }
               setIsRunning(false);
               if (soundEnabled) {
                 playNotificationSound();
@@ -233,12 +238,14 @@ export default function HomePage() {
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
   }, [isRunning, mode, soundEnabled, notificationEnabled]);
@@ -1120,8 +1127,8 @@ export default function HomePage() {
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'timer' 
                   ? theme === 'dark'
-                    ? 'bg-blue-600/80 text-white'
-                    : 'bg-blue-400/90 text-white'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1135,8 +1142,8 @@ export default function HomePage() {
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'stopwatch' 
                   ? theme === 'dark'
-                    ? 'bg-blue-600/80 text-white'
-                    : 'bg-blue-400/90 text-white'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1150,8 +1157,8 @@ export default function HomePage() {
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'alarm' 
                   ? theme === 'dark'
-                    ? 'bg-blue-600/80 text-white'
-                    : 'bg-blue-400/90 text-white'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1165,8 +1172,8 @@ export default function HomePage() {
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'worldclock' 
                   ? theme === 'dark'
-                    ? 'bg-blue-600/80 text-white'
-                    : 'bg-blue-400/90 text-white'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1183,8 +1190,8 @@ export default function HomePage() {
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 showMobileMenu
                   ? theme === 'dark'
-                    ? 'bg-blue-600/80 text-white'
-                    : 'bg-blue-400/90 text-white'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
                   : theme === 'dark'
                   ? 'text-slate-400 hover:bg-slate-800'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -1213,9 +1220,7 @@ export default function HomePage() {
                     onClick={() => setNotificationEnabled(!notificationEnabled)}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       notificationEnabled
-                        ? theme === 'dark'
-                          ? 'bg-gradient-to-br from-blue-600/80 to-blue-700/80 text-white shadow-lg shadow-blue-600/30'
-                          : 'bg-gradient-to-br from-blue-400/90 to-blue-500/90 text-white shadow-lg shadow-blue-400/30'
+                        ? 'bg-gradient-to-br from-cyan-400 to-cyan-500 text-white shadow-lg shadow-cyan-400/30'
                         : theme === 'dark'
                         ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
                         : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
@@ -2022,8 +2027,8 @@ export default function HomePage() {
                       }}
                       className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all ${
                         theme === 'dark'
-                          ? 'bg-white/10 text-slate-300 hover:bg-white/20'
-                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
+                          : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
                       }`}
                     >
                       {t(`presets.${preset.key}`)}
@@ -2617,11 +2622,11 @@ export default function HomePage() {
                         className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all ${
                           initialTime === preset.seconds
                             ? theme === 'dark'
-                              ? 'bg-blue-600/80 text-white shadow-md'
-                              : 'bg-blue-400/90 text-white shadow-md'
+                              ? 'bg-slate-600 text-white shadow-md'
+                              : 'bg-slate-400 text-white shadow-md'
                             : theme === 'dark'
-                            ? 'bg-white/10 text-slate-300 hover:bg-white/20'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
+                            : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
                         }`}
                       >
                         {t(`presets.${preset.key}`)}
