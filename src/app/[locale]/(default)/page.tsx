@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+import { localeNames } from '@/i18n/locale';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -1477,7 +1479,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-2 sm:top-6 left-2 sm:left-6 flex gap-1 sm:gap-3 z-50 flex-wrap max-w-[50%] sm:max-w-none"
+                className="fixed top-1 sm:top-6 left-1 sm:left-6 flex gap-0.5 sm:gap-3 z-50 flex-wrap max-w-[70%] sm:max-w-none"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1485,53 +1487,53 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('timer')}
-                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'timer' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.timer')}
                 >
-                  <Timer className="w-5 h-5 sm:w-7 sm:h-7" />
+                  <Timer className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('stopwatch')}
-                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'stopwatch' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.stopwatch')}
                 >
-                  <Clock className="w-5 h-5 sm:w-7 sm:h-7" />
+                  <Clock className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('alarm')}
-                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'alarm' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.alarm')}
                 >
-                  <AlarmClock className="w-5 h-5 sm:w-7 sm:h-7" />
+                  <AlarmClock className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('worldclock')}
-                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'worldclock' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.worldclock')}
                 >
-                  <Globe className="w-5 h-5 sm:w-7 sm:h-7" />
+                  <Globe className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
               </motion.div>
 
@@ -1541,7 +1543,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-2 sm:top-6 right-2 sm:right-6 flex gap-1 sm:gap-3 z-50"
+                className="fixed top-1 sm:top-6 right-1 sm:right-6 flex gap-0.5 sm:gap-3 z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1549,23 +1551,23 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-2 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-lg sm:rounded-xl transition-all shadow-2xl border border-white/20"
+                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
-                    <Volume2 className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                    <Volume2 className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
                   ) : (
-                    <VolumeX className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                    <VolumeX className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
                   )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
-                  className="p-2 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-lg sm:rounded-xl transition-all shadow-2xl border border-white/20"
+                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={t('tooltips.exit_fullscreen')}
                 >
-                  <X className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+                  <X className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
                 </motion.button>
               </motion.div>
             </>
@@ -1633,7 +1635,9 @@ export default function HomePage() {
 
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
-            <div className="text-center w-full flex items-center justify-center px-2 sm:px-4">
+            <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
+              isFullscreen ? 'flex-1' : ''
+            }`}>
               <div 
                 id="timer-display"
                 className={`${
@@ -1642,8 +1646,8 @@ export default function HomePage() {
                     // 根据是否有小时调整字体大小
                     if (isFullscreen) {
                       return time.hasHours 
-                        ? 'text-[7rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
-                        : 'text-[12rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
+                        ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
+                        : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
                     } else {
                       return time.hasHours
                         ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
@@ -2479,9 +2483,9 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-3 sm:gap-4 ${
+                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 ${
                   isFullscreen 
-                    ? 'mt-8 sm:mt-12 md:mt-16 lg:mt-20' 
+                    ? 'mt-4 sm:mt-12 md:mt-16 lg:mt-20 px-2' 
                     : 'mt-6 sm:mt-8 md:mt-12'
                 }`}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
@@ -2494,9 +2498,9 @@ export default function HomePage() {
                       whileTap={{ scale: 0.95 }}
                       onClick={toggleTimer}
                       disabled={mode === 'timer' && timeLeft === 0}
-                      className={`flex items-center gap-2 ${
+                      className={`flex items-center gap-1 sm:gap-2 ${
                         isFullscreen 
-                          ? 'px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-base sm:text-lg md:text-xl' 
+                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
                           : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
                       } rounded-[10px] font-semibold text-white shadow-lg transition-all ${
                         mode === 'timer' && timeLeft === 0
@@ -2510,7 +2514,7 @@ export default function HomePage() {
                         <>
                           <Pause className={
                             isFullscreen 
-                              ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
+                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                               : 'w-4 h-4 sm:w-5 sm:h-5'
                           } />
                           <span>{t('buttons.pause')}</span>
@@ -2519,7 +2523,7 @@ export default function HomePage() {
                         <>
                           <Play className={
                             isFullscreen 
-                              ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
+                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                               : 'w-4 h-4 sm:w-5 sm:h-5'
                           } />
                           <span>{t('buttons.start')}</span>
@@ -2531,15 +2535,15 @@ export default function HomePage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={resetTimer}
-                      className={`flex items-center gap-2 ${
+                      className={`flex items-center gap-1 sm:gap-2 ${
                         isFullscreen 
-                          ? 'px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-base sm:text-lg md:text-xl' 
+                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
                           : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
                       } bg-slate-700 hover:bg-slate-600 text-white rounded-[8px] font-semibold shadow-lg transition-all`}
                     >
                       <RotateCcw className={
                         isFullscreen 
-                          ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
+                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                           : 'w-4 h-4 sm:w-5 sm:h-5'
                       } />
                       <span>{t('buttons.reset')}</span>
@@ -2554,15 +2558,15 @@ export default function HomePage() {
                         setCustomSeconds(currentSeconds % 60);
                         setShowEditModal(true);
                       }}
-                      className={`flex items-center gap-2 ${
+                      className={`flex items-center gap-1 sm:gap-2 ${
                         isFullscreen 
-                          ? 'px-6 py-3 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-base sm:text-lg md:text-xl' 
+                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
                           : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
                       } ${theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-500 hover:bg-indigo-600'} text-white rounded-[8px] font-semibold shadow-lg transition-all`}
                     >
                       <Settings className={
                         isFullscreen 
-                          ? 'w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7' 
+                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
                           : 'w-4 h-4 sm:w-5 sm:h-5'
                       } />
                       <span>{t('buttons.settings')}</span>
