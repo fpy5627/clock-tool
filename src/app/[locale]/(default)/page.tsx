@@ -37,19 +37,20 @@ const THEME_COLORS = [
 ];
 
 // 世界时间城市列表（包含天气信息）
+// 世界城市列表（按UTC时区偏移量从西到东排序）
 const WORLD_CITIES = [
-  { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22, countryKey: 'china' },
-  { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18, countryKey: 'japan' },
-  { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16, countryKey: 'korea' },
-  { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28, countryKey: 'singapore' },
-  { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24, countryKey: 'australia' },
-  { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32, countryKey: 'uae' },
-  { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8, countryKey: 'russia' },
-  { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12, countryKey: 'uk' },
-  { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14, countryKey: 'france' },
-  { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15, countryKey: 'usa' },
   { key: 'losangeles', timezone: 'America/Los_Angeles', offset: -8, weatherCode: '113', temp: 22, countryKey: 'usa' },
   { key: 'chicago', timezone: 'America/Chicago', offset: -6, weatherCode: '119', temp: 13, countryKey: 'usa' },
+  { key: 'newyork', timezone: 'America/New_York', offset: -5, weatherCode: '116', temp: 15, countryKey: 'usa' },
+  { key: 'london', timezone: 'Europe/London', offset: 0, weatherCode: '296', temp: 12, countryKey: 'uk' },
+  { key: 'paris', timezone: 'Europe/Paris', offset: 1, weatherCode: '176', temp: 14, countryKey: 'france' },
+  { key: 'moscow', timezone: 'Europe/Moscow', offset: 3, weatherCode: '122', temp: 8, countryKey: 'russia' },
+  { key: 'dubai', timezone: 'Asia/Dubai', offset: 4, weatherCode: '113', temp: 32, countryKey: 'uae' },
+  { key: 'beijing', timezone: 'Asia/Shanghai', offset: 8, weatherCode: '116', temp: 22, countryKey: 'china' },
+  { key: 'singapore', timezone: 'Asia/Singapore', offset: 8, weatherCode: '296', temp: 28, countryKey: 'singapore' },
+  { key: 'tokyo', timezone: 'Asia/Tokyo', offset: 9, weatherCode: '113', temp: 18, countryKey: 'japan' },
+  { key: 'seoul', timezone: 'Asia/Seoul', offset: 9, weatherCode: '119', temp: 16, countryKey: 'korea' },
+  { key: 'sydney', timezone: 'Australia/Sydney', offset: 10, weatherCode: '113', temp: 24, countryKey: 'australia' },
 ];
 
 // 闹钟类型定义
@@ -113,6 +114,15 @@ export default function HomePage() {
     city: string;
     timezone: string;
     country: string;
+  } | null>(null);
+  
+  // 选中的城市（用于大卡片显示，不保存到localStorage，刷新后恢复为IP定位）
+  const [selectedCity, setSelectedCity] = useState<{
+    city: string;
+    timezone: string;
+    country: string;
+    weatherCode: string;
+    temp: number;
   } | null>(null);
   
   // 闹钟相关
@@ -225,6 +235,13 @@ export default function HomePage() {
       }
     }
   }, [isFullscreen, mode]);
+
+  // 当切换离开世界时间模式时，重置选中的城市
+  useEffect(() => {
+    if (mode !== 'worldclock') {
+      setSelectedCity(null);
+    }
+  }, [mode]);
 
   // 更新日期时间
   useEffect(() => {
@@ -1705,137 +1722,157 @@ export default function HomePage() {
             <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
-                {userLocation && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`py-14 sm:py-16 md:py-18 lg:py-20 xl:py-22 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
-                      showCardBorder 
-                        ? (theme === 'dark' 
-                            ? 'bg-slate-800/50 border border-slate-700 shadow-2xl' 
-                            : 'bg-white border border-gray-200 shadow-2xl')
-                        : 'bg-transparent border-0 shadow-none'
-                    }`}
-                    style={{
-                      width: '100%',
-                      minWidth: '300px',
-                      maxWidth: 'min(1400px, 95vw)',
-                      marginBottom: '48px',
-                      transition: 'all 0.3s ease-in-out'
-                    }}
-                  >
-                    <div className="w-full">
-                      {/* 顶部：城市和白天/黑夜图标 */}
-                      <div className="flex items-center justify-between mb-7">
-                        <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
-                          theme === 'dark' ? 'text-white' : 'text-gray-900'
+                {(selectedCity || userLocation) && (() => {
+                  // 优先显示选中的城市，否则显示IP定位的城市
+                  const displayCity = selectedCity || userLocation;
+                  if (!displayCity) return null;
+                  
+                  return (
+                    <motion.div
+                      key={selectedCity ? 'selected' : 'user-location'} // 添加 key 以触发重新渲染动画
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`py-14 sm:py-16 md:py-18 lg:py-20 xl:py-22 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
+                        showCardBorder 
+                          ? (theme === 'dark' 
+                              ? 'bg-slate-800/50 border border-slate-700 shadow-2xl' 
+                              : 'bg-white border border-gray-200 shadow-2xl')
+                          : 'bg-transparent border-0 shadow-none'
+                      }`}
+                      style={{
+                        width: '100%',
+                        minWidth: '300px',
+                        maxWidth: 'min(1400px, 95vw)',
+                        marginBottom: '48px',
+                        transition: 'all 0.3s ease-in-out'
+                      }}
+                    >
+                      <div className="w-full">
+                        {/* 顶部：城市和白天/黑夜图标 */}
+                        <div className="flex items-center justify-between mb-7">
+                          <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
+                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {displayCity.city} | {displayCity.country}
+                          </h2>
+                          {(() => {
+                            const now = new Date();
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const hours = userTime.getHours();
+                            const isNight = hours < 6 || hours >= 18;
+                            
+                            return isNight ? (
+                              <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                            ) : (
+                              <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* 分隔线 */}
+                        <div className={`border-t mb-8 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        
+                        {/* 大时间显示 */}
+                        <div 
+                          className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
+                          style={{
+                            fontFamily: '"Rajdhani", sans-serif',
+                            fontWeight: '700',
+                            letterSpacing: '0.02em',
+                            color: theme === 'dark' ? '#e5e7eb' : '#1f2937',
+                          }}
+                        >
+                          {(() => {
+                            const now = new Date();
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const hours = String(userTime.getHours()).padStart(2, '0');
+                            const minutes = String(userTime.getMinutes()).padStart(2, '0');
+                            const seconds = String(userTime.getSeconds()).padStart(2, '0');
+                            return (
+                              <span className="flex items-center justify-center gap-[0.08em]">
+                                <span>{hours}</span>
+                                <span className="inline-flex flex-col justify-center gap-[0.15em]">
+                                  <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                  <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                </span>
+                                <span>{minutes}</span>
+                                <span className="inline-flex flex-col justify-center gap-[0.15em]">
+                                  <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                  <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
+                                </span>
+                                <span className="text-[0.5em]">{seconds}</span>
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* 日期显示 */}
+                        <div className={`flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 text-xl sm:text-2xl md:text-3xl font-medium mb-8 ${
+                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                         }`}>
-                          {userLocation.city} | {userLocation.country}
-                        </h2>
-                        {(() => {
-                          const now = new Date();
-                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
-                          const hours = userTime.getHours();
-                          const isNight = hours < 6 || hours >= 18;
-                          
-                          return isNight ? (
-                            <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
-                          ) : (
-                            <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                          );
-                        })()}
-                      </div>
-                      
-                      {/* 分隔线 */}
-                      <div className={`border-t mb-8 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
-                      
-                      {/* 大时间显示 */}
-                      <div 
-                        className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
-                        style={{
-                          fontFamily: '"Rajdhani", sans-serif',
-                          fontWeight: '700',
-                          letterSpacing: '0.02em',
-                          color: theme === 'dark' ? '#e5e7eb' : '#1f2937',
-                        }}
-                      >
-                        {(() => {
-                          const now = new Date();
-                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
-                          const hours = String(userTime.getHours()).padStart(2, '0');
-                          const minutes = String(userTime.getMinutes()).padStart(2, '0');
-                          const seconds = String(userTime.getSeconds()).padStart(2, '0');
-                          return (
-                            <span className="flex items-center justify-center gap-[0.08em]">
-                              <span>{hours}</span>
-                              <span className="inline-flex flex-col justify-center gap-[0.15em]">
-                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
-                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
-                              </span>
-                              <span>{minutes}</span>
-                              <span className="inline-flex flex-col justify-center gap-[0.15em]">
-                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
-                                <span className="w-[0.12em] h-[0.12em] bg-current rounded-full"></span>
-                              </span>
-                              <span className="text-[0.5em]">{seconds}</span>
-                            </span>
-                          );
-                        })()}
-                      </div>
-                      
-                      {/* 日期显示 */}
-                      <div className={`text-xl sm:text-2xl md:text-3xl font-medium text-center mb-8 ${
-                        theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
-                      }`}>
-                        {(() => {
-                          const now = new Date();
-                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userLocation.timezone }));
-                          const year = userTime.getFullYear();
-                          const month = userTime.getMonth() + 1;
-                          const day = userTime.getDate();
-                          const weekdays = [
-                            t('weekdays.sunday'), 
-                            t('weekdays.monday'), 
-                            t('weekdays.tuesday'), 
-                            t('weekdays.wednesday'), 
-                            t('weekdays.thursday'), 
-                            t('weekdays.friday'), 
-                            t('weekdays.saturday')
-                          ];
-                          const weekday = weekdays[userTime.getDay()];
-                          return `${year}年${month}月${day}日 ${weekday}`;
-                        })()}
-                      </div>
-                      
-                      {/* 底部：温度和定位信息 */}
-                      <div className="flex items-center justify-between">
-                        {weather && (
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
-                              {getWeatherIcon(weather.icon)}
-                            </div>
-                            <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
-                              theme === 'dark' ? 'text-white' : 'text-gray-900'
+                          {(() => {
+                            const now = new Date();
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const year = userTime.getFullYear();
+                            const month = userTime.getMonth() + 1;
+                            const day = userTime.getDate();
+                            const weekdays = [
+                              t('weekdays.sunday'), 
+                              t('weekdays.monday'), 
+                              t('weekdays.tuesday'), 
+                              t('weekdays.wednesday'), 
+                              t('weekdays.thursday'), 
+                              t('weekdays.friday'), 
+                              t('weekdays.saturday')
+                            ];
+                            const weekday = weekdays[userTime.getDay()];
+                            return (
+                              <>
+                                <span>{year}年{month}月{day}日</span>
+                                <span>{weekday}</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* 底部：温度和定位信息 */}
+                        <div className="flex items-center justify-between">
+                          {(() => {
+                            // 优先使用 selectedCity 的天气，否则使用 weather 状态
+                            const displayWeather = selectedCity 
+                              ? { temp: selectedCity.temp, icon: selectedCity.weatherCode }
+                              : weather;
+                            
+                            return displayWeather ? (
+                              <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                                  {getWeatherIcon(displayWeather.icon)}
+                                </div>
+                                <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
+                                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                                }`}>
+                                  {displayWeather.temp}°C
+                                </span>
+                              </div>
+                            ) : null;
+                          })()}
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                            }`} />
+                            <span className={`text-sm sm:text-base md:text-lg font-normal ${
+                              theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                             }`}>
-                              {weather.temp}°C
+                              {displayCity.city}
                             </span>
                           </div>
-                        )}
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                          }`} />
-                          <span className={`text-sm sm:text-base md:text-lg font-normal ${
-                            theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                          }`}>
-                            {userLocation.city}
-                          </span>
                         </div>
+                        
                       </div>
-                      
-                    </div>
-                  </motion.div>
-                )}
+                    </motion.div>
+                  );
+                })()}
                 
                 {/* 小卡片网格 - 可自动隐藏 */}
                 <AnimatePresence>
@@ -1849,14 +1886,14 @@ export default function HomePage() {
                     >
                       <div 
                         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
-                        style={{
-                          width: '100%',
-                          minWidth: '300px',
+                style={{
+                  width: '100%',
+                  minWidth: '300px',
                           maxWidth: 'min(1400px, 95vw)',
                           gap: '24px'
-                        }}
-                      >
-                      {WORLD_CITIES.map((city) => {
+                }}
+              >
+                  {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                     const hours = cityTime.getHours();
@@ -1893,10 +1930,19 @@ export default function HomePage() {
                         key={city.key}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`p-4 rounded-xl transition-all ${
+                        onClick={() => {
+                          setSelectedCity({
+                            city: t(`cities.${city.key}`),
+                            timezone: city.timezone,
+                            country: t(`countries.${city.countryKey}`),
+                            weatherCode: city.weatherCode,
+                            temp: city.temp
+                          });
+                        }}
+                        className={`p-4 rounded-xl transition-all cursor-pointer ${
                           theme === 'dark' 
-                              ? 'bg-slate-800/50 border border-slate-700' 
-                            : 'bg-white border border-gray-200'
+                              ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
+                            : 'bg-white border border-gray-200 hover:bg-gray-50'
                         } shadow-lg hover:shadow-xl`}
                       >
                         <div className="flex items-center justify-between mb-3">
@@ -1942,7 +1988,7 @@ export default function HomePage() {
                       </motion.div>
                     );
                   })}
-                      </div>
+                </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
