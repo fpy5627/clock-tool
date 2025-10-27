@@ -1044,22 +1044,82 @@ export default function HomePage() {
 
   return (
     <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${theme === 'dark' ? 'bg-black' : 'bg-gray-100'} flex flex-col ${isFullscreen ? 'p-0' : 'p-4'} transition-colors duration-300`}
+      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${theme === 'dark' ? 'bg-black' : 'bg-gray-100'} flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300`}
       style={{ cursor: !showControls ? 'none' : 'default' }}
     >
+      {/* 移动端顶部导航栏 - 只在移动端显示 */}
+      {!isFullscreen && (
+        <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className="flex items-center justify-around py-3 px-2">
+            <button
+              onClick={() => switchMode('timer')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                mode === 'timer' 
+                  ? 'bg-blue-500 text-white' 
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Timer className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.timer')}</span>
+            </button>
+            <button
+              onClick={() => switchMode('stopwatch')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                mode === 'stopwatch' 
+                  ? 'bg-blue-500 text-white' 
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.stopwatch')}</span>
+            </button>
+            <button
+              onClick={() => switchMode('alarm')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                mode === 'alarm' 
+                  ? 'bg-blue-500 text-white' 
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <AlarmClock className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.alarm')}</span>
+            </button>
+            <button
+              onClick={() => switchMode('worldclock')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                mode === 'worldclock' 
+                  ? 'bg-blue-500 text-white' 
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Globe className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.worldclock')}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (
             <>
-              {/* 左上角：模式切换 */}
+              {/* 左上角：模式切换 - 移动端隐藏 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="absolute top-4 left-4 flex gap-2"
+                className="hidden sm:flex absolute top-2 sm:top-4 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1067,7 +1127,7 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('timer')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
                     mode === 'timer' 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -1076,13 +1136,13 @@ export default function HomePage() {
                   }`}
                   title={t('modes.timer')}
                 >
-                  <Timer className="w-5 h-5" />
+                  <Timer className="w-4 h-4 sm:w-6 sm:h-6" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('stopwatch')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
                     mode === 'stopwatch' 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -1091,13 +1151,13 @@ export default function HomePage() {
                   }`}
                   title={t('modes.stopwatch')}
                 >
-                  <Clock className="w-5 h-5" />
+                  <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('alarm')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
                     mode === 'alarm' 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -1106,13 +1166,13 @@ export default function HomePage() {
                   }`}
                   title={t('modes.alarm')}
                 >
-                  <AlarmClock className="w-5 h-5" />
+                  <AlarmClock className="w-4 h-4 sm:w-6 sm:h-6" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('worldclock')}
-                  className={`p-2 rounded-lg transition-colors ${
+                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
                     mode === 'worldclock' 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -1121,17 +1181,17 @@ export default function HomePage() {
                   }`}
                   title={t('modes.worldclock')}
                 >
-                  <Globe className="w-5 h-5" />
+                  <Globe className="w-4 h-4 sm:w-6 sm:h-6" />
                 </motion.button>
               </motion.div>
 
-              {/* 右上角：功能按钮 */}
+              {/* 右上角：功能按钮 - 移动端隐藏 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="absolute top-4 right-4 flex gap-2"
+                className="hidden sm:flex absolute top-2 sm:top-4 right-2 sm:right-4 gap-0.5 sm:gap-2"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1149,67 +1209,69 @@ export default function HomePage() {
                       setShowEditModal(true);
                     }
                   }}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
+                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={mode === 'alarm' ? t('buttons.add_alarm') : t('tooltips.custom_time')}
                 >
-                  <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
+                {/* 移动端隐藏通知按钮 */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setNotificationEnabled(!notificationEnabled)}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
+                  className={`hidden sm:flex p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
                 >
                   {notificationEnabled ? (
-                    <Bell className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                    <Bell className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                   ) : (
-                    <BellOff className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                    <BellOff className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                   )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
+                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
-                    <Volume2 className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                    <Volume2 className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                   ) : (
-                    <VolumeX className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                    <VolumeX className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                   )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
+                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
                 >
                   {theme === 'dark' ? (
-                    <Sun className="w-5 h-5 text-white" />
+                    <Sun className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-white" />
                   ) : (
-                    <Moon className="w-5 h-5 text-black" />
+                    <Moon className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-black" />
                   )}
                 </motion.button>
+                {/* 移动端隐藏设置面板按钮 */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
+                  className={`hidden sm:flex p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
                   title={t('buttons.settings')}
                 >
-                  <Settings className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
-                  className={`p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-lg transition-colors`}
+                  className={`p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={t('tooltips.fullscreen')}
                 >
-                  <Maximize className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
+                  <Maximize className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
               </motion.div>
             </>
@@ -1220,13 +1282,13 @@ export default function HomePage() {
         <AnimatePresence>
           {isFullscreen && showControls && (
             <>
-              {/* 左上角：模式切换 */}
+              {/* 左上角：模式切换 - 全屏模式移动端优化 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-6 left-6 flex gap-3 z-50"
+                className="fixed top-2 sm:top-6 left-2 sm:left-6 flex gap-1 sm:gap-3 z-50 flex-wrap max-w-[50%] sm:max-w-none"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1234,63 +1296,63 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('timer')}
-                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'timer' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.timer')}
                 >
-                  <Timer className="w-7 h-7" />
+                  <Timer className="w-5 h-5 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('stopwatch')}
-                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'stopwatch' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.stopwatch')}
                 >
-                  <Clock className="w-7 h-7" />
+                  <Clock className="w-5 h-5 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('alarm')}
-                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'alarm' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.alarm')}
                 >
-                  <AlarmClock className="w-7 h-7" />
+                  <AlarmClock className="w-5 h-5 sm:w-7 sm:h-7" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => switchMode('worldclock')}
-                  className={`p-4 rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                  className={`p-2 sm:p-4 rounded-lg sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
                     mode === 'worldclock' 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.worldclock')}
                 >
-                  <Globe className="w-7 h-7" />
+                  <Globe className="w-5 h-5 sm:w-7 sm:h-7" />
                 </motion.button>
               </motion.div>
 
-              {/* 右上角：功能按钮 */}
+              {/* 右上角：功能按钮 - 全屏模式移动端优化 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="fixed top-6 right-6 flex gap-3 z-50"
+                className="fixed top-2 sm:top-6 right-2 sm:right-6 flex gap-1 sm:gap-3 z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1298,23 +1360,23 @@ export default function HomePage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
+                  className="p-2 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-lg sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
-                    <Volume2 className="w-7 h-7 text-white" />
+                    <Volume2 className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   ) : (
-                    <VolumeX className="w-7 h-7 text-white" />
+                    <VolumeX className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                   )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={toggleFullscreen}
-                  className="p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-xl transition-all shadow-2xl border border-white/20"
+                  className="p-2 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-lg sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={t('tooltips.exit_fullscreen')}
                 >
-                  <X className="w-7 h-7 text-white" />
+                  <X className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
                 </motion.button>
               </motion.div>
             </>
@@ -1793,9 +1855,9 @@ export default function HomePage() {
                               : 'bg-white border border-gray-200 shadow-2xl')
                           : 'bg-transparent border-0 shadow-none'
                       }`}
-                      style={{
-                        width: '100%',
-                        minWidth: '300px',
+                style={{
+                  width: '100%',
+                  minWidth: '300px',
                         maxWidth: 'min(1400px, 95vw)',
                         marginBottom: '48px',
                         transition: 'all 0.3s ease-in-out'
@@ -1939,13 +2001,14 @@ export default function HomePage() {
                     >
                       <div 
                         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
-                style={{
-                  width: '100%',
-                  minWidth: '300px',
+                        style={{
+                          width: '100%',
+                          minWidth: '280px',
                           maxWidth: 'min(1400px, 95vw)',
-                          gap: '24px'
-                }}
-              >
+                          gap: '16px',
+                          padding: '0 8px'
+                        }}
+                      >
                   {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
@@ -1992,7 +2055,7 @@ export default function HomePage() {
                             temp: city.temp
                           });
                         }}
-                        className={`p-4 rounded-xl transition-all cursor-pointer ${
+                        className={`p-3 sm:p-4 rounded-xl transition-all cursor-pointer ${
                           theme === 'dark' 
                               ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
                             : 'bg-white border border-gray-200 hover:bg-gray-50'
@@ -2036,7 +2099,7 @@ export default function HomePage() {
                           </div>
                           <div className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
                           {diffText}
-                          </div>
+                        </div>
                         </div>
                       </motion.div>
                     );
@@ -2090,7 +2153,7 @@ export default function HomePage() {
                             temp: 20
                           });
                         }}
-                        className={`p-4 rounded-xl transition-all cursor-pointer relative ${
+                        className={`p-3 sm:p-4 rounded-xl transition-all cursor-pointer relative ${
                           theme === 'dark' 
                               ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
                             : 'bg-white border border-gray-200 hover:bg-gray-50'
@@ -2148,7 +2211,7 @@ export default function HomePage() {
                             </span>
                           </div>
                           <div className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
-                            {diffText}
+                          {diffText}
                           </div>
                         </div>
                       </motion.div>
@@ -2160,7 +2223,7 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     onClick={() => setShowTimezoneModal(true)}
-                    className={`p-4 rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px] ${
+                    className={`p-4 sm:p-6 rounded-xl transition-all cursor-pointer flex flex-col items-center justify-center min-h-[180px] sm:min-h-[200px] ${
                       theme === 'dark' 
                         ? 'bg-slate-800/30 border-2 border-dashed border-slate-600 hover:bg-slate-800/50 hover:border-slate-500' 
                         : 'bg-gray-50 border-2 border-dashed border-gray-300 hover:bg-gray-100 hover:border-gray-400'
@@ -2922,9 +2985,9 @@ export default function HomePage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden ${
+              className={`w-full max-w-2xl max-h-[90vh] sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl overflow-hidden mx-0 sm:mx-4 ${
                 theme === 'dark' ? 'bg-slate-800' : 'bg-white'
-              }`}
+              } fixed sm:relative bottom-0 sm:bottom-auto`}
             >
               {/* 模态框头部 */}
               <div className={`flex items-center justify-between p-6 border-b ${
@@ -2954,13 +3017,13 @@ export default function HomePage() {
                 </button>
               </div>
               
-              {/* 模式切换按钮 */}
-              <div className={`flex gap-2 p-4 border-b ${
+              {/* 模式切换按钮 - 移动端优化 */}
+              <div className={`flex gap-2 p-3 sm:p-4 border-b ${
                 theme === 'dark' ? 'border-slate-700' : 'border-gray-200'
               }`}>
                 <button
                   onClick={() => setInputMode('search')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  className={`flex-1 py-2.5 sm:py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition-all ${
                     inputMode === 'search'
                       ? (theme === 'dark'
                           ? 'bg-blue-600 text-white'
@@ -2975,7 +3038,7 @@ export default function HomePage() {
                 </button>
                 <button
                   onClick={() => setInputMode('manual')}
-                  className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${
+                  className={`flex-1 py-2.5 sm:py-2 px-3 sm:px-4 rounded-lg font-medium text-sm sm:text-base transition-all ${
                     inputMode === 'manual'
                       ? (theme === 'dark'
                           ? 'bg-blue-600 text-white'
@@ -2992,8 +3055,8 @@ export default function HomePage() {
               
               {inputMode === 'search' ? (
                 <>
-                  {/* 搜索框 */}
-                  <div className={`p-6 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+                  {/* 搜索框 - 移动端优化 */}
+                  <div className={`p-4 sm:p-6 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
                 <div className="relative">
                   <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${
                     theme === 'dark' ? 'text-slate-400' : 'text-gray-400'
@@ -3003,7 +3066,7 @@ export default function HomePage() {
                     value={timezoneSearch}
                     onChange={(e) => setTimezoneSearch(e.target.value)}
                     placeholder={t('worldclock.search_placeholder')}
-                    className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                    className={`w-full pl-10 pr-4 py-3.5 sm:py-3 text-base rounded-lg border ${
                       theme === 'dark'
                         ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                         : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -3096,8 +3159,8 @@ export default function HomePage() {
               </div>
                 </>
               ) : (
-                /* 手动输入模式 */
-                <div className="p-6">
+                /* 手动输入模式 - 移动端优化 */
+                <div className="p-4 sm:p-6">
                   <div className="space-y-4">
                     {/* 城市名称输入 */}
                     <div>
@@ -3111,7 +3174,7 @@ export default function HomePage() {
                         value={manualCityName}
                         onChange={(e) => setManualCityName(e.target.value)}
                         placeholder={t('worldclock.city_placeholder')}
-                        className={`w-full px-4 py-3 rounded-lg border ${
+                        className={`w-full px-4 py-3.5 sm:py-3 text-base rounded-lg border ${
                           theme === 'dark'
                             ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                             : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -3131,7 +3194,7 @@ export default function HomePage() {
                         value={manualCountryName}
                         onChange={(e) => setManualCountryName(e.target.value)}
                         placeholder={t('worldclock.country_placeholder')}
-                        className={`w-full px-4 py-3 rounded-lg border ${
+                        className={`w-full px-4 py-3.5 sm:py-3 text-base rounded-lg border ${
                           theme === 'dark'
                             ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                             : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -3151,7 +3214,7 @@ export default function HomePage() {
                         value={manualTimezone}
                         onChange={(e) => setManualTimezone(e.target.value)}
                         placeholder={t('worldclock.timezone_placeholder')}
-                        className={`w-full px-4 py-3 rounded-lg border ${
+                        className={`w-full px-4 py-3.5 sm:py-3 text-base rounded-lg border ${
                           theme === 'dark'
                             ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
                             : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
@@ -3184,7 +3247,7 @@ export default function HomePage() {
                       </div>
                     </div>
                     
-                    {/* 添加按钮 */}
+                    {/* 添加按钮 - 移动端优化 */}
                     <button
                       onClick={() => {
                         if (!manualCityName || !manualCountryName || !manualTimezone) {
@@ -3213,7 +3276,7 @@ export default function HomePage() {
                           toast.error('时区格式无效，请输入正确的 IANA 时区标识符');
                         }
                       }}
-                      className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                      className={`w-full py-3.5 sm:py-3 px-4 rounded-lg font-medium text-base transition-all ${
                         theme === 'dark'
                           ? 'bg-blue-600 hover:bg-blue-700 text-white'
                           : 'bg-blue-500 hover:bg-blue-600 text-white'
