@@ -98,6 +98,7 @@ export default function HomePage() {
   const [ringingAlarmId, setRingingAlarmId] = useState<string | null>(null);
   const [ringingAlarm, setRingingAlarm] = useState<Alarm | null>(null);
   const [expandedAlarmId, setExpandedAlarmId] = useState<string | null>(null);
+  const [currentRingingDuration, setCurrentRingingDuration] = useState<number>(0);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,6 +106,8 @@ export default function HomePage() {
   const alarmCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastToastRef = useRef<{ id: string; time: number } | null>(null);
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
+  const currentRingingAlarmRef = useRef<string | null>(null);
+  const alarmRingStartTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isRunning) {
@@ -360,16 +363,23 @@ export default function HomePage() {
       
       alarms.forEach(alarm => {
         if (shouldAlarmRing(alarm, now)) {
-          setRingingAlarmId(alarm.id);
-          setRingingAlarm(alarm); // 保存完整的闹钟对象
-          playNotificationSound();
-          showDesktopNotification('闹钟', alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
-          
-          // 如果是单次闹钟，响铃后删除
-          if (alarm.repeat === 'once') {
-            setTimeout(() => {
-              deleteAlarm(alarm.id);
-            }, 1000);
+          // 只在闹钟还没有开始响铃时才设置（使用ref避免闭包问题）
+          if (currentRingingAlarmRef.current !== alarm.id) {
+            const startTime = Date.now();
+            
+            currentRingingAlarmRef.current = alarm.id;
+            alarmRingStartTimeRef.current = startTime; // 使用ref记录开始响铃的时间
+            setRingingAlarmId(alarm.id);
+            setRingingAlarm(alarm); // 保存完整的闹钟对象
+            playNotificationSound();
+            showDesktopNotification('闹钟', alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
+            
+            // 如果是单次闹钟，响铃后删除
+            if (alarm.repeat === 'once') {
+              setTimeout(() => {
+                deleteAlarm(alarm.id);
+              }, 1000);
+            }
           }
         } else if (alarm.repeat === 'once' && alarm.enabled) {
           // 自动关闭过期的单次闹钟
@@ -390,6 +400,32 @@ export default function HomePage() {
       }
     };
   }, [alarms]);
+
+  // 更新响铃时长显示
+  useEffect(() => {
+    let durationInterval: NodeJS.Timeout | null = null;
+    
+    if (ringingAlarmId && alarmRingStartTimeRef.current) {
+      // 立即更新一次
+      setCurrentRingingDuration(Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000));
+      
+      // 每秒更新一次
+      durationInterval = setInterval(() => {
+        if (alarmRingStartTimeRef.current) {
+          const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);
+          setCurrentRingingDuration(duration);
+        }
+      }, 1000);
+    } else {
+      setCurrentRingingDuration(0);
+    }
+    
+    return () => {
+      if (durationInterval) {
+        clearInterval(durationInterval);
+      }
+    };
+  }, [ringingAlarmId]);
 
   // 防止重复显示toast的辅助函数
   const showToast = (type: 'success' | 'info', title: string, description: string, id: string) => {
@@ -562,16 +598,64 @@ export default function HomePage() {
   };
 
   const stopAlarmRinging = () => {
+    // 计算响铃时长
+    if (alarmRingStartTimeRef.current) {
+      const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      
+      let durationText = '';
+      if (minutes > 0) {
+        durationText = `${minutes}分${seconds}秒`;
+      } else {
+        durationText = `${seconds}秒`;
+      }
+      
+      showToast(
+        'info',
+        '闹钟已关闭',
+        `响铃时长：${durationText}`,
+        `alarm-stop-${Date.now()}`
+      );
+    }
+    
+    currentRingingAlarmRef.current = null;
+    alarmRingStartTimeRef.current = null;
     setRingingAlarmId(null);
     setRingingAlarm(null);
+    setCurrentRingingDuration(0);
   };
 
   const snoozeAlarm = () => {
     if (!ringingAlarmId) return;
     
+    // 计算响铃时长
+    if (alarmRingStartTimeRef.current) {
+      const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);
+      const minutes = Math.floor(duration / 60);
+      const seconds = duration % 60;
+      
+      let durationText = '';
+      if (minutes > 0) {
+        durationText = `${minutes}分${seconds}秒`;
+      } else {
+        durationText = `${seconds}秒`;
+      }
+      
+      showToast(
+        'success',
+        '已设置稍后提醒',
+        `响铃时长：${durationText}，将在5分钟后再次提醒`,
+        `alarm-snooze-${Date.now()}`
+      );
+    }
+    
     // 关闭当前响铃
+    currentRingingAlarmRef.current = null;
+    alarmRingStartTimeRef.current = null;
     setRingingAlarmId(null);
     setRingingAlarm(null);
+    setCurrentRingingDuration(0);
     
     // 创建一个5分钟后的临时闹钟
     const now = new Date();
@@ -682,6 +766,18 @@ export default function HomePage() {
       dateStr: `${year}年${month}月${day}日`,
       weekdayStr: weekday
     };
+  };
+
+  // 格式化响铃时长
+  const formatRingingDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    
+    if (minutes > 0) {
+      return `已响铃 ${minutes}分${secs}秒`;
+    } else {
+      return `已响铃 ${secs}秒`;
+    }
   };
 
   // 根据天气代码返回图标
@@ -1883,14 +1979,20 @@ export default function HomePage() {
                   : '00:00'}
               </div>
               
+              {/* 闹钟标签 */}
               <div 
-                className="text-lg sm:text-xl md:text-2xl text-white/90 w-full px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 mb-6 sm:mb-8 md:mb-12 text-center break-words overflow-hidden"
+                className="text-lg sm:text-xl md:text-2xl text-white/90 w-full px-4 sm:px-5 md:px-6 text-center break-words overflow-hidden mb-3"
                 style={{ 
                   wordWrap: 'break-word', 
                   overflowWrap: 'break-word'
                 }}
               >
                 {ringingAlarm?.label || '时间到了'}
+              </div>
+
+              {/* 响铃时长 */}
+              <div className="text-base sm:text-lg md:text-xl text-white/80 mb-6 sm:mb-8 md:mb-12 text-center font-medium">
+                {formatRingingDuration(currentRingingDuration)}
               </div>
               
               <button
