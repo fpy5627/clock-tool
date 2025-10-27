@@ -85,7 +85,7 @@ export default function HomePage() {
   const [customSeconds, setCustomSeconds] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [showExtraInfo, setShowExtraInfo] = useState(true); // 控制额外信息显示（全屏模式下）
+  const [showCardBorder, setShowCardBorder] = useState(true); // 控制大卡片边框显示（全屏模式下）
   
   // 新增功能状态
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -430,6 +430,39 @@ export default function HomePage() {
     
     return () => clearInterval(weatherInterval);
   }, [locale]);
+
+  // 全屏模式下鼠标移动检测 - 1.5秒后自动隐藏边框和小卡片
+  useEffect(() => {
+    let hideTimer: NodeJS.Timeout;
+    
+    const handleMouseMove = () => {
+      setShowCardBorder(true);
+      clearTimeout(hideTimer);
+      
+      // 1.5秒后自动隐藏边框
+      hideTimer = setTimeout(() => {
+        setShowCardBorder(false);
+      }, 1500);
+    };
+    
+    // 只在世界时钟模式且全屏模式下启用
+    if (mode === 'worldclock' && isFullscreen) {
+      window.addEventListener('mousemove', handleMouseMove);
+      
+      // 初始化：1.5秒后隐藏
+      hideTimer = setTimeout(() => {
+        setShowCardBorder(false);
+      }, 1500);
+      
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        clearTimeout(hideTimer);
+      };
+    } else {
+      // 非全屏模式时始终显示边框
+      setShowCardBorder(true);
+    }
+  }, [mode, isFullscreen]);
 
   // 检查闹钟
   useEffect(() => {
@@ -1677,15 +1710,18 @@ export default function HomePage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className={`py-14 sm:py-16 md:py-18 lg:py-20 xl:py-22 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
-                      theme === 'dark' 
-                        ? 'bg-slate-800/50 border border-slate-700' 
-                        : 'bg-white border border-gray-200'
-                    } shadow-2xl`}
+                      showCardBorder 
+                        ? (theme === 'dark' 
+                            ? 'bg-slate-800/50 border border-slate-700 shadow-2xl' 
+                            : 'bg-white border border-gray-200 shadow-2xl')
+                        : 'bg-transparent border-0 shadow-none'
+                    }`}
                     style={{
                       width: '100%',
                       minWidth: '300px',
                       maxWidth: 'min(1400px, 95vw)',
-                      marginBottom: '48px'
+                      marginBottom: '48px',
+                      transition: 'all 0.3s ease-in-out'
                     }}
                   >
                     <div className="w-full">
@@ -1801,17 +1837,26 @@ export default function HomePage() {
                   </motion.div>
                 )}
                 
-                <div className="w-full flex justify-center">
-                  <div 
-                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
-                style={{
-                  width: '100%',
-                  minWidth: '300px',
-                      maxWidth: 'min(1400px, 95vw)',
-                      gap: '24px'
-                }}
-              >
-                  {WORLD_CITIES.map((city) => {
+                {/* 小卡片网格 - 可自动隐藏 */}
+                <AnimatePresence>
+                  {showCardBorder && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full flex justify-center"
+                    >
+                      <div 
+                        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
+                        style={{
+                          width: '100%',
+                          minWidth: '300px',
+                          maxWidth: 'min(1400px, 95vw)',
+                          gap: '24px'
+                        }}
+                      >
+                      {WORLD_CITIES.map((city) => {
                     const now = new Date();
                     const cityTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                     const hours = cityTime.getHours();
@@ -1897,8 +1942,10 @@ export default function HomePage() {
                       </motion.div>
                     );
                   })}
-                  </div>
-                </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           ) : null}
