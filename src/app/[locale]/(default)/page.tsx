@@ -175,6 +175,11 @@ export default function HomePage() {
   const [pendingBackgroundImage, setPendingBackgroundImage] = useState<string>('');
   const [applyToAllPages, setApplyToAllPages] = useState(true); // 是否应用到所有功能页面
   
+  // 纯色背景确认对话框
+  const [showColorBackgroundConfirm, setShowColorBackgroundConfirm] = useState(false);
+  const [pendingBackgroundColor, setPendingBackgroundColor] = useState<string>('');
+  const [applyColorToAllPages, setApplyColorToAllPages] = useState(true); // 是否应用到所有功能页面
+  
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
   const [showTemperature, setShowTemperature] = useState(true);
@@ -586,12 +591,36 @@ export default function HomePage() {
       
       // 加载背景设置
       const savedBackgroundType = localStorage.getItem('timer-background-type');
-      const savedBackgroundColor = localStorage.getItem('timer-background-color');
+      
+      // 优先加载当前功能页面的背景颜色，如果没有则加载通用背景颜色
+      const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
+      const generalBackgroundColor = localStorage.getItem('timer-background-color');
+      
+      // 如果当前模式有专用背景，使用专用背景；否则使用通用背景；如果都没有，使用默认背景
+      let savedBackgroundColor;
+      if (currentModeBackgroundColor) {
+        savedBackgroundColor = currentModeBackgroundColor;
+      } else if (generalBackgroundColor) {
+        savedBackgroundColor = generalBackgroundColor;
+      } else {
+        // 使用默认背景
+        savedBackgroundColor = '#1e293b';
+      }
       
       // 优先加载当前功能页面的背景图片，如果没有则加载通用背景图片
       const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
       const generalBackgroundImage = localStorage.getItem('timer-background-image');
-      const savedBackgroundImage = currentModeBackgroundImage || generalBackgroundImage;
+      
+      // 如果当前模式有专用背景，使用专用背景；否则使用通用背景；如果都没有，清空背景
+      let savedBackgroundImage;
+      if (currentModeBackgroundImage) {
+        savedBackgroundImage = currentModeBackgroundImage;
+      } else if (generalBackgroundImage) {
+        savedBackgroundImage = generalBackgroundImage;
+      } else {
+        // 清空背景图片，回到默认背景
+        savedBackgroundImage = '';
+      }
       
       const savedImagePositionX = localStorage.getItem('timer-image-position-x');
       const savedImagePositionY = localStorage.getItem('timer-image-position-y');
@@ -632,7 +661,17 @@ export default function HomePage() {
       localStorage.setItem('timer-worldclock-color', worldClockColor);
       localStorage.setItem('timer-worldclock-smallcard-color', worldClockSmallCardColor);
       localStorage.setItem('timer-background-type', backgroundType);
-      localStorage.setItem('timer-background-color', backgroundColor);
+      
+      // 根据应用范围保存背景颜色
+      if (applyColorToAllPages) {
+        // 应用到所有功能页面：保存到通用key
+        console.log('保存背景颜色到所有功能页面:', backgroundColor);
+        localStorage.setItem('timer-background-color', backgroundColor);
+      } else {
+        // 仅应用到当前功能页面：保存到特定模式的key
+        console.log(`保存背景颜色到当前功能页面 (${mode}):`, backgroundColor);
+        localStorage.setItem(`timer-background-color-${mode}`, backgroundColor);
+      }
       
       // 根据应用范围保存背景图片
       if (applyToAllPages) {
@@ -653,27 +692,95 @@ export default function HomePage() {
       localStorage.setItem('timer-show-date', String(showDate));
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
-  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, backgroundType, backgroundColor, backgroundImage, applyToAllPages, imagePositionX, imagePositionY, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, backgroundType, backgroundColor, backgroundImage, applyToAllPages, applyColorToAllPages, imagePositionX, imagePositionY, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
 
   // 当用户通过其他方式设置背景时，重置为应用到所有页面
   useEffect(() => {
     if (backgroundType !== 'image' || backgroundImage === '') {
       setApplyToAllPages(true);
     }
+    if (backgroundType !== 'color') {
+      setApplyColorToAllPages(true);
+    }
   }, [backgroundType, backgroundImage]);
 
-  // 当模式切换时，重新加载对应功能页面的背景图片
+  // 检测当前背景的应用状态
   useEffect(() => {
-    if (typeof window !== 'undefined' && backgroundType === 'image') {
-      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
-      const generalBackgroundImage = localStorage.getItem('timer-background-image');
-      const newBackgroundImage = currentModeBackgroundImage || generalBackgroundImage || '';
+    if (typeof window !== 'undefined') {
+      // 检测纯色背景的应用状态
+      if (backgroundType === 'color' && backgroundColor) {
+        const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
+        const generalBackgroundColor = localStorage.getItem('timer-background-color');
+        
+        // 如果当前模式有专用背景且与当前背景相同，说明是仅应用到当前页面
+        if (currentModeBackgroundColor === backgroundColor && currentModeBackgroundColor !== generalBackgroundColor) {
+          setApplyColorToAllPages(false);
+        } else {
+          setApplyColorToAllPages(true);
+        }
+      }
       
-      if (newBackgroundImage !== backgroundImage) {
-        setBackgroundImage(newBackgroundImage);
+      // 检测背景图片的应用状态
+      if (backgroundType === 'image' && backgroundImage) {
+        const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+        const generalBackgroundImage = localStorage.getItem('timer-background-image');
+        
+        // 如果当前模式有专用背景且与当前背景相同，说明是仅应用到当前页面
+        if (currentModeBackgroundImage === backgroundImage && currentModeBackgroundImage !== generalBackgroundImage) {
+          setApplyToAllPages(false);
+        } else {
+          setApplyToAllPages(true);
+        }
       }
     }
-  }, [mode, backgroundType, backgroundImage]);
+  }, [mode, backgroundType, backgroundColor, backgroundImage]);
+
+  // 当模式切换时，重新加载对应功能页面的背景颜色和图片
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // 重新加载背景颜色
+      if (backgroundType === 'color') {
+        const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
+        const generalBackgroundColor = localStorage.getItem('timer-background-color');
+        
+        // 如果当前模式有专用背景，使用专用背景；否则使用通用背景；如果都没有，使用默认背景
+        let newBackgroundColor;
+        if (currentModeBackgroundColor) {
+          newBackgroundColor = currentModeBackgroundColor;
+        } else if (generalBackgroundColor) {
+          newBackgroundColor = generalBackgroundColor;
+        } else {
+          // 使用默认背景
+          newBackgroundColor = theme === 'dark' ? '#1e293b' : '#f8fafc';
+        }
+        
+        if (newBackgroundColor !== backgroundColor) {
+          setBackgroundColor(newBackgroundColor);
+        }
+      }
+      
+      // 重新加载背景图片
+      if (backgroundType === 'image') {
+        const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+        const generalBackgroundImage = localStorage.getItem('timer-background-image');
+        
+        // 如果当前模式有专用背景，使用专用背景；否则使用通用背景；如果都没有，清空背景
+        let newBackgroundImage;
+        if (currentModeBackgroundImage) {
+          newBackgroundImage = currentModeBackgroundImage;
+        } else if (generalBackgroundImage) {
+          newBackgroundImage = generalBackgroundImage;
+        } else {
+          // 清空背景图片，回到默认背景
+          newBackgroundImage = '';
+        }
+        
+        if (newBackgroundImage !== backgroundImage) {
+          setBackgroundImage(newBackgroundImage);
+        }
+      }
+    }
+  }, [mode, backgroundType, backgroundColor, backgroundImage]);
 
   // 初始化颜色：第一次打开时根据主题自动选择
   useEffect(() => {
@@ -3749,6 +3856,86 @@ export default function HomePage() {
                 {/* 背景色选择 */}
                 {backgroundType === 'color' && (
                   <div>
+                    {/* 当前背景状态和应用选项 */}
+                    {backgroundColor && (
+                      <div className="mb-4 p-3 rounded-lg border border-gray-300 dark:border-slate-600">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div 
+                            className="w-6 h-6 rounded border border-gray-300"
+                            style={{ backgroundColor: backgroundColor }}
+                          />
+                          <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                            当前背景颜色
+                          </span>
+                        </div>
+                        <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                          {applyColorToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setApplyColorToAllPages(true);
+                              // 立即保存到localStorage
+                              localStorage.setItem('timer-background-color', backgroundColor);
+                              toast.success('当前背景已应用到所有功能页面');
+                            }}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              applyColorToAllPages 
+                                ? theme === 'dark'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-blue-500 text-white'
+                                : theme === 'dark'
+                                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'bg-green-500 hover:bg-green-600 text-white'
+                            }`}
+                          >
+                            {applyColorToAllPages ? '已应用到所有页面' : '应用到所有页面'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setApplyColorToAllPages(false);
+                              // 保存到当前模式的localStorage
+                              localStorage.setItem(`timer-background-color-${mode}`, backgroundColor);
+                              
+                              // 清除其他功能页面的背景设置
+                              const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                              allModes.forEach(modeKey => {
+                                if (modeKey !== mode) {
+                                  localStorage.removeItem(`timer-background-color-${modeKey}`);
+                                }
+                              });
+                              
+                              // 清除通用背景设置
+                              localStorage.removeItem('timer-background-color');
+                              
+                              // 根据背景类型设置主题
+                              const isLightBackground = isLightColor(backgroundColor);
+                              setTimeout(() => {
+                                if (isLightBackground) {
+                                  if (theme !== 'light') setTheme('light');
+                                } else {
+                                  if (theme !== 'dark') setTheme('dark');
+                                }
+                              }, 0);
+                              
+                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景`);
+                            }}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              !applyColorToAllPages 
+                                ? theme === 'dark'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-blue-500 text-white'
+                                : theme === 'dark'
+                                  ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                            }`}
+                          >
+                            {!applyColorToAllPages ? '仅当前页面' : '仅当前页面'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     {/* 深色系背景 */}
                     <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
                     <div className="grid grid-cols-6 gap-2 mb-4">
@@ -3759,7 +3946,10 @@ export default function HomePage() {
                       ].map((color) => (
                         <button
                           key={color}
-                          onClick={() => setBackgroundColor(color)}
+                          onClick={() => {
+                            setPendingBackgroundColor(color);
+                            setShowColorBackgroundConfirm(true);
+                          }}
                           className={`aspect-square h-10 rounded-sm transition-all border-2 ${
                             theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
                           } ${
@@ -3781,7 +3971,10 @@ export default function HomePage() {
                       ].map((color) => (
                         <button
                           key={color}
-                          onClick={() => setBackgroundColor(color)}
+                          onClick={() => {
+                            setPendingBackgroundColor(color);
+                            setShowColorBackgroundConfirm(true);
+                          }}
                           className={`aspect-square h-10 rounded-sm transition-all border-2 ${
                             theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
                           } ${
@@ -3799,13 +3992,19 @@ export default function HomePage() {
                       <input
                         type="color"
                         value={backgroundColor}
-                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        onChange={(e) => {
+                          setPendingBackgroundColor(e.target.value);
+                          setShowColorBackgroundConfirm(true);
+                        }}
                         className="w-12 h-10 rounded-lg cursor-pointer"
                       />
                       <input
                         type="text"
                         value={backgroundColor}
-                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        onChange={(e) => {
+                          setPendingBackgroundColor(e.target.value);
+                          setShowColorBackgroundConfirm(true);
+                        }}
                         className={`flex-1 px-3 py-2 rounded-lg text-sm ${
                           theme === 'dark'
                             ? 'bg-slate-800 border-slate-700 text-white'
@@ -3820,6 +4019,87 @@ export default function HomePage() {
                 {/* 图片上传 */}
                 {backgroundType === 'image' && (
                   <div>
+                    {/* 当前背景状态和应用选项 */}
+                    {backgroundImage && (
+                      <div className="mb-4 p-3 rounded-lg border border-gray-300 dark:border-slate-600">
+                        <div className="flex items-center gap-2 mb-2">
+                          <img
+                            src={backgroundImage}
+                            alt="Current background"
+                            className="w-6 h-6 rounded border border-gray-300 object-cover"
+                          />
+                          <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                            当前背景图片
+                          </span>
+                        </div>
+                        <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                          {applyToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setApplyToAllPages(true);
+                              // 立即保存到localStorage
+                              localStorage.setItem('timer-background-image', backgroundImage);
+                              toast.success('当前背景已应用到所有功能页面');
+                            }}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              applyToAllPages 
+                                ? theme === 'dark'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-blue-500 text-white'
+                                : theme === 'dark'
+                                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'bg-green-500 hover:bg-green-600 text-white'
+                            }`}
+                          >
+                            {applyToAllPages ? '已应用到所有页面' : '应用到所有页面'}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setApplyToAllPages(false);
+                              // 保存到当前模式的localStorage
+                              localStorage.setItem(`timer-background-image-${mode}`, backgroundImage);
+                              
+                              // 清除其他功能页面的背景设置
+                              const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                              allModes.forEach(modeKey => {
+                                if (modeKey !== mode) {
+                                  localStorage.removeItem(`timer-background-image-${modeKey}`);
+                                }
+                              });
+                              
+                              // 清除通用背景设置
+                              localStorage.removeItem('timer-background-image');
+                              
+                              // 根据图片亮度设置主题
+                              const isLightImage = await analyzeImageBrightness(backgroundImage);
+                              setTimeout(() => {
+                                if (isLightImage) {
+                                  if (theme !== 'light') setTheme('light');
+                                } else {
+                                  if (theme !== 'dark') setTheme('dark');
+                                }
+                              }, 0);
+                              
+                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景`);
+                            }}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                              !applyToAllPages 
+                                ? theme === 'dark'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-blue-500 text-white'
+                                : theme === 'dark'
+                                  ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                            }`}
+                          >
+                            {!applyToAllPages ? '仅当前页面' : '仅当前页面'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>上传背景图片</p>
                     <div className="space-y-3">
                       {!backgroundImage ? (
@@ -4892,6 +5172,157 @@ export default function HomePage() {
                   onClick={() => {
                     setShowBackgroundConfirm(false);
                     setPendingBackgroundImage('');
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  取消
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 纯色背景应用确认对话框 */}
+      <AnimatePresence>
+        {showColorBackgroundConfirm && pendingBackgroundColor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+            onClick={() => {
+              setShowColorBackgroundConfirm(false);
+              setPendingBackgroundColor('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                应用纯色背景
+              </h3>
+              
+              {/* 颜色预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <div 
+                  className="w-full h-20 rounded-lg mb-3 border-2 border-gray-300"
+                  style={{ backgroundColor: pendingBackgroundColor }}
+                />
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  选择应用范围：
+                </p>
+              </div>
+              
+              {/* 选项说明 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                <div className="flex items-start gap-2 mb-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                  }`}>
+                    <span className="text-white text-xs font-bold">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                      所有功能页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                      计时器、秒表、闹钟、世界时间都使用此背景
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
+                  }`}>
+                    <span className="text-white text-xs font-bold">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                      仅当前功能页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 按钮组 */}
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    // 应用到所有功能页面
+                    console.log('用户选择了"应用到所有功能页面"');
+                    setApplyColorToAllPages(true);
+                    setBackgroundColor(pendingBackgroundColor);
+                    
+                    // 分析颜色亮度并自动设置主题
+                    const isLight = isLightColor(pendingBackgroundColor);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
+                    toast.success('背景已应用到所有功能页面');
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  应用到所有功能页面
+                </button>
+                <button
+                  onClick={async () => {
+                    // 仅应用到当前功能页面
+                    console.log('用户选择了"仅应用到当前功能页面"');
+                    setApplyColorToAllPages(false);
+                    setBackgroundColor(pendingBackgroundColor);
+                    
+                    // 分析颜色亮度并自动设置主题
+                    const isLight = isLightColor(pendingBackgroundColor);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
+                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                    toast.success(`背景已应用到${pageName}功能页面`);
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  仅应用到当前功能页面
+                </button>
+                <button
+                  onClick={() => {
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
                   }}
                   className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
