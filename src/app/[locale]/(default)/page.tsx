@@ -199,6 +199,10 @@ export default function HomePage() {
   const [currentRingingDuration, setCurrentRingingDuration] = useState<number>(0);
   const [lastAddedAlarmId, setLastAddedAlarmId] = useState<string | null>(null);
   
+  // 倒计时结束弹窗
+  const [showTimerEndModal, setShowTimerEndModal] = useState(false);
+  const [timerOvertime, setTimerOvertime] = useState(0); // 超时计时（秒）
+  
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isHoveringControls = useRef(false);
@@ -207,8 +211,14 @@ export default function HomePage() {
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
   const currentRingingAlarmRef = useRef<string | null>(null);
   const alarmRingStartTimeRef = useRef<number | null>(null);
+  const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    if (isRunning && mode === 'timer' && timeLeft === 0) {
+      // 如果倒计时已经结束，不要启动新的计时器
+      return;
+    }
+    
     if (isRunning) {
       intervalRef.current = setInterval(() => {
         if (mode === 'timer') {
@@ -226,6 +236,18 @@ export default function HomePage() {
               }
               // 桌面通知
               showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
+              
+              // 显示倒计时结束弹窗，并开始超时计时
+              setShowTimerEndModal(true);
+              setTimerOvertime(0);
+              
+              // 开始超时计时器
+              if (!overtimeIntervalRef.current) {
+                overtimeIntervalRef.current = setInterval(() => {
+                  setTimerOvertime((prev) => prev + 1);
+                }, 1000);
+              }
+              
               return 0;
             }
             return prev - 1;
@@ -248,7 +270,7 @@ export default function HomePage() {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, mode, soundEnabled, notificationEnabled]);
+  }, [isRunning, mode, timeLeft, soundEnabled, notificationEnabled]);
 
   // 全屏功能
   useEffect(() => {
@@ -741,6 +763,16 @@ export default function HomePage() {
       setTimeLeft(initialTime);
     } else {
       setStopwatchTime(0);
+    }
+  };
+
+  const closeTimerEndModal = () => {
+    setShowTimerEndModal(false);
+    setTimerOvertime(0);
+    // 清除超时计时器
+    if (overtimeIntervalRef.current) {
+      clearInterval(overtimeIntervalRef.current);
+      overtimeIntervalRef.current = null;
     }
   };
 
@@ -1717,7 +1749,7 @@ export default function HomePage() {
                       : 'text-2xl sm:text-3xl'
                   }`}
                 >
-                  {t('timer.time_up')}
+                  时间到
                 </motion.div>
               )}
             </div>
@@ -3496,6 +3528,283 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 倒计时结束弹窗 */}
+      <AnimatePresence>
+        {showTimerEndModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-3 xs:p-4 sm:p-6 md:p-8 bg-black/70 backdrop-blur-lg"
+            onClick={closeTimerEndModal}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 30 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`relative w-full max-w-[95vw] xs:max-w-lg sm:max-w-xl md:max-w-2xl rounded-3xl xs:rounded-[2rem] shadow-2xl overflow-hidden ${
+                theme === 'dark' 
+                  ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
+                  : 'bg-gradient-to-br from-white via-orange-50/30 to-white'
+              }`}
+            >
+              {/* 顶部装饰条 - 动画渐变 */}
+              <motion.div 
+                className="absolute top-0 left-0 right-0 h-2 xs:h-2.5 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500"
+                animate={{
+                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+                style={{
+                  backgroundSize: '200% 200%',
+                }}
+              ></motion.div>
+              
+              {/* 关闭按钮 */}
+              <button
+                onClick={closeTimerEndModal}
+                className={`absolute top-4 right-4 xs:top-5 xs:right-5 sm:top-6 sm:right-6 p-2 xs:p-2.5 rounded-full transition-all z-10 backdrop-blur-sm ${
+                  theme === 'dark'
+                    ? 'bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white border border-white/10'
+                    : 'bg-gray-900/5 hover:bg-gray-900/10 text-gray-500 hover:text-gray-700 border border-gray-200/50'
+                } shadow-lg hover:shadow-xl hover:scale-110`}
+              >
+                <X className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6" />
+              </button>
+
+              <div className="p-6 xs:p-8 sm:p-10 md:p-12 lg:p-14">
+                {/* 顶部图标和标题 */}
+                <div className="text-center mb-6 xs:mb-8 sm:mb-10">
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.1, 1],
+                      rotate: [0, 5, -5, 0],
+                    }}
+                    transition={{
+                      duration: 2.5,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                    className="inline-flex items-center justify-center w-24 h-24 xs:w-28 xs:h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 shadow-2xl mb-5 xs:mb-6 sm:mb-8"
+                    style={{
+                      boxShadow: theme === 'dark' 
+                        ? '0 20px 60px rgba(251, 146, 60, 0.4), 0 0 80px rgba(239, 68, 68, 0.3)'
+                        : '0 20px 60px rgba(251, 146, 60, 0.3), 0 0 80px rgba(239, 68, 68, 0.2)',
+                    }}
+                  >
+                    <motion.div
+                      animate={{
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 1.8,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      <Clock className="w-12 h-12 xs:w-14 xs:h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 text-white drop-shadow-2xl" strokeWidth={2.5} />
+                    </motion.div>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    <motion.h2 
+                      className={`text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-black mb-3 xs:mb-4 px-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent`}
+                      animate={{
+                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
+                      style={{
+                        backgroundSize: '200% 200%',
+                      }}
+                    >
+                      {(() => {
+                        const hours = Math.floor(initialTime / 3600);
+                        const mins = Math.floor((initialTime % 3600) / 60);
+                        const secs = initialTime % 60;
+                        
+                        if (hours > 0) {
+                          if (mins > 0) {
+                            return `${hours}小时${mins}分钟`;
+                          }
+                          return `${hours}小时`;
+                        } else if (mins > 0) {
+                          if (secs > 0) {
+                            return `${mins}分${secs}秒`;
+                          }
+                          return `${mins}分钟`;
+                        } else {
+                          return `${secs}秒`;
+                        }
+                      })()}
+                    </motion.h2>
+                    <p className={`text-base xs:text-lg sm:text-xl md:text-2xl font-semibold ${
+                      theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                    }`}>
+                      倒计时已完成
+                    </p>
+                  </motion.div>
+                </div>
+
+                {/* 超时计时器 - 精美卡片 */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className={`relative text-center p-8 xs:p-10 sm:p-12 rounded-3xl overflow-hidden mb-6 xs:mb-8 backdrop-blur-xl ${
+                    theme === 'dark' 
+                      ? 'bg-gradient-to-br from-red-500/15 via-orange-500/15 to-pink-500/15 border-2 border-red-500/30' 
+                      : 'bg-gradient-to-br from-orange-100/80 via-red-50/80 to-pink-100/80 border-2 border-orange-300/50'
+                  }`}
+                  style={{
+                    boxShadow: theme === 'dark'
+                      ? 'inset 0 0 60px rgba(239, 68, 68, 0.1), 0 10px 40px rgba(239, 68, 68, 0.2)'
+                      : 'inset 0 0 60px rgba(251, 146, 60, 0.15), 0 10px 40px rgba(251, 146, 60, 0.15)',
+                  }}
+                >
+                  {/* 动态背景粒子效果 */}
+                  <div className="absolute inset-0 overflow-hidden">
+                    <motion.div
+                      animate={{
+                        rotate: [0, 360],
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 15,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
+                      className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-red-500/20 via-transparent to-orange-500/20 blur-3xl"
+                    ></motion.div>
+                    <motion.div
+                      animate={{
+                        rotate: [360, 0],
+                        scale: [1.2, 1, 1.2],
+                      }}
+                      transition={{
+                        duration: 20,
+                        repeat: Infinity,
+                        ease: 'linear',
+                      }}
+                      className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-pink-500/20 via-transparent to-red-500/20 blur-3xl"
+                    ></motion.div>
+                  </div>
+                  
+                  <div className="relative">
+                    <motion.p 
+                      className={`text-sm xs:text-base sm:text-lg font-black uppercase tracking-[0.3em] mb-4 xs:mb-6 ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      animate={{
+                        opacity: [1, 0.7, 1],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      已超时
+                    </motion.p>
+                    <motion.div 
+                      className={`text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      }`}
+                      style={{
+                        fontFamily: '"Rajdhani", "SF Pro Display", -apple-system, sans-serif',
+                        fontWeight: '900',
+                        letterSpacing: '-0.03em',
+                        textShadow: theme === 'dark' 
+                          ? '0 0 30px rgba(248, 113, 113, 0.5), 0 0 60px rgba(248, 113, 113, 0.3), 0 5px 20px rgba(0, 0, 0, 0.3)'
+                          : '0 0 30px rgba(239, 68, 68, 0.3), 0 0 60px rgba(239, 68, 68, 0.2), 0 5px 20px rgba(0, 0, 0, 0.1)',
+                      }}
+                      animate={{
+                        scale: [1, 1.03, 1],
+                      }}
+                      transition={{
+                        duration: 1.2,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      {(() => {
+                        const hours = Math.floor(timerOvertime / 3600);
+                        const mins = Math.floor((timerOvertime % 3600) / 60);
+                        const secs = timerOvertime % 60;
+                        
+                        if (hours > 0) {
+                          return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                        } else {
+                          return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                        }
+                      })()}
+                    </motion.div>
+                  </div>
+                </motion.div>
+
+                {/* 确认按钮 - 精美设计 */}
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={closeTimerEndModal}
+                  className={`relative w-full py-4 xs:py-5 sm:py-6 px-8 rounded-2xl font-bold text-lg xs:text-xl sm:text-2xl transition-all shadow-xl overflow-hidden group ${
+                    theme === 'dark'
+                      ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white'
+                      : 'bg-gradient-to-r from-blue-500 via-blue-600 to-cyan-600 text-white'
+                  }`}
+                  style={{
+                    boxShadow: '0 10px 40px rgba(59, 130, 246, 0.4), 0 0 60px rgba(59, 130, 246, 0.2)',
+                  }}
+                >
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+                    animate={{
+                      x: ['-100%', '100%'],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'linear',
+                    }}
+                  ></motion.div>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    知道了
+                    <motion.span
+                      animate={{
+                        scale: [1, 1.2, 1],
+                      }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      ✓
+                    </motion.span>
+                  </span>
+                </motion.button>
+              </div>
             </motion.div>
           </motion.div>
         )}
