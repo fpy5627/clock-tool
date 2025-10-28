@@ -214,11 +214,6 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (isRunning && mode === 'timer' && timeLeft === 0) {
-      // 如果倒计时已经结束，不要启动新的计时器
-      return;
-    }
-    
     if (isRunning) {
       intervalRef.current = setInterval(() => {
         if (mode === 'timer') {
@@ -270,7 +265,7 @@ export default function HomePage() {
         intervalRef.current = null;
       }
     };
-  }, [isRunning, mode, timeLeft, soundEnabled, notificationEnabled]);
+  }, [isRunning, mode, soundEnabled, notificationEnabled]);
 
   // 全屏功能
   useEffect(() => {
@@ -3549,71 +3544,53 @@ export default function HomePage() {
               exit={{ scale: 0.8, opacity: 0, y: 30 }}
               transition={{ type: 'spring', damping: 20, stiffness: 200 }}
               onClick={(e) => e.stopPropagation()}
-              className={`relative w-full max-w-[95vw] xs:max-w-lg sm:max-w-xl md:max-w-2xl rounded-3xl xs:rounded-[2rem] shadow-2xl overflow-hidden ${
+              className={`relative w-full max-w-[95vw] xs:max-w-lg sm:max-w-xl md:max-w-2xl rounded-2xl xs:rounded-3xl shadow-2xl overflow-hidden ${
                 theme === 'dark' 
-                  ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-                  : 'bg-gradient-to-br from-white via-orange-50/30 to-white'
+                  ? 'bg-slate-900' 
+                  : 'bg-white'
               }`}
             >
-              {/* 顶部装饰条 - 动画渐变 */}
-              <motion.div 
-                className="absolute top-0 left-0 right-0 h-2 xs:h-2.5 bg-gradient-to-r from-orange-400 via-red-500 to-pink-500"
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                style={{
-                  backgroundSize: '200% 200%',
-                }}
-              ></motion.div>
+              {/* 顶部装饰条 */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 xs:h-2 bg-gradient-to-r from-green-400 via-emerald-500 to-teal-400"></div>
               
               {/* 关闭按钮 */}
               <button
                 onClick={closeTimerEndModal}
-                className={`absolute top-4 right-4 xs:top-5 xs:right-5 sm:top-6 sm:right-6 p-2 xs:p-2.5 rounded-full transition-all z-10 backdrop-blur-sm ${
+                className={`absolute top-3 right-3 xs:top-4 xs:right-4 sm:top-6 sm:right-6 p-1.5 xs:p-2 sm:p-2.5 rounded-full transition-all z-10 ${
                   theme === 'dark'
-                    ? 'bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white border border-white/10'
-                    : 'bg-gray-900/5 hover:bg-gray-900/10 text-gray-500 hover:text-gray-700 border border-gray-200/50'
-                } shadow-lg hover:shadow-xl hover:scale-110`}
+                    ? 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700'
+                } shadow-lg`}
               >
                 <X className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6" />
               </button>
 
-              <div className="p-6 xs:p-8 sm:p-10 md:p-12 lg:p-14">
+              <div className="p-5 xs:p-6 sm:p-10 md:p-12 lg:p-16">
                 {/* 顶部图标和标题 */}
-                <div className="text-center mb-6 xs:mb-8 sm:mb-10">
+                <div className="text-center mb-6 xs:mb-8 sm:mb-10 md:mb-12">
                   <motion.div
                     animate={{
-                      scale: [1, 1.1, 1],
-                      rotate: [0, 5, -5, 0],
+                      scale: [1, 1.05, 1],
+                      rotate: [0, 3, -3, 0],
                     }}
                     transition={{
-                      duration: 2.5,
+                      duration: 3,
                       repeat: Infinity,
                       ease: 'easeInOut',
                     }}
-                    className="inline-flex items-center justify-center w-24 h-24 xs:w-28 xs:h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 shadow-2xl mb-5 xs:mb-6 sm:mb-8"
-                    style={{
-                      boxShadow: theme === 'dark' 
-                        ? '0 20px 60px rgba(251, 146, 60, 0.4), 0 0 80px rgba(239, 68, 68, 0.3)'
-                        : '0 20px 60px rgba(251, 146, 60, 0.3), 0 0 80px rgba(239, 68, 68, 0.2)',
-                    }}
+                    className="inline-flex items-center justify-center w-20 h-20 xs:w-24 xs:h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 shadow-xl xs:shadow-2xl shadow-green-500/40 mb-4 xs:mb-6 sm:mb-8"
                   >
                     <motion.div
                       animate={{
-                        scale: [1, 1.2, 1],
+                        scale: [1, 1.15, 1],
                       }}
                       transition={{
-                        duration: 1.8,
+                        duration: 2,
                         repeat: Infinity,
                         ease: 'easeInOut',
                       }}
                     >
-                      <Clock className="w-12 h-12 xs:w-14 xs:h-14 sm:w-18 sm:h-18 md:w-20 md:h-20 text-white drop-shadow-2xl" strokeWidth={2.5} />
+                      <Clock className="w-10 h-10 xs:w-12 xs:h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 text-white" strokeWidth={2.5} />
                     </motion.div>
                   </motion.div>
                   
@@ -3622,20 +3599,9 @@ export default function HomePage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                   >
-                    <motion.h2 
-                      className={`text-3xl xs:text-4xl sm:text-5xl md:text-6xl font-black mb-3 xs:mb-4 px-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 bg-clip-text text-transparent`}
-                      animate={{
-                        backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      style={{
-                        backgroundSize: '200% 200%',
-                      }}
-                    >
+                    <h2 className={`text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2 xs:mb-3 sm:mb-4 px-2 ${
+                      theme === 'dark' ? 'text-white' : 'text-gray-900'
+                    }`}>
                       {(() => {
                         const hours = Math.floor(initialTime / 3600);
                         const mins = Math.floor((initialTime % 3600) / 60);
@@ -3655,92 +3621,64 @@ export default function HomePage() {
                           return `${secs}秒`;
                         }
                       })()}
-                    </motion.h2>
-                    <p className={`text-base xs:text-lg sm:text-xl md:text-2xl font-semibold ${
-                      theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                    </h2>
+                    <p className={`text-sm xs:text-base sm:text-lg md:text-xl ${
+                      theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                     }`}>
                       倒计时已完成
                     </p>
                   </motion.div>
                 </div>
 
-                {/* 超时计时器 - 精美卡片 */}
+                {/* 超时计时器 - 大卡片 */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className={`relative text-center p-8 xs:p-10 sm:p-12 rounded-3xl overflow-hidden mb-6 xs:mb-8 backdrop-blur-xl ${
+                  className={`relative text-center p-6 xs:p-8 sm:p-10 md:p-12 rounded-2xl xs:rounded-3xl overflow-hidden mb-6 xs:mb-8 sm:mb-10 ${
                     theme === 'dark' 
-                      ? 'bg-gradient-to-br from-red-500/15 via-orange-500/15 to-pink-500/15 border-2 border-red-500/30' 
-                      : 'bg-gradient-to-br from-orange-100/80 via-red-50/80 to-pink-100/80 border-2 border-orange-300/50'
+                      ? 'bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 xs:border-2' 
+                      : 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 xs:border-2'
                   }`}
-                  style={{
-                    boxShadow: theme === 'dark'
-                      ? 'inset 0 0 60px rgba(239, 68, 68, 0.1), 0 10px 40px rgba(239, 68, 68, 0.2)'
-                      : 'inset 0 0 60px rgba(251, 146, 60, 0.15), 0 10px 40px rgba(251, 146, 60, 0.15)',
-                  }}
                 >
-                  {/* 动态背景粒子效果 */}
+                  {/* 背景装饰 */}
                   <div className="absolute inset-0 overflow-hidden">
                     <motion.div
                       animate={{
                         rotate: [0, 360],
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 15,
-                        repeat: Infinity,
-                        ease: 'linear',
-                      }}
-                      className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-red-500/20 via-transparent to-orange-500/20 blur-3xl"
-                    ></motion.div>
-                    <motion.div
-                      animate={{
-                        rotate: [360, 0],
-                        scale: [1.2, 1, 1.2],
                       }}
                       transition={{
                         duration: 20,
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-pink-500/20 via-transparent to-red-500/20 blur-3xl"
+                      className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-red-500/10 via-transparent to-orange-500/10"
                     ></motion.div>
                   </div>
                   
                   <div className="relative">
-                    <motion.p 
-                      className={`text-sm xs:text-base sm:text-lg font-black uppercase tracking-[0.3em] mb-4 xs:mb-6 ${
-                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
-                      }`}
-                      animate={{
-                        opacity: [1, 0.7, 1],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    >
+                    <p className={`text-xs xs:text-sm sm:text-base font-bold uppercase tracking-wider xs:tracking-widest mb-3 xs:mb-4 sm:mb-6 ${
+                      theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                    }`}>
                       已超时
-                    </motion.p>
+                    </p>
                     <motion.div 
-                      className={`text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black ${
-                        theme === 'dark' ? 'text-red-400' : 'text-red-600'
+                      className={`text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black ${
+                        theme === 'dark' ? 'text-red-400' : 'text-red-500'
                       }`}
                       style={{
-                        fontFamily: '"Rajdhani", "SF Pro Display", -apple-system, sans-serif',
+                        fontFamily: '"Rajdhani", sans-serif',
                         fontWeight: '900',
-                        letterSpacing: '-0.03em',
+                        letterSpacing: '-0.02em',
                         textShadow: theme === 'dark' 
-                          ? '0 0 30px rgba(248, 113, 113, 0.5), 0 0 60px rgba(248, 113, 113, 0.3), 0 5px 20px rgba(0, 0, 0, 0.3)'
-                          : '0 0 30px rgba(239, 68, 68, 0.3), 0 0 60px rgba(239, 68, 68, 0.2), 0 5px 20px rgba(0, 0, 0, 0.1)',
+                          ? '0 0 20px rgba(248, 113, 113, 0.3), 0 0 40px rgba(248, 113, 113, 0.2)'
+                          : '0 0 20px rgba(239, 68, 68, 0.2), 0 0 40px rgba(239, 68, 68, 0.1)',
                       }}
                       animate={{
-                        scale: [1, 1.03, 1],
+                        scale: [1, 1.02, 1],
                       }}
                       transition={{
-                        duration: 1.2,
+                        duration: 1.5,
                         repeat: Infinity,
                         ease: 'easeInOut',
                       }}
@@ -3760,49 +3698,21 @@ export default function HomePage() {
                   </div>
                 </motion.div>
 
-                {/* 确认按钮 - 精美设计 */}
+                {/* 确认按钮 */}
                 <motion.button
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={closeTimerEndModal}
-                  className={`relative w-full py-4 xs:py-5 sm:py-6 px-8 rounded-2xl font-bold text-lg xs:text-xl sm:text-2xl transition-all shadow-xl overflow-hidden group ${
+                  className={`w-full py-3.5 xs:py-4 sm:py-5 md:py-6 px-6 xs:px-8 rounded-xl xs:rounded-2xl font-bold text-base xs:text-lg sm:text-xl transition-all shadow-lg xs:shadow-xl hover:shadow-2xl ${
                     theme === 'dark'
-                      ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 text-white'
-                      : 'bg-gradient-to-r from-blue-500 via-blue-600 to-cyan-600 text-white'
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white'
+                      : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
                   }`}
-                  style={{
-                    boxShadow: '0 10px 40px rgba(59, 130, 246, 0.4), 0 0 60px rgba(59, 130, 246, 0.2)',
-                  }}
                 >
-                  <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-                    animate={{
-                      x: ['-100%', '100%'],
-                    }}
-                    transition={{
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  ></motion.div>
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    知道了
-                    <motion.span
-                      animate={{
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                      }}
-                    >
-                      ✓
-                    </motion.span>
-                  </span>
+                  知道了
                 </motion.button>
               </div>
             </motion.div>
