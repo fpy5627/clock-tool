@@ -166,6 +166,14 @@ export default function HomePage() {
   const [backgroundType, setBackgroundType] = useState<'default' | 'color' | 'image'>('default');
   const [backgroundColor, setBackgroundColor] = useState('#1e293b'); // 默认深色背景
   const [backgroundImage, setBackgroundImage] = useState<string>('');
+  const [imageOverlayOpacity, setImageOverlayOpacity] = useState(30); // 图片遮罩不透明度（0-100，数值越大遮罩越重）
+  const [imagePositionX, setImagePositionX] = useState(50); // 图片水平位置 (0-100)
+  const [imagePositionY, setImagePositionY] = useState(50); // 图片垂直位置 (0-100)
+  
+  // 背景确认对话框
+  const [showBackgroundConfirm, setShowBackgroundConfirm] = useState(false);
+  const [pendingBackgroundImage, setPendingBackgroundImage] = useState<string>('');
+  const [applyToAllPages, setApplyToAllPages] = useState(true); // 是否应用到所有功能页面
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -254,6 +262,101 @@ export default function HomePage() {
     // 使用感知亮度公式
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     return brightness > 155; // 大于155认为是浅色
+  };
+
+  // 压缩和缩放图片
+  const compressAndResizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          // 获取屏幕尺寸，设置最大宽高为屏幕的2倍（适配高清屏）
+          const maxWidth = window.innerWidth * 2;
+          const maxHeight = window.innerHeight * 2;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // 计算缩放比例，保持宽高比
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = width * ratio;
+            height = height * ratio;
+          }
+          
+          // 创建canvas进行压缩
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            reject(new Error('无法创建canvas上下文'));
+            return;
+          }
+          
+          // 使用高质量缩放
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // 转换为base64，质量设置为0.9（90%质量）
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = () => {
+          reject(new Error('图片加载失败'));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error('文件读取失败'));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // 分析图片亮度
+  const analyzeImageBrightness = (imageDataUrl: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(false);
+          return;
+        }
+
+        // 缩小图片以加快分析速度
+        const size = 50;
+        canvas.width = size;
+        canvas.height = size;
+        ctx.drawImage(img, 0, 0, size, size);
+
+        const imageData = ctx.getImageData(0, 0, size, size);
+        const data = imageData.data;
+        let totalBrightness = 0;
+
+        // 计算所有像素的平均亮度
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+          totalBrightness += brightness;
+        }
+
+        const avgBrightness = totalBrightness / (size * size);
+        // 平均亮度大于128认为是浅色图片
+        resolve(avgBrightness > 128);
+      };
+      img.onerror = () => {
+        resolve(false);
+      };
+      img.src = imageDataUrl;
+    });
   };
 
   // 监听背景颜色变化，自动切换主题
@@ -484,10 +587,19 @@ export default function HomePage() {
       // 加载背景设置
       const savedBackgroundType = localStorage.getItem('timer-background-type');
       const savedBackgroundColor = localStorage.getItem('timer-background-color');
-      const savedBackgroundImage = localStorage.getItem('timer-background-image');
+      
+      // 优先加载当前功能页面的背景图片，如果没有则加载通用背景图片
+      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+      const generalBackgroundImage = localStorage.getItem('timer-background-image');
+      const savedBackgroundImage = currentModeBackgroundImage || generalBackgroundImage;
+      
+      const savedImagePositionX = localStorage.getItem('timer-image-position-x');
+      const savedImagePositionY = localStorage.getItem('timer-image-position-y');
       if (savedBackgroundType) setBackgroundType(savedBackgroundType as 'default' | 'color' | 'image');
       if (savedBackgroundColor) setBackgroundColor(savedBackgroundColor);
       if (savedBackgroundImage) setBackgroundImage(savedBackgroundImage);
+      if (savedImagePositionX) setImagePositionX(Number(savedImagePositionX));
+      if (savedImagePositionY) setImagePositionY(Number(savedImagePositionY));
       
       if (savedNotification) setNotificationEnabled(savedNotification === 'true');
       if (savedProgress !== null) setProgressVisible(savedProgress === 'true');
@@ -521,7 +633,19 @@ export default function HomePage() {
       localStorage.setItem('timer-worldclock-smallcard-color', worldClockSmallCardColor);
       localStorage.setItem('timer-background-type', backgroundType);
       localStorage.setItem('timer-background-color', backgroundColor);
-      localStorage.setItem('timer-background-image', backgroundImage);
+      
+      // 根据应用范围保存背景图片
+      if (applyToAllPages) {
+        // 应用到所有功能页面：保存到通用key
+        console.log('保存背景图片到所有功能页面:', backgroundImage);
+        localStorage.setItem('timer-background-image', backgroundImage);
+      } else {
+        // 仅应用到当前功能页面：保存到特定模式的key
+        console.log(`保存背景图片到当前功能页面 (${mode}):`, backgroundImage);
+        localStorage.setItem(`timer-background-image-${mode}`, backgroundImage);
+      }
+      localStorage.setItem('timer-image-position-x', String(imagePositionX));
+      localStorage.setItem('timer-image-position-y', String(imagePositionY));
       localStorage.setItem('timer-notification', String(notificationEnabled));
       localStorage.setItem('timer-progress', String(progressVisible));
       localStorage.setItem('timer-show-weather-icon', String(showWeatherIcon));
@@ -529,7 +653,27 @@ export default function HomePage() {
       localStorage.setItem('timer-show-date', String(showDate));
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
-  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, backgroundType, backgroundColor, backgroundImage, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, backgroundType, backgroundColor, backgroundImage, applyToAllPages, imagePositionX, imagePositionY, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+
+  // 当用户通过其他方式设置背景时，重置为应用到所有页面
+  useEffect(() => {
+    if (backgroundType !== 'image' || backgroundImage === '') {
+      setApplyToAllPages(true);
+    }
+  }, [backgroundType, backgroundImage]);
+
+  // 当模式切换时，重新加载对应功能页面的背景图片
+  useEffect(() => {
+    if (typeof window !== 'undefined' && backgroundType === 'image') {
+      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+      const generalBackgroundImage = localStorage.getItem('timer-background-image');
+      const newBackgroundImage = currentModeBackgroundImage || generalBackgroundImage || '';
+      
+      if (newBackgroundImage !== backgroundImage) {
+        setBackgroundImage(newBackgroundImage);
+      }
+    }
+  }, [mode, backgroundType, backgroundImage]);
 
   // 初始化颜色：第一次打开时根据主题自动选择
   useEffect(() => {
@@ -1337,16 +1481,29 @@ export default function HomePage() {
     <div 
       className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${
         backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
-      } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300`}
+      } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
       style={{ 
         cursor: !showControls ? 'none' : 'default',
         backgroundColor: backgroundType === 'color' ? backgroundColor : undefined,
         backgroundImage: backgroundType === 'image' && backgroundImage ? `url(${backgroundImage})` : undefined,
         backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundPosition: backgroundType === 'image' && backgroundImage ? `${imagePositionX}% ${imagePositionY}%` : 'center',
         backgroundRepeat: 'no-repeat',
       }}
     >
+      {/* 图片背景遮罩层 - 提升内容可读性 */}
+      {backgroundType === 'image' && backgroundImage && (
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{ 
+            backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.3)',
+            zIndex: 0,
+          }}
+        />
+      )}
+      
+      {/* 内容层 */}
+      <div className="relative z-10 flex flex-col flex-1">
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
         <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
@@ -2046,7 +2203,11 @@ export default function HomePage() {
                 {/* 闹钟列表 */}
                 <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
                 {alarms.length === 0 ? (
-                  <div className={`text-center py-12 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
+                  <div className={`text-center py-12 rounded-lg ${
+                    theme === 'dark' 
+                      ? 'bg-slate-800/80 text-gray-300 backdrop-blur-sm' 
+                      : 'bg-white/80 text-gray-600 backdrop-blur-sm shadow-sm'
+                  }`}>
                     {t('alarm.no_alarms')}
                   </div>
                 ) : (
@@ -2073,8 +2234,8 @@ export default function HomePage() {
                       }}
                       className={`py-6 px-4 rounded-[8px] flex items-start justify-between ${
                         theme === 'dark' 
-                          ? 'bg-white/5 hover:bg-white/10' 
-                          : 'bg-gray-800/5 hover:bg-gray-800/10'
+                          ? 'bg-slate-800/90 hover:bg-slate-700/90 backdrop-blur-sm' 
+                          : 'bg-white/90 hover:bg-gray-50/90 backdrop-blur-sm shadow-sm'
                       } transition-all ${alarm.id === ringingAlarmId ? 'ring-2 ring-red-500 animate-pulse' : ''} ${
                         lastAddedAlarmId === alarm.id ? 'ring-2 ring-blue-400' : ''
                       }`}
@@ -2191,10 +2352,10 @@ export default function HomePage() {
                   setEditingAlarmId(null);
                   setShowAddAlarm(true);
                 }}
-                className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors ${
+                className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
                   theme === 'dark' 
-                    ? 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-400' 
-                    : 'bg-blue-500/20 hover:bg-blue-500/30 text-blue-600'
+                    ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
+                    : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
                 }`}
               >
                 <Plus className="w-5 h-5" />
@@ -2203,7 +2364,9 @@ export default function HomePage() {
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
               <div className="mt-8">
-                <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>
+                <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
+                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                }`}>
                   {t('alarm.quick_add')}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -2280,10 +2443,10 @@ export default function HomePage() {
                           `alarm-success-${hour}-${minute}`
                         );
                       }}
-                      className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all ${
+                      className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all backdrop-blur-sm ${
                         theme === 'dark'
-                          ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
-                          : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
+                          ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                          : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                       }`}
                     >
                       {t(`presets.${preset.key}`)}
@@ -2361,16 +2524,16 @@ export default function HomePage() {
                           const worldClockThemeColor = THEME_COLORS.find(c => c.id === worldClockColor) || THEME_COLORS[0];
                           
                           return (
-                            <div 
-                              className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
-                              style={{
-                                fontFamily: '"Rajdhani", sans-serif',
-                                fontWeight: '700',
-                                letterSpacing: '0.02em',
+                        <div 
+                          className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
+                          style={{
+                            fontFamily: '"Rajdhani", sans-serif',
+                            fontWeight: '700',
+                            letterSpacing: '0.02em',
                                 color: worldClockThemeColor.gradient ? undefined : worldClockThemeColor.color,
-                              }}
-                            >
-                              {(() => {
+                          }}
+                        >
+                          {(() => {
                             
                             // 定义数字样式函数
                             const getNumberStyle = () => {
@@ -2411,7 +2574,7 @@ export default function HomePage() {
                               </span>
                             );
                           })()}
-                            </div>
+                        </div>
                           );
                         })()}
                         
@@ -3087,14 +3250,12 @@ export default function HomePage() {
                         if (value > 23) value = 23;
                         setNewAlarmHour(value);
                       }}
-                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black no-spinner ${
+                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent no-spinner ${
                         theme === 'dark' 
-                          ? 'bg-slate-800 border-slate-700' 
-                          : 'bg-white border-gray-300'
+                          ? 'bg-slate-800 border-slate-700 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
                       }`}
                       style={{ 
-                        color: '#000000 !important',
-                        WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
                         fontWeight: '500'
                       }}
@@ -3116,14 +3277,12 @@ export default function HomePage() {
                         if (value > 59) value = 59;
                         setNewAlarmMinute(value);
                       }}
-                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black no-spinner ${
+                      className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent no-spinner ${
                         theme === 'dark' 
-                          ? 'bg-slate-800 border-slate-700' 
-                          : 'bg-white border-gray-300'
+                          ? 'bg-slate-800 border-slate-700 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
                       }`}
                       style={{ 
-                        color: '#000000 !important',
-                        WebkitTextFillColor: '#000000 !important',
                         fontSize: '16px',
                         fontWeight: '500'
                       }}
@@ -3141,14 +3300,12 @@ export default function HomePage() {
                     value={newAlarmLabel}
                     onChange={(e) => setNewAlarmLabel(e.target.value)}
                     placeholder={t('alarm.label_placeholder')}
-                    className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black ${
+                    className={`w-full px-4 py-2 border rounded-[8px] focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       theme === 'dark' 
-                        ? 'bg-slate-800 border-slate-700 placeholder:text-slate-400' 
-                        : 'bg-white border-gray-300 placeholder:text-gray-500'
+                        ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder:text-gray-500'
                     }`}
                     style={{ 
-                      color: '#000000 !important',
-                      WebkitTextFillColor: '#000000 !important',
                       fontSize: '16px',
                       fontWeight: '500'
                     }}
@@ -3338,8 +3495,8 @@ export default function HomePage() {
                     const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
                     
                     return (
-                      <button
-                        key={color.id}
+                    <button
+                      key={color.id}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -3707,63 +3864,157 @@ export default function HomePage() {
                             id="background-image-upload"
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  setBackgroundImage(event.target?.result as string);
-                                };
-                                reader.readAsDataURL(file);
+                                try {
+                                  // 压缩和缩放图片
+                                  const compressedImageUrl = await compressAndResizeImage(file);
+                                  
+                                  // 保存待确认的图片并显示确认对话框
+                                  setPendingBackgroundImage(compressedImageUrl);
+                                  setShowBackgroundConfirm(true);
+                                } catch (error) {
+                                  console.error('图片处理失败:', error);
+                                  toast.error('图片处理失败，请重试');
+                                }
                               }
                             }}
                             className="hidden"
                           />
                         </div>
                       ) : (
-                        <div className="relative">
-                          <img
-                            src={backgroundImage}
-                            alt="Background preview"
-                            className="w-full h-32 object-cover rounded-lg"
-                          />
-                          <div className="absolute top-2 right-2 flex gap-2">
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <img
+                              src={backgroundImage}
+                              alt="Background preview"
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <div className="absolute top-2 right-2 flex gap-2">
+                              <button
+                                onClick={() => {
+                                  const input = document.getElementById('background-image-upload') as HTMLInputElement;
+                                  input?.click();
+                                }}
+                                className={`p-1.5 rounded-full ${
+                                  theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
+                                } hover:scale-110 transition-all`}
+                                title="更换图片"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => setBackgroundImage('')}
+                                className={`p-1.5 rounded-full ${
+                                  theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
+                                } hover:scale-110 transition-all`}
+                                title="删除图片"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {/* 图片位置调整 */}
+                          <div className={`p-3 rounded-lg ${
+                            theme === 'dark' ? 'bg-slate-800/50' : 'bg-gray-100'
+                          }`}>
+                            <p className={`text-xs font-medium mb-3 ${
+                              theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                            }`}>
+                              调整图片位置
+                            </p>
+                            
+                            {/* 水平位置 */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <label className={`text-xs ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                                }`}>
+                                  水平位置
+                                </label>
+                                <span className={`text-xs ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                                }`}>
+                                  {imagePositionX}%
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={imagePositionX}
+                                onChange={(e) => setImagePositionX(Number(e.target.value))}
+                                className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                                style={{
+                                  background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#2563eb'} 0%, ${theme === 'dark' ? '#3b82f6' : '#2563eb'} ${imagePositionX}%, ${theme === 'dark' ? '#334155' : '#d1d5db'} ${imagePositionX}%, ${theme === 'dark' ? '#334155' : '#d1d5db'} 100%)`
+                                }}
+                              />
+                            </div>
+                            
+                            {/* 垂直位置 */}
+                            <div className="mb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <label className={`text-xs ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                                }`}>
+                                  垂直位置
+                                </label>
+                                <span className={`text-xs ${
+                                  theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
+                                }`}>
+                                  {imagePositionY}%
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="100"
+                                value={imagePositionY}
+                                onChange={(e) => setImagePositionY(Number(e.target.value))}
+                                className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+                                style={{
+                                  background: `linear-gradient(to right, ${theme === 'dark' ? '#3b82f6' : '#2563eb'} 0%, ${theme === 'dark' ? '#3b82f6' : '#2563eb'} ${imagePositionY}%, ${theme === 'dark' ? '#334155' : '#d1d5db'} ${imagePositionY}%, ${theme === 'dark' ? '#334155' : '#d1d5db'} 100%)`
+                                }}
+                              />
+                            </div>
+                            
+                            {/* 重置按钮 */}
                             <button
                               onClick={() => {
-                                const input = document.getElementById('background-image-upload') as HTMLInputElement;
-                                input?.click();
+                                setImagePositionX(50);
+                                setImagePositionY(50);
                               }}
-                              className={`p-1.5 rounded-full ${
-                                theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
-                              } hover:scale-110 transition-all`}
-                              title="更换图片"
+                              className={`w-full py-2 px-3 rounded-lg text-xs font-medium transition-all ${
+                                theme === 'dark'
+                                  ? 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                              }`}
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => setBackgroundImage('')}
-                              className={`p-1.5 rounded-full ${
-                                theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
-                              } hover:scale-110 transition-all`}
-                              title="删除图片"
-                            >
-                              <X className="w-4 h-4" />
+                              重置到居中
                             </button>
                           </div>
                           <input
                             id="background-image-upload"
                             type="file"
                             accept="image/*"
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  setBackgroundImage(event.target?.result as string);
-                                };
-                                reader.readAsDataURL(file);
+                                try {
+                                  // 压缩和缩放图片
+                                  const compressedImageUrl = await compressAndResizeImage(file);
+                                  
+                                  // 保存待确认的图片并显示确认对话框
+                                  setPendingBackgroundImage(compressedImageUrl);
+                                  setShowBackgroundConfirm(true);
+                                } catch (error) {
+                                  console.error('图片处理失败:', error);
+                                  toast.error('图片处理失败，请重试');
+                                }
                               }
                             }}
                             className="hidden"
@@ -3871,7 +4122,7 @@ export default function HomePage() {
                     />
                   </button>
                 </div>
-              </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -4503,6 +4754,159 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 背景应用确认对话框 */}
+      <AnimatePresence>
+        {showBackgroundConfirm && pendingBackgroundImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+            onClick={() => {
+              setShowBackgroundConfirm(false);
+              setPendingBackgroundImage('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                应用背景图片
+              </h3>
+              
+              {/* 图片预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <img
+                  src={pendingBackgroundImage}
+                  alt="Background preview"
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                />
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  选择应用范围：
+                </p>
+              </div>
+              
+              {/* 选项说明 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                <div className="flex items-start gap-2 mb-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                  }`}>
+                    <span className="text-white text-xs font-bold">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                      所有页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                      计时器、秒表、闹钟、世界时间都使用此背景
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
+                  }`}>
+                    <span className="text-white text-xs font-bold">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                      仅当前页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 按钮 */}
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    // 应用到所有页面
+                    console.log('用户选择了"应用到所有页面"');
+                    setApplyToAllPages(true);
+                    setBackgroundImage(pendingBackgroundImage);
+                    
+                    // 分析图片亮度并自动设置主题
+                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                    toast.success('背景已应用到所有功能页面');
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  应用到所有功能页面
+                </button>
+                <button
+                  onClick={async () => {
+                    // 仅应用到当前页面
+                    console.log('用户选择了"仅应用到当前页面"');
+                    setApplyToAllPages(false);
+                    setBackgroundImage(pendingBackgroundImage);
+                    
+                    // 分析图片亮度并自动设置主题
+                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                    toast.success(`背景已应用到${pageName}功能页面`);
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  仅应用到当前功能页面
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  取消
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </div>
     </div>
   );
 }
