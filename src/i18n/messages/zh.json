@@ -152,7 +152,16 @@
       "purple": "紫色",
       "green": "绿色",
       "orange": "橙色",
-      "pink": "粉色"
+      "pink": "粉色",
+      "cyan": "青色",
+      "red": "樱桃红",
+      "magenta": "洋红",
+      "indigo": "靛蓝",
+      "yellow": "亮黄色",
+      "lime": "青柠绿",
+      "teal": "蓝绿色",
+      "white": "白色",
+      "black": "黑色"
     },
     "cities": {
       "beijing": "北京",

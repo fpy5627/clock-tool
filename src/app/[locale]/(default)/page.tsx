@@ -37,6 +37,15 @@ const THEME_COLORS = [
   { id: 'green', key: 'green', color: '#22c55e' },
   { id: 'orange', key: 'orange', color: '#f97316' },
   { id: 'pink', key: 'pink', color: '#ec4899' },
+  { id: 'cyan', key: 'cyan', color: '#06b6d4' },
+  { id: 'red', key: 'red', color: '#dc2626' },
+  { id: 'magenta', key: 'magenta', color: '#d946ef' },
+  { id: 'indigo', key: 'indigo', color: '#6366f1' },
+  { id: 'yellow', key: 'yellow', color: '#eab308' },
+  { id: 'lime', key: 'lime', color: '#84cc16' },
+  { id: 'teal', key: 'teal', color: '#14b8a6' },
+  { id: 'white', key: 'white', color: '#ffffff' },
+  { id: 'black', key: 'black', color: '#000000' },
 ];
 
 // 世界时间城市列表（包含天气信息）
@@ -411,6 +420,21 @@ export default function HomePage() {
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
   }, [selectedSound, selectedColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+
+  // 监听主题变化，自动切换被禁用的颜色
+  useEffect(() => {
+    if (theme) {
+      // 白天模式禁用白色，夜晚模式禁用黑色
+      const isCurrentColorDisabled = 
+        (theme === 'light' && selectedColor === 'white') || 
+        (theme === 'dark' && selectedColor === 'black');
+      
+      if (isCurrentColorDisabled) {
+        // 切换到默认颜色（蓝色）
+        setSelectedColor('blue');
+      }
+    }
+  }, [theme]);
 
   // 保存上次使用的时长
   useEffect(() => {
@@ -1705,8 +1729,8 @@ export default function HomePage() {
                         ? '#22c55e'
                         : timeLeft < 60 
                         ? '#ef4444'
-                        : theme === 'dark' ? '#e5e7eb' : '#1f2937')
-                    : theme === 'dark' ? '#e5e7eb' : '#1f2937',
+                        : themeColor.color)
+                    : themeColor.color,
                   WebkitFontSmoothing: 'antialiased',
                   MozOsxFontSmoothing: 'grayscale',
                 }}
@@ -2506,7 +2530,7 @@ export default function HomePage() {
                     style={{ 
                       backgroundColor: timeLeft < 60 
                         ? '#ef4444'
-                        : theme === 'dark' ? '#e5e7eb' : '#1f2937',
+                        : themeColor.color,
                       width: `${(timeLeft / initialTime) * 100}%`,
                       transition: 'width 1s linear, background-color 0.3s ease'
                     }}
@@ -3047,18 +3071,33 @@ export default function HomePage() {
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
                 </label>
-                <div className="grid grid-cols-5 gap-2">
-                  {THEME_COLORS.map((color) => (
-                    <button
-                      key={color.id}
-                      onClick={() => setSelectedColor(color.id)}
-                      className={`w-12 h-12 rounded-lg transition-all ${
-                        selectedColor === color.id ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
-                      }`}
-                      style={{ backgroundColor: color.color }}
-                      title={t(`colors.${color.key}`)}
-                    />
-                  ))}
+                <div className="grid grid-cols-7 gap-2">
+                  {THEME_COLORS.map((color) => {
+                    // 白天模式禁用白色，夜晚模式禁用黑色
+                    const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
+                    return (
+                      <button
+                        key={color.id}
+                        onClick={() => {
+                          if (!isDisabled) {
+                            setSelectedColor(color.id);
+                          }
+                        }}
+                        disabled={isDisabled}
+                        className={`w-10 h-10 rounded-lg transition-all ${
+                          isDisabled 
+                            ? 'opacity-30 cursor-not-allowed' 
+                            : selectedColor === color.id 
+                            ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
+                            : 'hover:scale-105'
+                        } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
+                        style={{ 
+                          backgroundColor: color.color,
+                        }}
+                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 

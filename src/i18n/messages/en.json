@@ -152,7 +152,16 @@
       "purple": "Purple",
       "green": "Green",
       "orange": "Orange",
-      "pink": "Pink"
+      "pink": "Pink",
+      "cyan": "Cyan",
+      "red": "Cherry Red",
+      "magenta": "Magenta",
+      "indigo": "Indigo",
+      "yellow": "Bright Yellow",
+      "lime": "Lime",
+      "teal": "Teal",
+      "white": "White",
+      "black": "Black"
     },
     "cities": {
       "beijing": "Beijing",
