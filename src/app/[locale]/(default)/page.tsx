@@ -151,11 +151,16 @@ export default function HomePage() {
   const [selectedSound, setSelectedSound] = useState('bell');
   const [timerColor, setTimerColor] = useState('blue'); // 倒计时颜色
   const [stopwatchColor, setStopwatchColor] = useState('blue'); // 秒表颜色
-  const [worldClockColor, setWorldClockColor] = useState('blue'); // 世界时间颜色
+  const [worldClockColor, setWorldClockColor] = useState('blue'); // 世界时间大卡片颜色
+  const [worldClockSmallCardColor, setWorldClockSmallCardColor] = useState('blue'); // 世界时间小卡片颜色
   const [notificationEnabled, setNotificationEnabled] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [progressVisible, setProgressVisible] = useState(true);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  
+  // 世界时间颜色修改确认对话框
+  const [showWorldClockColorConfirm, setShowWorldClockColorConfirm] = useState(false);
+  const [pendingWorldClockColor, setPendingWorldClockColor] = useState<string | null>(null);
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -398,6 +403,7 @@ export default function HomePage() {
       const savedTimerColor = localStorage.getItem('timer-timer-color');
       const savedStopwatchColor = localStorage.getItem('timer-stopwatch-color');
       const savedWorldClockColor = localStorage.getItem('timer-worldclock-color');
+      const savedWorldClockSmallCardColor = localStorage.getItem('timer-worldclock-smallcard-color');
       
       // 如果有保存的颜色，使用保存的颜色
       if (savedTimerColor) {
@@ -418,6 +424,15 @@ export default function HomePage() {
         setWorldClockColor(savedWorldClockColor);
       } else if (savedColor) {
         setWorldClockColor(savedColor); // 向后兼容旧版本
+      }
+      // 如果没有保存的颜色，使用默认值（在theme ready后会被初始化）
+      
+      if (savedWorldClockSmallCardColor) {
+        setWorldClockSmallCardColor(savedWorldClockSmallCardColor);
+      } else if (savedWorldClockColor) {
+        setWorldClockSmallCardColor(savedWorldClockColor); // 如果没有小卡片颜色，使用大卡片颜色
+      } else if (savedColor) {
+        setWorldClockSmallCardColor(savedColor); // 向后兼容旧版本
       }
       // 如果没有保存的颜色，使用默认值（在theme ready后会被初始化）
       
@@ -450,6 +465,7 @@ export default function HomePage() {
       localStorage.setItem('timer-timer-color', timerColor);
       localStorage.setItem('timer-stopwatch-color', stopwatchColor);
       localStorage.setItem('timer-worldclock-color', worldClockColor);
+      localStorage.setItem('timer-worldclock-smallcard-color', worldClockSmallCardColor);
       localStorage.setItem('timer-notification', String(notificationEnabled));
       localStorage.setItem('timer-progress', String(progressVisible));
       localStorage.setItem('timer-show-weather-icon', String(showWeatherIcon));
@@ -457,7 +473,7 @@ export default function HomePage() {
       localStorage.setItem('timer-show-date', String(showDate));
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
-  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
 
   // 初始化颜色：第一次打开时根据主题自动选择
   useEffect(() => {
@@ -467,6 +483,7 @@ export default function HomePage() {
       const savedTimerColor = localStorage.getItem('timer-timer-color');
       const savedStopwatchColor = localStorage.getItem('timer-stopwatch-color');
       const savedWorldClockColor = localStorage.getItem('timer-worldclock-color');
+      const savedWorldClockSmallCardColor = localStorage.getItem('timer-worldclock-smallcard-color');
       const savedColor = localStorage.getItem('timer-color'); // 旧版本兼容
       
       // 如果没有保存过颜色，根据主题设置默认颜色
@@ -483,6 +500,11 @@ export default function HomePage() {
       if (!savedWorldClockColor && !savedColor) {
         const defaultColor = theme === 'dark' ? 'white' : 'black';
         setWorldClockColor(defaultColor);
+      }
+      
+      if (!savedWorldClockSmallCardColor && !savedWorldClockColor && !savedColor) {
+        const defaultColor = theme === 'dark' ? 'white' : 'black';
+        setWorldClockSmallCardColor(defaultColor);
       }
     }
   }, [theme]);
@@ -504,6 +526,10 @@ export default function HomePage() {
         (theme === 'light' && worldClockColor === 'white') || 
         (theme === 'dark' && worldClockColor === 'black');
       
+      const isWorldClockSmallCardColorDisabled = 
+        (theme === 'light' && worldClockSmallCardColor === 'white') || 
+        (theme === 'dark' && worldClockSmallCardColor === 'black');
+      
       if (isTimerColorDisabled) {
         setTimerColor(theme === 'light' ? 'black' : 'white');
       }
@@ -515,8 +541,12 @@ export default function HomePage() {
       if (isWorldClockColorDisabled) {
         setWorldClockColor(theme === 'light' ? 'black' : 'white');
       }
+      
+      if (isWorldClockSmallCardColorDisabled) {
+        setWorldClockSmallCardColor(theme === 'light' ? 'black' : 'white');
+      }
     }
-  }, [theme, timerColor, stopwatchColor, worldClockColor]);
+  }, [theme, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor]);
 
   // 保存上次使用的时长
   useEffect(() => {
@@ -2256,22 +2286,26 @@ export default function HomePage() {
                         <div className={`border-t mb-8 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                         
                         {/* 大时间显示 */}
-                        <div 
-                          className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
-                          style={{
-                            fontFamily: '"Rajdhani", sans-serif',
-                            fontWeight: '700',
-                            letterSpacing: '0.02em',
-                          }}
-                        >
-                          {(() => {
-                            const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
-                            const hours = String(userTime.getHours()).padStart(2, '0');
-                            const minutes = String(userTime.getMinutes()).padStart(2, '0');
-                            const seconds = String(userTime.getSeconds()).padStart(2, '0');
-                            
-                            const worldClockThemeColor = THEME_COLORS.find(c => c.id === worldClockColor) || THEME_COLORS[0];
+                        {(() => {
+                          const now = new Date();
+                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                          const hours = String(userTime.getHours()).padStart(2, '0');
+                          const minutes = String(userTime.getMinutes()).padStart(2, '0');
+                          const seconds = String(userTime.getSeconds()).padStart(2, '0');
+                          
+                          const worldClockThemeColor = THEME_COLORS.find(c => c.id === worldClockColor) || THEME_COLORS[0];
+                          
+                          return (
+                            <div 
+                              className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
+                              style={{
+                                fontFamily: '"Rajdhani", sans-serif',
+                                fontWeight: '700',
+                                letterSpacing: '0.02em',
+                                color: worldClockThemeColor.gradient ? undefined : worldClockThemeColor.color,
+                              }}
+                            >
+                              {(() => {
                             
                             // 定义数字样式函数
                             const getNumberStyle = () => {
@@ -2312,7 +2346,9 @@ export default function HomePage() {
                               </span>
                             );
                           })()}
-                        </div>
+                            </div>
+                          );
+                        })()}
                         
                         {/* 日期显示 */}
                         <div className={`flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 text-xl sm:text-2xl md:text-3xl font-medium mb-8 ${
@@ -2472,8 +2508,8 @@ export default function HomePage() {
                             fontFamily: '"Rajdhani", sans-serif',
                             letterSpacing: '0.05em',
                             color: (() => {
-                              const worldClockThemeColor = THEME_COLORS.find(c => c.id === worldClockColor) || THEME_COLORS[0];
-                              return worldClockThemeColor.gradient ? worldClockThemeColor.color : worldClockThemeColor.color;
+                              const smallCardThemeColor = THEME_COLORS.find(c => c.id === worldClockSmallCardColor) || THEME_COLORS[0];
+                              return smallCardThemeColor.gradient ? smallCardThemeColor.color : smallCardThemeColor.color;
                             })(),
                           }}
                         >
@@ -2589,8 +2625,8 @@ export default function HomePage() {
                             fontFamily: '"Rajdhani", sans-serif',
                             letterSpacing: '0.05em',
                             color: (() => {
-                              const worldClockThemeColor = THEME_COLORS.find(c => c.id === worldClockColor) || THEME_COLORS[0];
-                              return worldClockThemeColor.gradient ? worldClockThemeColor.color : worldClockThemeColor.color;
+                              const smallCardThemeColor = THEME_COLORS.find(c => c.id === worldClockSmallCardColor) || THEME_COLORS[0];
+                              return smallCardThemeColor.gradient ? smallCardThemeColor.color : smallCardThemeColor.color;
                             })(),
                           }}
                         >
@@ -3212,17 +3248,27 @@ export default function HomePage() {
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
+                  {mode === 'worldclock' && worldClockColor !== worldClockSmallCardColor && (
+                    <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
+                      (大卡片与小卡片颜色不同)
+                    </span>
+                  )}
                 </label>
                 <div className="grid grid-cols-7 gap-2">
                   {THEME_COLORS.map((color) => {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelected = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    
                     return (
                       <button
                         key={color.id}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           if (!isDisabled) {
                             // 根据当前模式设置对应的颜色
                             if (mode === 'timer') {
@@ -3230,15 +3276,17 @@ export default function HomePage() {
                             } else if (mode === 'stopwatch') {
                               setStopwatchColor(color.id);
                             } else if (mode === 'worldclock') {
-                              setWorldClockColor(color.id);
+                              // 世界时间模式下，弹出确认对话框
+                              setPendingWorldClockColor(color.id);
+                              setShowWorldClockColorConfirm(true);
                             }
                           }
                         }}
                         disabled={isDisabled}
-                        className={`w-10 h-10 rounded-lg transition-all ${
+                        className={`w-10 h-10 rounded-lg transition-all relative ${
                           isDisabled 
                             ? 'opacity-30 cursor-not-allowed' 
-                            : isSelected 
+                            : isSelectedPrimary 
                             ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
                             : 'hover:scale-105'
                         } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
@@ -3246,7 +3294,14 @@ export default function HomePage() {
                           background: color.gradient || color.color,
                         }}
                         title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
-                      />
+                      >
+                        {/* 小卡片颜色指示器 */}
+                        {isSelectedSecondary && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
+                            title="小卡片颜色"
+                          />
+                        )}
+                      </button>
                     );
                   })}
                 </div>
@@ -3904,6 +3959,118 @@ export default function HomePage() {
                 >
                   知道了
                 </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 世界时间颜色修改确认对话框 */}
+      <AnimatePresence>
+        {showWorldClockColorConfirm && pendingWorldClockColor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+            onClick={() => {
+              setShowWorldClockColorConfirm(false);
+              setPendingWorldClockColor(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                确认修改颜色
+              </h3>
+              
+              {/* 颜色预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  预览新颜色：
+                </p>
+                <div 
+                  className="text-5xl font-bold text-center mb-2"
+                  style={{
+                    fontFamily: '"Rajdhani", sans-serif',
+                    color: (() => {
+                      const previewColor = THEME_COLORS.find(c => c.id === pendingWorldClockColor);
+                      return previewColor?.gradient ? previewColor.color : previewColor?.color;
+                    })(),
+                  }}
+                >
+                  {currentDate.getHours().toString().padStart(2, '0')}:{currentDate.getMinutes().toString().padStart(2, '0')}:{currentDate.getSeconds().toString().padStart(2, '0')}
+                </div>
+                <p className={`text-xs text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
+                  {THEME_COLORS.find(c => c.id === pendingWorldClockColor)?.key && t(`colors.${THEME_COLORS.find(c => c.id === pendingWorldClockColor)?.key}`)}
+                </p>
+              </div>
+              
+              <p className={`text-base mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                是否同时修改小卡片的颜色？
+              </p>
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-3">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 同时修改大卡片和小卡片
+                      if (pendingWorldClockColor) {
+                        setWorldClockColor(pendingWorldClockColor);
+                        setWorldClockSmallCardColor(pendingWorldClockColor);
+                      }
+                      setShowWorldClockColorConfirm(false);
+                      setPendingWorldClockColor(null);
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    是，一起修改
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 只修改大卡片
+                      if (pendingWorldClockColor) {
+                        setWorldClockColor(pendingWorldClockColor);
+                      }
+                      setShowWorldClockColorConfirm(false);
+                      setPendingWorldClockColor(null);
+                    }}
+                    className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                    }`}
+                  >
+                    否，只改大卡片
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowWorldClockColorConfirm(false);
+                    setPendingWorldClockColor(null);
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  取消
+                </button>
               </div>
             </motion.div>
           </motion.div>
