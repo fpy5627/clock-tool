@@ -78,3 +78,21 @@ pre {
   hyphens: auto !important;
   white-space: pre-wrap !important;
 }
+
+/* 设置面板滚动条样式 */
+.settings-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+}
+
+.settings-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}

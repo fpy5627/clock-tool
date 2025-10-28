@@ -162,6 +162,11 @@ export default function HomePage() {
   const [showWorldClockColorConfirm, setShowWorldClockColorConfirm] = useState(false);
   const [pendingWorldClockColor, setPendingWorldClockColor] = useState<string | null>(null);
   
+  // 背景自定义
+  const [backgroundType, setBackgroundType] = useState<'default' | 'color' | 'image'>('default');
+  const [backgroundColor, setBackgroundColor] = useState('#1e293b'); // 默认深色背景
+  const [backgroundImage, setBackgroundImage] = useState<string>('');
+  
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
   const [showTemperature, setShowTemperature] = useState(true);
@@ -236,6 +241,46 @@ export default function HomePage() {
   const alarmRingStartTimeRef = useRef<number | null>(null);
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
+  const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
+
+  // 判断颜色是否为浅色的函数
+  const isLightColor = (color: string): boolean => {
+    // 将十六进制颜色转换为RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 使用感知亮度公式
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155; // 大于155认为是浅色
+  };
+
+  // 监听背景颜色变化，自动切换主题
+  useEffect(() => {
+    // 只有在背景颜色真正改变且是颜色模式时才处理
+    if (backgroundType === 'color' && backgroundColor && backgroundColor !== lastBackgroundColorRef.current) {
+      lastBackgroundColorRef.current = backgroundColor;
+      
+      const isLight = isLightColor(backgroundColor);
+      
+      // 浅色背景：使用白天模式（light theme）
+      // 深色背景：使用夜晚模式（dark theme）
+      const targetTheme = isLight ? 'light' : 'dark';
+      
+      // 使用 setTimeout 延迟切换，避免状态更新冲突
+      const timer = setTimeout(() => {
+        setTheme(targetTheme);
+      }, 0);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // 当切换回默认背景时，重置追踪
+    if (backgroundType === 'default') {
+      lastBackgroundColorRef.current = '';
+    }
+  }, [backgroundColor, backgroundType, setTheme]);
 
   useEffect(() => {
     if (isRunning) {
@@ -436,6 +481,14 @@ export default function HomePage() {
       }
       // 如果没有保存的颜色，使用默认值（在theme ready后会被初始化）
       
+      // 加载背景设置
+      const savedBackgroundType = localStorage.getItem('timer-background-type');
+      const savedBackgroundColor = localStorage.getItem('timer-background-color');
+      const savedBackgroundImage = localStorage.getItem('timer-background-image');
+      if (savedBackgroundType) setBackgroundType(savedBackgroundType as 'default' | 'color' | 'image');
+      if (savedBackgroundColor) setBackgroundColor(savedBackgroundColor);
+      if (savedBackgroundImage) setBackgroundImage(savedBackgroundImage);
+      
       if (savedNotification) setNotificationEnabled(savedNotification === 'true');
       if (savedProgress !== null) setProgressVisible(savedProgress === 'true');
       if (savedShowWeatherIcon !== null) setShowWeatherIcon(savedShowWeatherIcon === 'true');
@@ -466,6 +519,9 @@ export default function HomePage() {
       localStorage.setItem('timer-stopwatch-color', stopwatchColor);
       localStorage.setItem('timer-worldclock-color', worldClockColor);
       localStorage.setItem('timer-worldclock-smallcard-color', worldClockSmallCardColor);
+      localStorage.setItem('timer-background-type', backgroundType);
+      localStorage.setItem('timer-background-color', backgroundColor);
+      localStorage.setItem('timer-background-image', backgroundImage);
       localStorage.setItem('timer-notification', String(notificationEnabled));
       localStorage.setItem('timer-progress', String(progressVisible));
       localStorage.setItem('timer-show-weather-icon', String(showWeatherIcon));
@@ -473,7 +529,7 @@ export default function HomePage() {
       localStorage.setItem('timer-show-date', String(showDate));
       localStorage.setItem('timer-show-weekday', String(showWeekday));
     }
-  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
+  }, [selectedSound, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor, backgroundType, backgroundColor, backgroundImage, notificationEnabled, progressVisible, showWeatherIcon, showTemperature, showDate, showWeekday]);
 
   // 初始化颜色：第一次打开时根据主题自动选择
   useEffect(() => {
@@ -1279,8 +1335,17 @@ export default function HomePage() {
 
   return (
     <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${theme === 'dark' ? 'bg-black' : 'bg-gray-100'} flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300`}
-      style={{ cursor: !showControls ? 'none' : 'default' }}
+      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${
+        backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
+      } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300`}
+      style={{ 
+        cursor: !showControls ? 'none' : 'default',
+        backgroundColor: backgroundType === 'color' ? backgroundColor : undefined,
+        backgroundImage: backgroundType === 'image' && backgroundImage ? `url(${backgroundImage})` : undefined,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
     >
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
@@ -3231,10 +3296,11 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-4 top-20 z-40 w-80"
+            className="fixed right-4 top-20 bottom-4 z-40 w-80 flex flex-col"
           >
-            <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl p-6`}>
-              <div className="flex justify-between items-center mb-6">
+            <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl flex flex-col max-h-full overflow-hidden`}>
+              {/* 固定头部 */}
+              <div className="flex-shrink-0 flex justify-between items-center p-6 pb-4 border-b" style={{ borderColor: theme === 'dark' ? '#334155' : '#e5e7eb' }}>
                 <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('settings_panel.title')}</h3>
                 <button
                   onClick={() => setShowSettingsPanel(false)}
@@ -3244,6 +3310,11 @@ export default function HomePage() {
                 </button>
               </div>
 
+              {/* 可滚动内容区域 */}
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-4 settings-scrollbar" style={{
+                scrollbarWidth: 'thin',
+                scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#d1d5db #f1f5f9'
+              }}>
               {/* 主题颜色选择 */}
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
@@ -3254,8 +3325,11 @@ export default function HomePage() {
                     </span>
                   )}
                 </label>
-                <div className="grid grid-cols-7 gap-2">
-                  {THEME_COLORS.map((color) => {
+                
+                {/* 深色系 */}
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {THEME_COLORS.filter(c => ['blue', 'purple', 'green', 'red', 'magenta', 'indigo', 'teal', 'black'].includes(c.id)).map((color) => {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
@@ -3283,13 +3357,121 @@ export default function HomePage() {
                           }
                         }}
                         disabled={isDisabled}
-                        className={`w-10 h-10 rounded-lg transition-all relative ${
+                        className={`w-10 h-10 rounded-sm transition-all relative ${
                           isDisabled 
                             ? 'opacity-30 cursor-not-allowed' 
                             : isSelectedPrimary 
                             ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
                             : 'hover:scale-105'
                         } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
+                        style={{ 
+                          background: color.gradient || color.color,
+                        }}
+                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                      >
+                        {/* 小卡片颜色指示器 */}
+                        {isSelectedSecondary && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
+                            title="小卡片颜色"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* 浅色系 */}
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>浅色系</p>
+                <div className="grid grid-cols-7 gap-2 mb-4">
+                  {THEME_COLORS.filter(c => ['cyan', 'orange', 'pink', 'yellow', 'lime', 'white'].includes(c.id)).map((color) => {
+                    // 白天模式禁用白色，夜晚模式禁用黑色
+                    const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
+                    // 根据当前模式判断是否选中
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    
+                    return (
+                      <button
+                        key={color.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!isDisabled) {
+                            // 根据当前模式设置对应的颜色
+                            if (mode === 'timer') {
+                              setTimerColor(color.id);
+                            } else if (mode === 'stopwatch') {
+                              setStopwatchColor(color.id);
+                            } else if (mode === 'worldclock') {
+                              // 世界时间模式下，弹出确认对话框
+                              setPendingWorldClockColor(color.id);
+                              setShowWorldClockColorConfirm(true);
+                            }
+                          }
+                        }}
+                        disabled={isDisabled}
+                        className={`w-10 h-10 rounded-sm transition-all relative ${
+                          isDisabled 
+                            ? 'opacity-30 cursor-not-allowed' 
+                            : isSelectedPrimary 
+                            ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
+                            : 'hover:scale-105'
+                        } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
+                        style={{ 
+                          background: color.gradient || color.color,
+                        }}
+                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                      >
+                        {/* 小卡片颜色指示器 */}
+                        {isSelectedSecondary && (
+                          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
+                            title="小卡片颜色"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                
+                {/* 渐变色系 */}
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>渐变色系</p>
+                <div className="grid grid-cols-6 gap-2">
+                  {THEME_COLORS.filter(c => ['sunset', 'ocean', 'forest', 'aurora', 'fire', 'candy'].includes(c.id)).map((color) => {
+                    // 白天模式禁用白色，夜晚模式禁用黑色
+                    const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
+                    // 根据当前模式判断是否选中
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    
+                    return (
+                      <button
+                        key={color.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!isDisabled) {
+                            // 根据当前模式设置对应的颜色
+                            if (mode === 'timer') {
+                              setTimerColor(color.id);
+                            } else if (mode === 'stopwatch') {
+                              setStopwatchColor(color.id);
+                            } else if (mode === 'worldclock') {
+                              // 世界时间模式下，弹出确认对话框
+                              setPendingWorldClockColor(color.id);
+                              setShowWorldClockColorConfirm(true);
+                            }
+                          }
+                        }}
+                        disabled={isDisabled}
+                        className={`w-10 h-10 rounded-sm transition-all relative ${
+                          isDisabled 
+                            ? 'opacity-30 cursor-not-allowed' 
+                            : isSelectedPrimary 
+                            ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
+                            : 'hover:scale-105'
+                        }`}
                         style={{ 
                           background: color.gradient || color.color,
                         }}
@@ -3347,6 +3529,171 @@ export default function HomePage() {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* 背景自定义 */}
+              <div className="mb-6">
+                <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
+                  背景自定义
+                </label>
+                
+                {/* 背景类型选择 */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setBackgroundType('default')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      backgroundType === 'default'
+                        ? theme === 'dark'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white'
+                        : theme === 'dark'
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    默认
+                  </button>
+                  <button
+                    onClick={() => setBackgroundType('color')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      backgroundType === 'color'
+                        ? theme === 'dark'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white'
+                        : theme === 'dark'
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    纯色
+                  </button>
+                  <button
+                    onClick={() => setBackgroundType('image')}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
+                      backgroundType === 'image'
+                        ? theme === 'dark'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-blue-500 text-white'
+                        : theme === 'dark'
+                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    图片
+                  </button>
+                </div>
+
+                {/* 背景色选择 */}
+                {backgroundType === 'color' && (
+                  <div>
+                    {/* 深色系背景 */}
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
+                    <div className="grid grid-cols-6 gap-2 mb-4">
+                      {[
+                        '#1e293b', '#0f172a', '#1e1b4b', '#1f2937', '#18181b',
+                        '#164e63', '#1e40af', '#6b21a8', '#831843', '#991b1b',
+                        '#713f12', '#065f46', '#134e4a', '#0c4a6e', '#581c87'
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setBackgroundColor(color)}
+                          className={`aspect-square h-10 rounded-sm transition-all ${
+                            backgroundColor === color ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* 浅色系背景 */}
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>浅色系</p>
+                    <div className="grid grid-cols-6 gap-2 mb-4">
+                      {[
+                        '#f8fafc', '#f1f5f9', '#e0e7ff', '#dbeafe', '#e0f2fe',
+                        '#cffafe', '#d1fae5', '#dcfce7', '#fef9c3', '#fef3c7',
+                        '#ffe4e6', '#fce7f3', '#f3e8ff', '#fae8ff', '#fdf4ff'
+                      ].map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setBackgroundColor(color)}
+                          className={`aspect-square h-10 rounded-sm transition-all border ${
+                            backgroundColor === color 
+                              ? 'ring-2 ring-offset-2 ring-blue-500 scale-110 border-blue-300' 
+                              : 'border-gray-300 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                    
+                    {/* 自定义颜色输入 */}
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>自定义颜色</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className="w-12 h-10 rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={backgroundColor}
+                        onChange={(e) => setBackgroundColor(e.target.value)}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm ${
+                          theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700 text-white'
+                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                        } border`}
+                        placeholder="#1e293b"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 图片上传 */}
+                {backgroundType === 'image' && (
+                  <div>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>上传背景图片</p>
+                    <div className="space-y-3">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setBackgroundImage(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className={`w-full text-sm ${
+                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                        }`}
+                      />
+                      {backgroundImage && (
+                        <div className="relative">
+                          <img
+                            src={backgroundImage}
+                            alt="Background preview"
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            onClick={() => setBackgroundImage('')}
+                            className={`absolute top-2 right-2 p-1.5 rounded-full ${
+                              theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
+                            } hover:scale-110 transition-all`}
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 显示控制开关组 */}
@@ -3445,6 +3792,7 @@ export default function HomePage() {
                     />
                   </button>
                 </div>
+              </div>
               </div>
             </div>
           </motion.div>
