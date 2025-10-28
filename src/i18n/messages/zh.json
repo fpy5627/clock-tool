@@ -161,7 +161,13 @@
       "lime": "青柠绿",
       "teal": "蓝绿色",
       "white": "白色",
-      "black": "黑色"
+      "black": "黑色",
+      "sunset": "日落渐变",
+      "ocean": "海洋渐变",
+      "forest": "森林渐变",
+      "aurora": "极光渐变",
+      "fire": "火焰渐变",
+      "candy": "糖果渐变"
     },
     "cities": {
       "beijing": "北京",

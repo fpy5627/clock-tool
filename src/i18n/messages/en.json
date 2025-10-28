@@ -161,7 +161,13 @@
       "lime": "Lime",
       "teal": "Teal",
       "white": "White",
-      "black": "Black"
+      "black": "Black",
+      "sunset": "Sunset",
+      "ocean": "Ocean",
+      "forest": "Forest",
+      "aurora": "Aurora",
+      "fire": "Fire",
+      "candy": "Candy"
     },
     "cities": {
       "beijing": "Beijing",
