@@ -180,6 +180,12 @@ export default function HomePage() {
   const [pendingBackgroundColor, setPendingBackgroundColor] = useState<string>('');
   const [applyColorToAllPages, setApplyColorToAllPages] = useState(true); // 是否应用到所有功能页面
   
+  // 上传图片历史记录
+  const [uploadedImageHistory, setUploadedImageHistory] = useState<string[]>([]);
+  
+  // 防止状态检测逻辑干扰的标志
+  const [isSettingFromHistory, setIsSettingFromHistory] = useState(false);
+  
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
   const [showTemperature, setShowTemperature] = useState(true);
@@ -256,7 +262,27 @@ export default function HomePage() {
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
 
-  // 判断颜色是否为浅色的函数
+  // 添加上传图片到历史记录
+  const addToImageHistory = (imageDataUrl: string) => {
+    setUploadedImageHistory(prev => {
+      // 如果图片已存在，先移除
+      const filtered = prev.filter(img => img !== imageDataUrl);
+      // 添加到开头，限制最多保存10张图片
+      const newHistory = [imageDataUrl, ...filtered].slice(0, 10);
+      // 保存到localStorage
+      localStorage.setItem('timer-uploaded-image-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
+
+  // 从历史记录中移除图片
+  const removeFromImageHistory = (imageDataUrl: string) => {
+    setUploadedImageHistory(prev => {
+      const newHistory = prev.filter(img => img !== imageDataUrl);
+      localStorage.setItem('timer-uploaded-image-history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+  };
   const isLightColor = (color: string): boolean => {
     // 将十六进制颜色转换为RGB
     const hex = color.replace('#', '');
@@ -636,6 +662,19 @@ export default function HomePage() {
       if (savedShowTemperature !== null) setShowTemperature(savedShowTemperature === 'true');
       if (savedShowDate !== null) setShowDate(savedShowDate === 'true');
       if (savedShowWeekday !== null) setShowWeekday(savedShowWeekday === 'true');
+      
+      // 加载上传图片历史记录
+      const savedImageHistory = localStorage.getItem('timer-uploaded-image-history');
+      if (savedImageHistory) {
+        try {
+          const history = JSON.parse(savedImageHistory);
+          setUploadedImageHistory(Array.isArray(history) ? history : []);
+        } catch (e) {
+          console.error('Failed to parse saved image history');
+          setUploadedImageHistory([]);
+        }
+      }
+      
       if (savedAlarms) {
         try {
           setAlarms(JSON.parse(savedAlarms));
@@ -696,17 +735,19 @@ export default function HomePage() {
 
   // 当用户通过其他方式设置背景时，重置为应用到所有页面
   useEffect(() => {
+    // 只有在背景类型不是图片模式或者没有背景图片时才重置applyToAllPages
+    // 这样可以避免在历史图片点击时被自动重置
     if (backgroundType !== 'image' || backgroundImage === '') {
       setApplyToAllPages(true);
     }
     if (backgroundType !== 'color') {
       setApplyColorToAllPages(true);
     }
-  }, [backgroundType, backgroundImage]);
+  }, [backgroundType]);
 
   // 检测当前背景的应用状态
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !isSettingFromHistory) {
       // 检测纯色背景的应用状态
       if (backgroundType === 'color' && backgroundColor) {
         const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
@@ -726,14 +767,21 @@ export default function HomePage() {
         const generalBackgroundImage = localStorage.getItem('timer-background-image');
         
         // 如果当前模式有专用背景且与当前背景相同，说明是仅应用到当前页面
-        if (currentModeBackgroundImage === backgroundImage && currentModeBackgroundImage !== generalBackgroundImage) {
+        // 同时确保通用背景设置不存在或与当前背景不同
+        if (currentModeBackgroundImage === backgroundImage && 
+            (generalBackgroundImage === null || generalBackgroundImage !== backgroundImage)) {
           setApplyToAllPages(false);
         } else {
           setApplyToAllPages(true);
         }
       }
     }
-  }, [mode, backgroundType, backgroundColor, backgroundImage]);
+    
+    // 重置标志
+    if (isSettingFromHistory) {
+      setIsSettingFromHistory(false);
+    }
+  }, [mode, backgroundType, backgroundColor, backgroundImage, isSettingFromHistory]);
 
   // 当模式切换时，重新加载对应功能页面的背景颜色和图片
   useEffect(() => {
@@ -4052,10 +4100,23 @@ export default function HomePage() {
                         </p>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setApplyToAllPages(true);
                               // 立即保存到localStorage
                               localStorage.setItem('timer-background-image', backgroundImage);
+                              
+                              // 分析图片亮度并自动设置主题
+                              const isLightImage = await analyzeImageBrightness(backgroundImage);
+                              setTimeout(() => {
+                                if (isLightImage) {
+                                  // 浅色图片：设置为白天模式
+                                  if (theme !== 'light') setTheme('light');
+                                } else {
+                                  // 深色图片：设置为夜间模式
+                                  if (theme !== 'dark') setTheme('dark');
+                                }
+                              }, 0);
+                              
                               toast.success('当前背景已应用到所有功能页面');
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
@@ -4131,6 +4192,134 @@ export default function HomePage() {
                       </div>
                     )}
                     <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>上传背景图片</p>
+                    
+                    {/* 上传图片历史记录 */}
+                    {uploadedImageHistory.length > 0 && (
+                      <div className="mb-4">
+                        <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                          最近上传的图片
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {uploadedImageHistory.map((imageUrl, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={imageUrl}
+                                alt={`历史图片 ${index + 1}`}
+                                className="w-full h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                onClick={() => {
+                                  setPendingBackgroundImage(imageUrl);
+                                  setShowBackgroundConfirm(true);
+                                }}
+                                title="点击使用此图片"
+                              />
+                              {/* 快速应用按钮 */}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                                <div className="flex flex-col gap-1">
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      // 应用到所有页面
+                                      setApplyToAllPages(true);
+                                      setBackgroundImage(imageUrl);
+                                      
+                                      // 保存到localStorage
+                                      localStorage.setItem('timer-background-image', imageUrl);
+                                      
+                                      // 分析图片亮度并自动设置主题
+                                      const isLightImage = await analyzeImageBrightness(imageUrl);
+                                      setTimeout(() => {
+                                        if (isLightImage) {
+                                          // 浅色图片：设置为白天模式
+                                          if (theme !== 'light') setTheme('light');
+                                        } else {
+                                          // 深色图片：设置为夜间模式
+                                          if (theme !== 'dark') setTheme('dark');
+                                        }
+                                      }, 0);
+                                      
+                                      toast.success('历史图片已应用到所有功能页面');
+                                    }}
+                                    className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
+                                    title="应用到所有页面"
+                                  >
+                                    所有页面
+                                  </button>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      
+                                      // 设置标志，防止状态检测逻辑干扰
+                                      setIsSettingFromHistory(true);
+                                      
+                                      // 先清除其他功能页面的背景设置
+                                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                                      allModes.forEach(modeKey => {
+                                        if (modeKey !== mode) {
+                                          localStorage.removeItem(`timer-background-image-${modeKey}`);
+                                        }
+                                      });
+                                      
+                                      // 清除通用背景设置
+                                      localStorage.removeItem('timer-background-image');
+                                      
+                                      // 保存到当前模式的localStorage
+                                      localStorage.setItem(`timer-background-image-${mode}`, imageUrl);
+                                      
+                                      // 设置背景图片和状态（确保状态设置在使用图片之前）
+                                      setBackgroundImage(imageUrl);
+                                      setApplyToAllPages(false);
+                                      
+                                      // 根据图片亮度设置主题和其他页面的默认背景
+                                      const isLightImage = await analyzeImageBrightness(imageUrl);
+                                      setTimeout(() => {
+                                        if (isLightImage) {
+                                          // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
+                                          if (theme !== 'light') setTheme('light');
+                                          // 为其他页面设置浅色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                            }
+                                          });
+                                        } else {
+                                          // 深色图片：设置为夜间模式，其他页面使用深色默认背景
+                                          if (theme !== 'dark') setTheme('dark');
+                                          // 为其他页面设置深色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                            }
+                                          });
+                                        }
+                                      }, 0);
+                                      
+                                      const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                                      const themeText = isLightImage ? '白天模式' : '夜间模式';
+                                      toast.success(`历史图片已应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                                    }}
+                                    className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
+                                    title="仅应用到当前页面"
+                                  >
+                                    当前页面
+                                  </button>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFromImageHistory(imageUrl);
+                                }}
+                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                title="删除此图片"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="space-y-3">
                       {!backgroundImage ? (
                         <div 
@@ -4180,6 +4369,9 @@ export default function HomePage() {
                                 try {
                                   // 压缩和缩放图片
                                   const compressedImageUrl = await compressAndResizeImage(file);
+                                  
+                                  // 添加到历史记录
+                                  addToImageHistory(compressedImageUrl);
                                   
                                   // 保存待确认的图片并显示确认对话框
                                   setPendingBackgroundImage(compressedImageUrl);
@@ -4317,6 +4509,9 @@ export default function HomePage() {
                                 try {
                                   // 压缩和缩放图片
                                   const compressedImageUrl = await compressAndResizeImage(file);
+                                  
+                                  // 添加到历史记录
+                                  addToImageHistory(compressedImageUrl);
                                   
                                   // 保存待确认的图片并显示确认对话框
                                   setPendingBackgroundImage(compressedImageUrl);
@@ -5145,6 +5340,9 @@ export default function HomePage() {
                     console.log('用户选择了"应用到所有页面"');
                     setApplyToAllPages(true);
                     setBackgroundImage(pendingBackgroundImage);
+                    
+                    // 保存到localStorage
+                    localStorage.setItem('timer-background-image', pendingBackgroundImage);
                     
                     // 分析图片亮度并自动设置主题
                     const isLight = await analyzeImageBrightness(pendingBackgroundImage);
