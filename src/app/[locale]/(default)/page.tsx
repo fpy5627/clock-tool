@@ -3908,18 +3908,33 @@ export default function HomePage() {
                               // 清除通用背景设置
                               localStorage.removeItem('timer-background-color');
                               
-                              // 根据背景类型设置主题
+                              // 根据背景类型设置主题和其他页面的默认背景
                               const isLightBackground = isLightColor(backgroundColor);
                               setTimeout(() => {
                                 if (isLightBackground) {
+                                  // 浅色背景：设置为白天模式，其他页面使用浅色默认背景
                                   if (theme !== 'light') setTheme('light');
+                                  // 为其他页面设置浅色默认背景
+                                  allModes.forEach(modeKey => {
+                                    if (modeKey !== mode) {
+                                      localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                    }
+                                  });
                                 } else {
+                                  // 深色背景：设置为夜间模式，其他页面使用深色默认背景
                                   if (theme !== 'dark') setTheme('dark');
+                                  // 为其他页面设置深色默认背景
+                                  allModes.forEach(modeKey => {
+                                    if (modeKey !== mode) {
+                                      localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                    }
+                                  });
                                 }
                               }, 0);
                               
                               const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景`);
+                              const themeText = isLightBackground ? '白天模式' : '夜间模式';
+                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyColorToAllPages 
@@ -4072,18 +4087,33 @@ export default function HomePage() {
                               // 清除通用背景设置
                               localStorage.removeItem('timer-background-image');
                               
-                              // 根据图片亮度设置主题
+                              // 根据图片亮度设置主题和其他页面的默认背景
                               const isLightImage = await analyzeImageBrightness(backgroundImage);
                               setTimeout(() => {
                                 if (isLightImage) {
+                                  // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
                                   if (theme !== 'light') setTheme('light');
+                                  // 为其他页面设置浅色默认背景
+                                  allModes.forEach(modeKey => {
+                                    if (modeKey !== mode) {
+                                      localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                    }
+                                  });
                                 } else {
+                                  // 深色图片：设置为夜间模式，其他页面使用深色默认背景
                                   if (theme !== 'dark') setTheme('dark');
+                                  // 为其他页面设置深色默认背景
+                                  allModes.forEach(modeKey => {
+                                    if (modeKey !== mode) {
+                                      localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                    }
+                                  });
                                 }
                               }, 0);
                               
                               const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景`);
+                              const themeText = isLightImage ? '白天模式' : '夜间模式';
+                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyToAllPages 
@@ -5145,13 +5175,38 @@ export default function HomePage() {
                     setApplyToAllPages(false);
                     setBackgroundImage(pendingBackgroundImage);
                     
-                    // 分析图片亮度并自动设置主题
+                    // 清除其他功能页面的背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      if (modeKey !== mode) {
+                        localStorage.removeItem(`timer-background-image-${modeKey}`);
+                      }
+                    });
+                    
+                    // 清除通用背景设置
+                    localStorage.removeItem('timer-background-image');
+                    
+                    // 分析图片亮度并自动设置主题和其他页面的默认背景
                     const isLight = await analyzeImageBrightness(pendingBackgroundImage);
                     setTimeout(() => {
                       if (isLight) {
+                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
                         if (theme !== 'light') setTheme('light');
+                        // 为其他页面设置浅色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                          }
+                        });
                       } else {
+                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
                         if (theme !== 'dark') setTheme('dark');
+                        // 为其他页面设置深色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                          }
+                        });
                       }
                     }, 0);
                     
@@ -5296,13 +5351,38 @@ export default function HomePage() {
                     setApplyColorToAllPages(false);
                     setBackgroundColor(pendingBackgroundColor);
                     
-                    // 分析颜色亮度并自动设置主题
+                    // 清除其他功能页面的背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      if (modeKey !== mode) {
+                        localStorage.removeItem(`timer-background-color-${modeKey}`);
+                      }
+                    });
+                    
+                    // 清除通用背景设置
+                    localStorage.removeItem('timer-background-color');
+                    
+                    // 分析颜色亮度并自动设置主题和其他页面的默认背景
                     const isLight = isLightColor(pendingBackgroundColor);
                     setTimeout(() => {
                       if (isLight) {
+                        // 浅色背景：设置为白天模式，其他页面使用浅色默认背景
                         if (theme !== 'light') setTheme('light');
+                        // 为其他页面设置浅色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                          }
+                        });
                       } else {
+                        // 深色背景：设置为夜间模式，其他页面使用深色默认背景
                         if (theme !== 'dark') setTheme('dark');
+                        // 为其他页面设置深色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                          }
+                        });
                       }
                     }, 0);
                     
