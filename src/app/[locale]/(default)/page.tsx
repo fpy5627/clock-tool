@@ -3357,13 +3357,15 @@ export default function HomePage() {
                           }
                         }}
                         disabled={isDisabled}
-                        className={`w-10 h-10 rounded-sm transition-all relative ${
+                        className={`w-10 h-10 rounded-sm transition-all relative border-2 ${
+                          theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                        } ${
                           isDisabled 
                             ? 'opacity-30 cursor-not-allowed' 
                             : isSelectedPrimary 
                             ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
                             : 'hover:scale-105'
-                        } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
+                        }`}
                         style={{ 
                           background: color.gradient || color.color,
                         }}
@@ -3411,13 +3413,15 @@ export default function HomePage() {
                           }
                         }}
                         disabled={isDisabled}
-                        className={`w-10 h-10 rounded-sm transition-all relative ${
+                        className={`w-10 h-10 rounded-sm transition-all relative border-2 ${
+                          theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                        } ${
                           isDisabled 
                             ? 'opacity-30 cursor-not-allowed' 
                             : isSelectedPrimary 
                             ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' 
                             : 'hover:scale-105'
-                        } ${color.id === 'white' ? 'border-2 border-gray-300' : ''}`}
+                        }`}
                         style={{ 
                           background: color.gradient || color.color,
                         }}
@@ -3465,7 +3469,9 @@ export default function HomePage() {
                           }
                         }}
                         disabled={isDisabled}
-                        className={`w-10 h-10 rounded-sm transition-all relative ${
+                        className={`w-10 h-10 rounded-sm transition-all relative border-2 ${
+                          theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                        } ${
                           isDisabled 
                             ? 'opacity-30 cursor-not-allowed' 
                             : isSelectedPrimary 
@@ -3597,7 +3603,9 @@ export default function HomePage() {
                         <button
                           key={color}
                           onClick={() => setBackgroundColor(color)}
-                          className={`aspect-square h-10 rounded-sm transition-all ${
+                          className={`aspect-square h-10 rounded-sm transition-all border-2 ${
+                            theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                          } ${
                             backgroundColor === color ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
                           }`}
                           style={{ backgroundColor: color }}
@@ -3617,10 +3625,10 @@ export default function HomePage() {
                         <button
                           key={color}
                           onClick={() => setBackgroundColor(color)}
-                          className={`aspect-square h-10 rounded-sm transition-all border ${
-                            backgroundColor === color 
-                              ? 'ring-2 ring-offset-2 ring-blue-500 scale-110 border-blue-300' 
-                              : 'border-gray-300 hover:scale-105'
+                          className={`aspect-square h-10 rounded-sm transition-all border-2 ${
+                            theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                          } ${
+                            backgroundColor === color ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
                           }`}
                           style={{ backgroundColor: color }}
                           title={color}
@@ -3657,38 +3665,109 @@ export default function HomePage() {
                   <div>
                     <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>上传背景图片</p>
                     <div className="space-y-3">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              setBackgroundImage(event.target?.result as string);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        className={`w-full text-sm ${
-                          theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
-                        }`}
-                      />
-                      {backgroundImage && (
+                      {!backgroundImage ? (
+                        <div 
+                          onClick={() => {
+                            const input = document.getElementById('background-image-upload') as HTMLInputElement;
+                            input?.click();
+                          }}
+                          className={`relative w-full border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all ${
+                            theme === 'dark' 
+                              ? 'border-slate-600 hover:border-slate-500 bg-slate-800/30 hover:bg-slate-800/50' 
+                              : 'border-gray-300 hover:border-gray-400 bg-gray-50 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center justify-center gap-2">
+                            <div className={`p-3 rounded-full ${
+                              theme === 'dark' ? 'bg-slate-700' : 'bg-gray-200'
+                            }`}>
+                              <svg 
+                                className={`w-6 h-6 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`} 
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-center">
+                              <p className={`text-sm font-medium ${
+                                theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                              }`}>
+                                点击选择图片
+                              </p>
+                              <p className={`text-xs mt-1 ${
+                                theme === 'dark' ? 'text-slate-500' : 'text-gray-500'
+                              }`}>
+                                支持 JPG、PNG、GIF 格式
+                              </p>
+                            </div>
+                          </div>
+                          <input
+                            id="background-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  setBackgroundImage(event.target?.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </div>
+                      ) : (
                         <div className="relative">
                           <img
                             src={backgroundImage}
                             alt="Background preview"
-                            className="w-full h-24 object-cover rounded-lg"
+                            className="w-full h-32 object-cover rounded-lg"
                           />
-                          <button
-                            onClick={() => setBackgroundImage('')}
-                            className={`absolute top-2 right-2 p-1.5 rounded-full ${
-                              theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
-                            } hover:scale-110 transition-all`}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                          <div className="absolute top-2 right-2 flex gap-2">
+                            <button
+                              onClick={() => {
+                                const input = document.getElementById('background-image-upload') as HTMLInputElement;
+                                input?.click();
+                              }}
+                              className={`p-1.5 rounded-full ${
+                                theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
+                              } hover:scale-110 transition-all`}
+                              title="更换图片"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => setBackgroundImage('')}
+                              className={`p-1.5 rounded-full ${
+                                theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
+                              } hover:scale-110 transition-all`}
+                              title="删除图片"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <input
+                            id="background-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  setBackgroundImage(event.target?.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                            className="hidden"
+                          />
                         </div>
                       )}
                     </div>
