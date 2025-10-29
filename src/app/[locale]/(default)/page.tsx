@@ -381,7 +381,14 @@ export default function HomePage() {
 
         const avgBrightness = totalBrightness / (size * size);
         // 平均亮度大于128认为是浅色图片
-        resolve(avgBrightness > 128);
+        const isLight = avgBrightness > 128;
+        console.log('图片亮度分析:', {
+          avgBrightness: avgBrightness.toFixed(2),
+          threshold: 128,
+          isLight: isLight,
+          result: isLight ? '浅色图片' : '深色图片'
+        });
+        resolve(isLight);
       };
       img.onerror = () => {
         resolve(false);
@@ -745,7 +752,7 @@ export default function HomePage() {
     }
   }, [backgroundType]);
 
-  // 检测当前背景的应用状态
+  // 检测当前背景的应用状态 - 暂时禁用背景图片检测，避免干扰历史图片设置
   useEffect(() => {
     if (typeof window !== 'undefined' && !isSettingFromHistory) {
       // 检测纯色背景的应用状态
@@ -761,27 +768,15 @@ export default function HomePage() {
         }
       }
       
-      // 检测背景图片的应用状态
-      if (backgroundType === 'image' && backgroundImage) {
-        const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
-        const generalBackgroundImage = localStorage.getItem('timer-background-image');
-        
-        // 如果当前模式有专用背景且与当前背景相同，说明是仅应用到当前页面
-        // 同时确保通用背景设置不存在或与当前背景不同
-        if (currentModeBackgroundImage === backgroundImage && 
-            (generalBackgroundImage === null || generalBackgroundImage !== backgroundImage)) {
-          setApplyToAllPages(false);
-        } else {
-          setApplyToAllPages(true);
-        }
-      }
+      // 暂时禁用背景图片的状态检测，避免干扰历史图片设置
+      // 背景图片的状态完全由用户操作控制
     }
     
     // 重置标志
     if (isSettingFromHistory) {
       setIsSettingFromHistory(false);
     }
-  }, [mode, backgroundType, backgroundColor, backgroundImage, isSettingFromHistory]);
+  }, [mode, backgroundType, backgroundColor, isSettingFromHistory]);
 
   // 当模式切换时，重新加载对应功能页面的背景颜色和图片
   useEffect(() => {
@@ -1990,7 +1985,9 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     // 使用 next-themes 的 setTheme
-                    setTheme(theme === 'dark' ? 'light' : 'dark');
+                    const newTheme = theme === 'dark' ? 'light' : 'dark';
+                    console.log('手动切换主题:', theme, '->', newTheme);
+                    setTheme(newTheme);
                   }}
                   className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
@@ -4218,24 +4215,32 @@ export default function HomePage() {
                                   <button
                                     onClick={async (e) => {
                                       e.stopPropagation();
-                                      // 应用到所有页面
-                                      setApplyToAllPages(true);
-                                      setBackgroundImage(imageUrl);
                                       
-                                      // 保存到localStorage
+                                      // 完全独立的历史图片设置逻辑 - 应用到所有页面
+                                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                                      
+                                      // 1. 清除所有特定模式的背景设置
+                                      allModes.forEach(modeKey => {
+                                        localStorage.removeItem(`timer-background-image-${modeKey}`);
+                                      });
+                                      
+                                      // 2. 保存到通用localStorage
                                       localStorage.setItem('timer-background-image', imageUrl);
                                       
-                                      // 分析图片亮度并自动设置主题
+                                      // 3. 强制设置状态
+                                      setBackgroundImage(imageUrl);
+                                      setApplyToAllPages(true);
+                                      
+                                      // 4. 根据图片亮度设置主题
                                       const isLightImage = await analyzeImageBrightness(imageUrl);
-                                      setTimeout(() => {
-                                        if (isLightImage) {
-                                          // 浅色图片：设置为白天模式
-                                          if (theme !== 'light') setTheme('light');
-                                        } else {
-                                          // 深色图片：设置为夜间模式
-                                          if (theme !== 'dark') setTheme('dark');
-                                        }
-                                      }, 0);
+                                      
+                                      if (isLightImage) {
+                                        // 浅色图片：设置为白天模式
+                                        if (theme !== 'light') setTheme('light');
+                                      } else {
+                                        // 深色图片：设置为夜间模式
+                                        if (theme !== 'dark') setTheme('dark');
+                                      }
                                       
                                       toast.success('历史图片已应用到所有功能页面');
                                     }}
@@ -4248,50 +4253,54 @@ export default function HomePage() {
                                     onClick={async (e) => {
                                       e.stopPropagation();
                                       
-                                      // 设置标志，防止状态检测逻辑干扰
-                                      setIsSettingFromHistory(true);
-                                      
-                                      // 先清除其他功能页面的背景设置
+                                      // 完全独立的历史图片设置逻辑，不依赖任何状态检测
                                       const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                                      
+                                      // 1. 清除所有其他页面的背景设置
                                       allModes.forEach(modeKey => {
                                         if (modeKey !== mode) {
                                           localStorage.removeItem(`timer-background-image-${modeKey}`);
                                         }
                                       });
                                       
-                                      // 清除通用背景设置
+                                      // 2. 清除通用背景设置
                                       localStorage.removeItem('timer-background-image');
                                       
-                                      // 保存到当前模式的localStorage
+                                      // 3. 保存到当前模式的localStorage
                                       localStorage.setItem(`timer-background-image-${mode}`, imageUrl);
                                       
-                                      // 设置背景图片和状态（确保状态设置在使用图片之前）
+                                      // 4. 强制设置状态，不依赖任何检测逻辑
                                       setBackgroundImage(imageUrl);
                                       setApplyToAllPages(false);
                                       
-                                      // 根据图片亮度设置主题和其他页面的默认背景
+                                      // 5. 根据图片亮度设置主题和其他页面的默认背景
                                       const isLightImage = await analyzeImageBrightness(imageUrl);
-                                      setTimeout(() => {
-                                        if (isLightImage) {
-                                          // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
-                                          if (theme !== 'light') setTheme('light');
-                                          // 为其他页面设置浅色默认背景
-                                          allModes.forEach(modeKey => {
-                                            if (modeKey !== mode) {
-                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                                            }
-                                          });
-                                        } else {
-                                          // 深色图片：设置为夜间模式，其他页面使用深色默认背景
-                                          if (theme !== 'dark') setTheme('dark');
-                                          // 为其他页面设置深色默认背景
-                                          allModes.forEach(modeKey => {
-                                            if (modeKey !== mode) {
-                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                                            }
-                                          });
-                                        }
-                                      }, 0);
+                                      
+                                      // 添加调试信息
+                                      console.log('图片明暗度分析结果:', isLightImage ? '浅色图片' : '深色图片');
+                                      console.log('当前主题:', theme);
+                                      
+                                      if (isLightImage) {
+                                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
+                                        console.log('设置主题为白天模式');
+                                        if (theme !== 'light') setTheme('light');
+                                        // 为其他页面设置浅色默认背景
+                                        allModes.forEach(modeKey => {
+                                          if (modeKey !== mode) {
+                                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                          }
+                                        });
+                                      } else {
+                                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
+                                        console.log('设置主题为夜间模式');
+                                        if (theme !== 'dark') setTheme('dark');
+                                        // 为其他页面设置深色默认背景
+                                        allModes.forEach(modeKey => {
+                                          if (modeKey !== mode) {
+                                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                          }
+                                        });
+                                      }
                                       
                                       const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
                                       const themeText = isLightImage ? '白天模式' : '夜间模式';
