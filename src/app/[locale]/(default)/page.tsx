@@ -166,7 +166,7 @@ export default function HomePage() {
   const [backgroundType, setBackgroundType] = useState<'default' | 'color' | 'image'>('default');
   const [backgroundColor, setBackgroundColor] = useState('#1e293b'); // 默认深色背景
   const [backgroundImage, setBackgroundImage] = useState<string>('');
-  const [imageOverlayOpacity, setImageOverlayOpacity] = useState(30); // 图片遮罩不透明度（0-100，数值越大遮罩越重）
+  const [imageOverlayOpacity, setImageOverlayOpacity] = useState(40); // 图片遮罩不透明度（0-100，数值越大遮罩越重）
   const [imagePositionX, setImagePositionX] = useState(50); // 图片水平位置 (0-100)
   const [imagePositionY, setImagePositionY] = useState(50); // 图片垂直位置 (0-100)
   
@@ -185,6 +185,9 @@ export default function HomePage() {
   
   // 防止状态检测逻辑干扰的标志
   const [isSettingFromHistory, setIsSettingFromHistory] = useState(false);
+  
+  // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
+  const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -337,12 +340,12 @@ export default function HomePage() {
           resolve(compressedDataUrl);
         };
         img.onerror = () => {
-          reject(new Error('图片加载失败'));
+          reject(new Error('Image loading failed'));
         };
         img.src = e.target?.result as string;
       };
       reader.onerror = () => {
-        reject(new Error('文件读取失败'));
+        reject(new Error('File reading failed'));
       };
       reader.readAsDataURL(file);
     });
@@ -382,11 +385,11 @@ export default function HomePage() {
         const avgBrightness = totalBrightness / (size * size);
         // 平均亮度大于128认为是浅色图片
         const isLight = avgBrightness > 128;
-        console.log('图片亮度分析:', {
+        console.log('Image brightness analysis:', {
           avgBrightness: avgBrightness.toFixed(2),
           threshold: 128,
           isLight: isLight,
-          result: isLight ? '浅色图片' : '深色图片'
+          result: isLight ? 'Light image' : 'Dark image'
         });
         resolve(isLight);
       };
@@ -722,11 +725,11 @@ export default function HomePage() {
       // 根据应用范围保存背景图片
       if (applyToAllPages) {
         // 应用到所有功能页面：保存到通用key
-        console.log('保存背景图片到所有功能页面:', backgroundImage);
+        console.log('Saving background image to all pages:', backgroundImage);
         localStorage.setItem('timer-background-image', backgroundImage);
       } else {
         // 仅应用到当前功能页面：保存到特定模式的key
-        console.log(`保存背景图片到当前功能页面 (${mode}):`, backgroundImage);
+        console.log(`Saving background image to current page (${mode}):`, backgroundImage);
         localStorage.setItem(`timer-background-image-${mode}`, backgroundImage);
       }
       localStorage.setItem('timer-image-position-x', String(imagePositionX));
@@ -781,6 +784,13 @@ export default function HomePage() {
   // 当模式切换时，重新加载对应功能页面的背景颜色和图片
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // 检查用户是否手动设置了当前模式的主题
+      const userManualTheme = localStorage.getItem(`timer-manual-theme-${mode}`);
+      if (userManualTheme) {
+        console.log(`Mode switched to ${mode}, applying user manually set theme:`, userManualTheme);
+        setTheme(userManualTheme);
+      }
+      
       // 重新加载背景颜色
       if (backgroundType === 'color') {
         const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
@@ -812,7 +822,18 @@ export default function HomePage() {
         if (currentModeBackgroundImage) {
           newBackgroundImage = currentModeBackgroundImage;
         } else if (generalBackgroundImage) {
-          newBackgroundImage = generalBackgroundImage;
+          // 检查是否有其他模式使用了专用背景图片
+          const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+          const hasAnyModeSpecificBackground = allModes.some(modeKey => 
+            localStorage.getItem(`timer-background-image-${modeKey}`) !== null
+          );
+          
+          // 如果有任何模式使用了专用背景图片，则不使用通用背景图片
+          if (hasAnyModeSpecificBackground) {
+            newBackgroundImage = '';
+          } else {
+            newBackgroundImage = generalBackgroundImage;
+          }
         } else {
           // 清空背景图片，回到默认背景
           newBackgroundImage = '';
@@ -1448,9 +1469,9 @@ export default function HomePage() {
   };
 
   const toggleFullscreen = async () => {
-    // 检查是否支持全屏API
+    // Check if fullscreen API is supported
     if (!document.fullscreenEnabled && !(document as any).webkitFullscreenEnabled) {
-      // 移动端不支持全屏API时，使用模拟全屏
+      // Use simulated fullscreen when mobile doesn't support fullscreen API
       setIsFullscreen(!isFullscreen);
       return;
     }
@@ -1472,12 +1493,12 @@ export default function HomePage() {
         }
       } catch (error) {
         console.log('Fullscreen not available, using simulated fullscreen');
-        // 如果全屏API不可用，使用模拟全屏
+        // Use simulated fullscreen if fullscreen API is not available
         setIsFullscreen(!isFullscreen);
       }
     } else {
       try {
-        // 退出全屏
+        // Exit fullscreen
         if (document.exitFullscreen) {
           await document.exitFullscreen();
         } else if ((document as any).webkitExitFullscreen) {
@@ -1546,8 +1567,13 @@ export default function HomePage() {
     ];
     const weekday = weekdays[currentDate.getDay()];
     
+    // 根据语言环境选择日期格式
+    const dateStr = locale === 'zh' 
+      ? `${year}年${month}月${day}日`
+      : `${month}/${day}/${year}`;
+    
     return {
-      dateStr: `${year}年${month}月${day}日`,
+      dateStr,
       weekdayStr: weekday
     };
   };
@@ -1817,7 +1843,7 @@ export default function HomePage() {
                       <Settings className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      设置
+                      {t('buttons.settings')}
                     </span>
                   </motion.button>
                   
@@ -1836,7 +1862,7 @@ export default function HomePage() {
                       <Maximize className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      全屏
+                      {t('tooltips.fullscreen')}
                     </span>
                   </motion.button>
                 </div>
@@ -1987,6 +2013,57 @@ export default function HomePage() {
                     // 使用 next-themes 的 setTheme
                     const newTheme = theme === 'dark' ? 'light' : 'dark';
                     console.log('手动切换主题:', theme, '->', newTheme);
+                    
+                    // 如果切换到夜晚模式，重置所有功能页面到默认状态
+                    if (newTheme === 'dark') {
+                      console.log('切换到夜晚模式，重置所有功能页面到默认状态');
+                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                      
+                      // 清除所有功能页面的自定义背景图片
+                      allModes.forEach(modeKey => {
+                        localStorage.removeItem(`timer-background-image-${modeKey}`);
+                        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
+                        console.log(`Clearing custom settings for ${modeKey} page`);
+                      });
+                      
+                      // 清除通用背景图片设置
+                      localStorage.removeItem('timer-background-image');
+                      
+                      // 重置背景类型为默认
+                      setBackgroundType('default');
+                      setBackgroundImage('');
+                      setApplyToAllPages(true);
+                      
+                      // 清除手动主题设置标志
+                      setUserManuallySetTheme(false);
+                      
+                      toast.success(t('settings_panel.reset_all_pages'));
+                    } else {
+                      // 切换到白天模式，保持现有逻辑
+                      // 标记用户手动设置了主题
+                      setUserManuallySetTheme(true);
+                      localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
+                      
+                      // 检查当前页面是否有专用背景图片
+                      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+                      const generalBackgroundImage = localStorage.getItem('timer-background-image');
+                      
+                      // 如果当前页面有专用背景图片，需要确保其他页面保持正确的默认背景
+                      if (currentModeBackgroundImage && !generalBackgroundImage) {
+                        console.log('当前页面有专用背景图片，确保其他页面保持默认背景');
+                        const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                        
+                        // 为其他页面设置与当前主题匹配的默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            const defaultBackgroundColor = newTheme === 'light' ? '#f8fafc' : '#1e293b';
+                            localStorage.setItem(`timer-background-color-${modeKey}`, defaultBackgroundColor);
+                            console.log(`Setting default background for ${modeKey} page:`, defaultBackgroundColor);
+                          }
+                        });
+                      }
+                    }
+                    
                     setTheme(newTheme);
                   }}
                   className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
@@ -2752,7 +2829,12 @@ export default function HomePage() {
                             const weekday = weekdays[userTime.getDay()];
                             return (
                               <>
-                                <span>{year}年{month}月{day}日</span>
+                                <span>
+                                  {locale === 'zh' 
+                                    ? `${year}年${month}月${day}日`
+                                    : `${month}/${day}/${year}`
+                                  }
+                                </span>
                                 <span>{weekday}</span>
                               </>
                             );
@@ -2897,7 +2979,10 @@ export default function HomePage() {
                         </div>
                         
                         <div className={`text-sm sm:text-base font-medium mb-4 text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
-                          {year}年{month}月{day}日 {weekday}
+                          {locale === 'zh' 
+  ? `${year}年${month}月${day}日 ${weekday}`
+  : `${month}/${day}/${year} ${weekday}`
+}
                         </div>
                         
                         <div className="flex items-center justify-between mb-2">
@@ -3014,7 +3099,10 @@ export default function HomePage() {
                         </div>
                         
                         <div className={`text-sm sm:text-base font-medium mb-4 text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
-                          {year}年{month}月{day}日 {weekday}
+                          {locale === 'zh' 
+  ? `${year}年${month}月${day}日 ${weekday}`
+  : `${month}/${day}/${year} ${weekday}`
+}
                         </div>
                         
                         <div className="flex items-center justify-between mb-2">
@@ -3630,13 +3718,13 @@ export default function HomePage() {
                   {t('settings_panel.theme_color')}
                   {mode === 'worldclock' && worldClockColor !== worldClockSmallCardColor && (
                     <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
-                      (大卡片与小卡片颜色不同)
+                      {t('settings_panel.large_small_card_different')}
                     </span>
                   )}
                 </label>
                 
                 {/* 深色系 */}
-                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.dark_colors')}</p>
                 <div className="grid grid-cols-7 gap-2 mb-4">
                   {THEME_COLORS.filter(c => ['blue', 'purple', 'green', 'red', 'magenta', 'indigo', 'teal', 'black'].includes(c.id)).map((color) => {
                     // 白天模式禁用白色，夜晚模式禁用黑色
@@ -3678,12 +3766,12 @@ export default function HomePage() {
                         style={{ 
                           background: color.gradient || color.color,
                         }}
-                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                        title={isDisabled ? (theme === 'light' ? t('settings_panel.light_mode_unavailable') : t('settings_panel.dark_mode_unavailable')) : t(`colors.${color.key}`)}
                       >
                         {/* 小卡片颜色指示器 */}
                         {isSelectedSecondary && (
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
-                            title="小卡片颜色"
+                            title={t('settings_panel.small_card_color')}
                           />
                         )}
                       </button>
@@ -3692,7 +3780,7 @@ export default function HomePage() {
                 </div>
                 
                 {/* 浅色系 */}
-                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>浅色系</p>
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.light_colors')}</p>
                 <div className="grid grid-cols-7 gap-2 mb-4">
                   {THEME_COLORS.filter(c => ['cyan', 'orange', 'pink', 'yellow', 'lime', 'white'].includes(c.id)).map((color) => {
                     // 白天模式禁用白色，夜晚模式禁用黑色
@@ -3734,12 +3822,12 @@ export default function HomePage() {
                         style={{ 
                           background: color.gradient || color.color,
                         }}
-                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                        title={isDisabled ? (theme === 'light' ? t('settings_panel.light_mode_unavailable') : t('settings_panel.dark_mode_unavailable')) : t(`colors.${color.key}`)}
                       >
                         {/* 小卡片颜色指示器 */}
                         {isSelectedSecondary && (
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
-                            title="小卡片颜色"
+                            title={t('settings_panel.small_card_color')}
                           />
                         )}
                       </button>
@@ -3748,7 +3836,7 @@ export default function HomePage() {
                 </div>
                 
                 {/* 渐变色系 */}
-                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>渐变色系</p>
+                <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.gradient_colors')}</p>
                 <div className="grid grid-cols-6 gap-2">
                   {THEME_COLORS.filter(c => ['sunset', 'ocean', 'forest', 'aurora', 'fire', 'candy'].includes(c.id)).map((color) => {
                     // 白天模式禁用白色，夜晚模式禁用黑色
@@ -3790,12 +3878,12 @@ export default function HomePage() {
                         style={{ 
                           background: color.gradient || color.color,
                         }}
-                        title={isDisabled ? (theme === 'light' ? '白天模式不可用' : '夜晚模式不可用') : t(`colors.${color.key}`)}
+                        title={isDisabled ? (theme === 'light' ? t('settings_panel.light_mode_unavailable') : t('settings_panel.dark_mode_unavailable')) : t(`colors.${color.key}`)}
                       >
                         {/* 小卡片颜色指示器 */}
                         {isSelectedSecondary && (
                           <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white" 
-                            title="小卡片颜色"
+                            title={t('settings_panel.small_card_color')}
                           />
                         )}
                       </button>
@@ -3849,7 +3937,7 @@ export default function HomePage() {
               {/* 背景自定义 */}
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
-                  背景自定义
+                  {t('settings_panel.background_customization')}
                 </label>
                 
                 {/* 背景类型选择 */}
@@ -3866,7 +3954,7 @@ export default function HomePage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    默认
+                    {t('settings_panel.default')}
                   </button>
                   <button
                     onClick={() => setBackgroundType('color')}
@@ -3880,7 +3968,7 @@ export default function HomePage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    纯色
+                    {t('settings_panel.color')}
                   </button>
                   <button
                     onClick={() => setBackgroundType('image')}
@@ -3894,7 +3982,7 @@ export default function HomePage() {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    图片
+                    {t('settings_panel.image')}
                   </button>
                 </div>
 
@@ -3922,7 +4010,7 @@ export default function HomePage() {
                               setApplyColorToAllPages(true);
                               // 立即保存到localStorage
                               localStorage.setItem('timer-background-color', backgroundColor);
-                              toast.success('当前背景已应用到所有功能页面');
+                              toast.success(t('settings_panel.background_applied_all'));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               applyColorToAllPages 
@@ -3934,7 +4022,7 @@ export default function HomePage() {
                                   : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
                           >
-                            {applyColorToAllPages ? '已应用到所有页面' : '应用到所有页面'}
+                            {applyColorToAllPages ? t('settings_panel.apply_to_all_pages') : t('settings_panel.apply_to_all_pages')}
                           </button>
                           <button
                             onClick={() => {
@@ -3991,7 +4079,7 @@ export default function HomePage() {
                                   : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
                             }`}
                           >
-                            {!applyColorToAllPages ? '仅当前页面' : '仅当前页面'}
+                            {!applyColorToAllPages ? t('settings_panel.apply_to_current_page') : t('settings_panel.apply_to_current_page')}
                           </button>
                         </div>
                       </div>
@@ -4114,7 +4202,7 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              toast.success('当前背景已应用到所有功能页面');
+                              toast.success(t('settings_panel.background_applied_all'));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               applyToAllPages 
@@ -4126,7 +4214,7 @@ export default function HomePage() {
                                   : 'bg-green-500 hover:bg-green-600 text-white'
                             }`}
                           >
-                            {applyToAllPages ? '已应用到所有页面' : '应用到所有页面'}
+                            {applyToAllPages ? t('settings_panel.apply_to_all_pages') : t('settings_panel.apply_to_all_pages')}
                           </button>
                           <button
                             onClick={async () => {
@@ -4183,18 +4271,18 @@ export default function HomePage() {
                                   : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
                             }`}
                           >
-                            {!applyToAllPages ? '仅当前页面' : '仅当前页面'}
+                            {!applyToAllPages ? t('settings_panel.apply_to_current_page') : t('settings_panel.apply_to_current_page')}
                           </button>
                         </div>
                       </div>
                     )}
-                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>上传背景图片</p>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>{t('settings_panel.upload_image')}</p>
                     
                     {/* 上传图片历史记录 */}
                     {uploadedImageHistory.length > 0 && (
                       <div className="mb-4">
                         <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                          最近上传的图片
+                          {t('settings_panel.image_history')}
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           {uploadedImageHistory.map((imageUrl, index) => (
@@ -4242,12 +4330,12 @@ export default function HomePage() {
                                         if (theme !== 'dark') setTheme('dark');
                                       }
                                       
-                                      toast.success('历史图片已应用到所有功能页面');
+                                      toast.success(t('settings_panel.history_image_applied_all'));
                                     }}
                                     className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded transition-colors"
-                                    title="应用到所有页面"
+                                    title={t('settings_panel.apply_to_all_pages')}
                                   >
-                                    所有页面
+                                    {t('settings_panel.apply_to_all_pages')}
                                   </button>
                                   <button
                                     onClick={async (e) => {
@@ -4277,39 +4365,64 @@ export default function HomePage() {
                                       const isLightImage = await analyzeImageBrightness(imageUrl);
                                       
                                       // 添加调试信息
-                                      console.log('图片明暗度分析结果:', isLightImage ? '浅色图片' : '深色图片');
-                                      console.log('当前主题:', theme);
+                                      console.log('Image brightness analysis result:', isLightImage ? 'Light image' : 'Dark image');
+                                      console.log('Current theme:', theme);
                                       
-                                      if (isLightImage) {
-                                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
-                                        console.log('设置主题为白天模式');
-                                        if (theme !== 'light') setTheme('light');
-                                        // 为其他页面设置浅色默认背景
-                                        allModes.forEach(modeKey => {
-                                          if (modeKey !== mode) {
-                                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                                          }
-                                        });
+                                      // 检查用户是否手动设置了主题
+                                      const userManualTheme = localStorage.getItem(`timer-manual-theme-${mode}`);
+                                      const hasUserManualTheme = userManualTheme !== null;
+                                      
+                                      if (hasUserManualTheme) {
+                                        console.log('用户已手动设置主题，跳过自动主题设置');
+                                        // 用户手动设置了主题，不自动设置主题，但仍设置其他页面的默认背景
+                                        if (isLightImage) {
+                                          // 为其他页面设置浅色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                            }
+                                          });
+                                        } else {
+                                          // 为其他页面设置深色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                            }
+                                          });
+                                        }
                                       } else {
-                                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
-                                        console.log('设置主题为夜间模式');
-                                        if (theme !== 'dark') setTheme('dark');
-                                        // 为其他页面设置深色默认背景
-                                        allModes.forEach(modeKey => {
-                                          if (modeKey !== mode) {
-                                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                                          }
-                                        });
+                                        // 用户没有手动设置主题，自动设置主题
+                                        if (isLightImage) {
+                                          // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
+                                          console.log('Setting theme to light mode');
+                                          if (theme !== 'light') setTheme('light');
+                                          // 为其他页面设置浅色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                                            }
+                                          });
+                                        } else {
+                                          // 深色图片：设置为夜间模式，其他页面使用深色默认背景
+                                          console.log('Setting theme to dark mode');
+                                          if (theme !== 'dark') setTheme('dark');
+                                          // 为其他页面设置深色默认背景
+                                          allModes.forEach(modeKey => {
+                                            if (modeKey !== mode) {
+                                              localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                                            }
+                                          });
+                                        }
                                       }
                                       
-                                      const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                                      const themeText = isLightImage ? '白天模式' : '夜间模式';
-                                      toast.success(`历史图片已应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                                      const pageName = mode === 'timer' ? t('modes.timer') : mode === 'stopwatch' ? t('modes.stopwatch') : mode === 'alarm' ? t('modes.alarm') : t('modes.worldclock');
+                                      const themeText = isLightImage ? (locale === 'zh' ? '白天模式' : 'Light mode') : (locale === 'zh' ? '夜间模式' : 'Dark mode');
+                                      toast.success(t('settings_panel.history_image_applied_current', { pageName, themeText }));
                                     }}
                                     className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
-                                    title="仅应用到当前页面"
+                                    title={t('settings_panel.apply_to_current_page')}
                                   >
-                                    当前页面
+                                    {t('settings_panel.apply_to_current_page')}
                                   </button>
                                 </div>
                               </div>
@@ -4359,12 +4472,12 @@ export default function HomePage() {
                               <p className={`text-sm font-medium ${
                                 theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                               }`}>
-                                点击选择图片
+                                {t('settings_panel.click_to_select_image')}
                               </p>
                               <p className={`text-xs mt-1 ${
                                 theme === 'dark' ? 'text-slate-500' : 'text-gray-500'
                               }`}>
-                                支持 JPG、PNG、GIF 格式
+                                {t('settings_panel.supported_formats')}
                               </p>
                             </div>
                           </div>
@@ -4386,8 +4499,8 @@ export default function HomePage() {
                                   setPendingBackgroundImage(compressedImageUrl);
                                   setShowBackgroundConfirm(true);
                                 } catch (error) {
-                                  console.error('图片处理失败:', error);
-                                  toast.error('图片处理失败，请重试');
+                                  console.error('Image processing failed:', error);
+                                  toast.error(t('settings_panel.image_processing_failed'));
                                 }
                               }
                             }}
@@ -4411,7 +4524,7 @@ export default function HomePage() {
                                 className={`p-1.5 rounded-full ${
                                   theme === 'dark' ? 'bg-slate-900/80 text-white' : 'bg-white/80 text-gray-900'
                                 } hover:scale-110 transition-all`}
-                                title="更换图片"
+                                title={t('settings_panel.change_image')}
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -4436,7 +4549,7 @@ export default function HomePage() {
                             <p className={`text-xs font-medium mb-3 ${
                               theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                             }`}>
-                              调整图片位置
+                              {t('settings_panel.image_position')}
                             </p>
                             
                             {/* 水平位置 */}
@@ -4445,7 +4558,7 @@ export default function HomePage() {
                                 <label className={`text-xs ${
                                   theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                                 }`}>
-                                  水平位置
+                                  {t('settings_panel.horizontal')}
                                 </label>
                                 <span className={`text-xs ${
                                   theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
@@ -4472,7 +4585,7 @@ export default function HomePage() {
                                 <label className={`text-xs ${
                                   theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                                 }`}>
-                                  垂直位置
+                                  {t('settings_panel.vertical')}
                                 </label>
                                 <span className={`text-xs ${
                                   theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
@@ -4526,8 +4639,8 @@ export default function HomePage() {
                                   setPendingBackgroundImage(compressedImageUrl);
                                   setShowBackgroundConfirm(true);
                                 } catch (error) {
-                                  console.error('图片处理失败:', error);
-                                  toast.error('图片处理失败，请重试');
+                                  console.error('Image processing failed:', error);
+                                  toast.error(t('settings_panel.image_processing_failed'));
                                 }
                               }
                             }}
@@ -4944,9 +5057,9 @@ export default function HomePage() {
                           setManualTimezone('');
                           setInputMode('search');
                           
-                          toast.success(`已添加 ${manualCityName}`);
+                          toast.success(t('settings_panel.timezone_added', { cityName: manualCityName }));
                         } catch (error) {
-                          toast.error('时区格式无效，请输入正确的 IANA 时区标识符');
+                          toast.error(t('settings_panel.invalid_timezone_format'));
                         }
                       }}
                       className={`w-full py-3.5 sm:py-3 px-4 rounded-lg font-medium text-base transition-all ${
@@ -5261,7 +5374,7 @@ export default function HomePage() {
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
                   }`}
                 >
-                  取消
+                  {t('settings_panel.cancel')}
                 </button>
               </div>
             </motion.div>
@@ -5346,7 +5459,7 @@ export default function HomePage() {
                 <button
                   onClick={async () => {
                     // 应用到所有页面
-                    console.log('用户选择了"应用到所有页面"');
+                    console.log('User selected "Apply to all pages"');
                     setApplyToAllPages(true);
                     setBackgroundImage(pendingBackgroundImage);
                     
@@ -5365,7 +5478,7 @@ export default function HomePage() {
                     
                     setShowBackgroundConfirm(false);
                     setPendingBackgroundImage('');
-                    toast.success('背景已应用到所有功能页面');
+                    toast.success(t('settings_panel.background_applied_all'));
                   }}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
@@ -5373,12 +5486,12 @@ export default function HomePage() {
                       : 'bg-blue-500 hover:bg-blue-600 text-white'
                   }`}
                 >
-                  应用到所有功能页面
+                  {t('settings_panel.apply_to_all')}
                 </button>
                 <button
                   onClick={async () => {
                     // 仅应用到当前页面
-                    console.log('用户选择了"仅应用到当前页面"');
+                    console.log('User selected "Apply to current page only"');
                     setApplyToAllPages(false);
                     setBackgroundImage(pendingBackgroundImage);
                     
@@ -5441,7 +5554,7 @@ export default function HomePage() {
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
                   }`}
                 >
-                  取消
+                  {t('settings_panel.cancel')}
                 </button>
               </div>
             </motion.div>
@@ -5541,7 +5654,7 @@ export default function HomePage() {
                     
                     setShowColorBackgroundConfirm(false);
                     setPendingBackgroundColor('');
-                    toast.success('背景已应用到所有功能页面');
+                    toast.success(t('settings_panel.background_applied_all'));
                   }}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
@@ -5549,7 +5662,7 @@ export default function HomePage() {
                       : 'bg-blue-500 hover:bg-blue-600 text-white'
                   }`}
                 >
-                  应用到所有功能页面
+                  {t('settings_panel.apply_to_all')}
                 </button>
                 <button
                   onClick={async () => {
@@ -5617,7 +5730,7 @@ export default function HomePage() {
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
                   }`}
                 >
-                  取消
+                  {t('settings_panel.cancel')}
                 </button>
               </div>
             </motion.div>
