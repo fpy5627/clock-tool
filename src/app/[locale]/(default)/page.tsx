@@ -8,18 +8,27 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
+import NProgress from 'nprogress';
+
+// 配置 NProgress
+NProgress.configure({ 
+  showSpinner: true,
+  speed: 300,
+  minimum: 0.3,
+});
 
 // 预设时间选项
 const PRESET_TIMES = [
-  { key: '1min', seconds: 60 },
-  { key: '3min', seconds: 180 },
-  { key: '5min', seconds: 300 },
-  { key: '10min', seconds: 600 },
-  { key: '15min', seconds: 900 },
-  { key: '25min', seconds: 1500 },
-  { key: '30min', seconds: 1800 },
-  { key: '45min', seconds: 2700 },
-  { key: '1hour', seconds: 3600 },
+  { key: '1min', seconds: 60, path: '1-minute-timer' },
+  { key: '3min', seconds: 180, path: '3-minute-timer' },
+  { key: '5min', seconds: 300, path: '5-minute-timer' },
+  { key: '10min', seconds: 600, path: '10-minute-timer' },
+  { key: '15min', seconds: 900, path: '15-minute-timer' },
+  { key: '25min', seconds: 1500, path: '25-minute-timer' },
+  { key: '30min', seconds: 1800, path: '30-minute-timer' },
+  { key: '45min', seconds: 2700, path: '45-minute-timer' },
+  { key: '1hour', seconds: 3600, path: '1-hour-timer' },
 ];
 
 // 声音选项
@@ -3317,23 +3326,31 @@ export default function HomePage() {
                   <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>{t('timer.quick_settings')}</p>
                   <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
                     {PRESET_TIMES.map((preset) => (
-                      <motion.button
+                      <Link
                         key={preset.seconds}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setPresetTime(preset.seconds)}
-                        className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all ${
-                          initialTime === preset.seconds
-                            ? theme === 'dark'
-                              ? 'bg-slate-600 text-white shadow-md'
-                              : 'bg-slate-400 text-white shadow-md'
-                            : theme === 'dark'
-                            ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
-                            : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
-                        }`}
+                        href={`/${locale}/${preset.path}`}
+                        className="block"
+                        onClick={() => {
+                          // 显示进度条
+                          NProgress.start();
+                        }}
                       >
-                        {t(`presets.${preset.key}`)}
-                      </motion.button>
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all text-center cursor-pointer ${
+                            initialTime === preset.seconds
+                              ? theme === 'dark'
+                                ? 'bg-slate-600 text-white shadow-md'
+                                : 'bg-slate-400 text-white shadow-md'
+                              : theme === 'dark'
+                              ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
+                              : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
+                          }`}
+                        >
+                          {t(`presets.${preset.key}`)}
+                        </motion.div>
+                      </Link>
                     ))}
                   </div>
                 </motion.div>
