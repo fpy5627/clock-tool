@@ -20,11 +20,3 @@ export interface LandingPage {
   cta?: Section;
   footer?: Footer;
 }
-
-export interface PricingPage {
-  pricing?: Pricing;
-}
-
-export interface ShowcasePage {
-  showcase?: Section;
-}

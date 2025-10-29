@@ -126,12 +126,12 @@ export default function HomePage() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   
-  // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
-  const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
+  // 固定模式为 stopwatch
+  const mode = 'stopwatch' as const;
   
   // 倒计时相关
-  const [timeLeft, setTimeLeft] = useState(300); // Default 5 minutes
-  const [initialTime, setInitialTime] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(1800); // Default 30 minutes
+  const [initialTime, setInitialTime] = useState(1800);
   
   // 秒表相关
   const [stopwatchTime, setStopwatchTime] = useState(0); // 秒表时间（秒）
@@ -693,12 +693,11 @@ export default function HomePage() {
         }
       }
       
-      // 不再从localStorage加载时间，始终使用默认的5分钟
-      // if (savedTime) {
-      //   const time = parseInt(savedTime);
-      //   setTimeLeft(time);
-      //   setInitialTime(time);
-      // }
+      if (savedTime) {
+        const time = parseInt(savedTime);
+        setTimeLeft(time);
+        setInitialTime(time);
+      }
     }
   }, []);
 
@@ -1282,16 +1281,6 @@ export default function HomePage() {
   const navigateToPage = (page: string) => {
     const currentLocale = locale || 'en';
     router.push(`/${currentLocale}/${page}`);
-  };
-
-  const switchMode = (newMode: 'timer' | 'stopwatch' | 'alarm' | 'worldclock') => {
-    setIsRunning(false);
-    setMode(newMode);
-    if (newMode === 'timer') {
-      setTimeLeft(initialTime);
-    } else if (newMode === 'stopwatch') {
-      setStopwatchTime(0);
-    }
   };
 
   const setPresetTime = (seconds: number) => {

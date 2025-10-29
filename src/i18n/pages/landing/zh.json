@@ -11,38 +11,9 @@
       "url": "/"
     },
     "nav": {
-      "items": [
-        {
-          "title": "功能特点",
-          "url": "/#feature",
-          "icon": "RiSparkling2Line"
-        },
-        {
-          "title": "定价",
-          "url": "/pricing",
-          "icon": "RiMoneyDollarCircleLine"
-        },
-        {
-          "title": "案例展示",
-          "url": "/showcase",
-          "icon": "RiApps2Line"
-        },
-        {
-          "title": "文档",
-          "url": "/docs",
-          "icon": "RiBookOpenLine"
-        }
-      ]
+      "items": []
     },
-    "buttons": [
-      {
-        "title": "获取 Timero",
-        "url": "https://timero.ai",
-        "target": "_blank",
-        "variant": "link",
-        "icon": "RiArrowRightUpLine"
-      }
-    ],
+    "buttons": [],
     "show_sign": true,
     "show_theme": true,
     "show_locale": true

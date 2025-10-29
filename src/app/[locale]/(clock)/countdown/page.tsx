@@ -5,21 +5,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
+import NProgress from 'nprogress';
+
+// 配置 NProgress
+NProgress.configure({ 
+  showSpinner: true,
+  speed: 300,
+  minimum: 0.3,
+});
 
 // 预设时间选项
 const PRESET_TIMES = [
-  { key: '1min', seconds: 60 },
-  { key: '3min', seconds: 180 },
-  { key: '5min', seconds: 300 },
-  { key: '10min', seconds: 600 },
-  { key: '15min', seconds: 900 },
-  { key: '25min', seconds: 1500 },
-  { key: '30min', seconds: 1800 },
-  { key: '45min', seconds: 2700 },
-  { key: '1hour', seconds: 3600 },
+  { key: '1min', seconds: 60, path: '1-minute-timer' },
+  { key: '3min', seconds: 180, path: '3-minute-timer' },
+  { key: '5min', seconds: 300, path: '5-minute-timer' },
+  { key: '10min', seconds: 600, path: '10-minute-timer' },
+  { key: '15min', seconds: 900, path: '15-minute-timer' },
+  { key: '25min', seconds: 1500, path: '25-minute-timer' },
+  { key: '30min', seconds: 1800, path: '30-minute-timer' },
+  { key: '45min', seconds: 2700, path: '45-minute-timer' },
+  { key: '1hour', seconds: 3600, path: '1-hour-timer' },
 ];
 
 // 声音选项
@@ -124,14 +133,35 @@ export default function HomePage() {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   
-  // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
-  const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
+  // 固定模式为 timer
+  const mode = 'timer' as const;
+  
+  // 从URL路径或参数读取预设时间
+  const getInitialTime = () => {
+    // 先检查URL参数
+    const presetFromUrl = searchParams.get('preset');
+    if (presetFromUrl) {
+      return parseInt(presetFromUrl);
+    }
+    
+    // 检查URL路径来确定预设时间（使用endsWith确保精确匹配，加上斜杠避免部分匹配）
+    const pathMatch = PRESET_TIMES.find(preset => pathname.endsWith(`/${preset.path}`));
+    if (pathMatch) {
+      return pathMatch.seconds;
+    }
+    
+    // 默认5分钟
+    return 300;
+  };
+  
+  const initialPresetTime = getInitialTime();
   
   // 倒计时相关
-  const [timeLeft, setTimeLeft] = useState(300); // Default 5 minutes
-  const [initialTime, setInitialTime] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(initialPresetTime);
+  const [initialTime, setInitialTime] = useState(initialPresetTime);
   
   // 秒表相关
   const [stopwatchTime, setStopwatchTime] = useState(0); // 秒表时间（秒）
@@ -399,6 +429,33 @@ export default function HomePage() {
       img.src = imageDataUrl;
     });
   };
+
+  // 监听路径变化，更新计时器初始时间
+  useEffect(() => {
+    // 计算新的预设时间
+    let newTime = 300; // 默认5分钟
+    
+    // 先检查URL参数
+    const presetFromUrl = searchParams.get('preset');
+    if (presetFromUrl) {
+      newTime = parseInt(presetFromUrl);
+    } else {
+      // 检查URL路径来确定预设时间（使用endsWith确保精确匹配，加上斜杠避免部分匹配）
+      const pathMatch = PRESET_TIMES.find(preset => pathname.endsWith(`/${preset.path}`));
+      if (pathMatch) {
+        newTime = pathMatch.seconds;
+      }
+    }
+    
+    // 只有当时间不同且计时器未运行时才更新
+    if (newTime !== initialTime && !isRunning) {
+      setInitialTime(newTime);
+      setTimeLeft(newTime);
+    }
+    
+    // 完成进度条加载
+    NProgress.done();
+  }, [pathname, searchParams, initialTime, isRunning]);
 
   // 监听背景颜色变化，自动切换主题
   useEffect(() => {
@@ -1282,16 +1339,6 @@ export default function HomePage() {
   const navigateToPage = (page: string) => {
     const currentLocale = locale || 'en';
     router.push(`/${currentLocale}/${page}`);
-  };
-
-  const switchMode = (newMode: 'timer' | 'stopwatch' | 'alarm' | 'worldclock') => {
-    setIsRunning(false);
-    setMode(newMode);
-    if (newMode === 'timer') {
-      setTimeLeft(initialTime);
-    } else if (newMode === 'stopwatch') {
-      setStopwatchTime(0);
-    }
   };
 
   const setPresetTime = (seconds: number) => {
@@ -3317,23 +3364,33 @@ export default function HomePage() {
                   <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>{t('timer.quick_settings')}</p>
                   <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
                     {PRESET_TIMES.map((preset) => (
-                      <motion.button
+                      <Link
                         key={preset.seconds}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setPresetTime(preset.seconds)}
-                        className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all ${
-                          initialTime === preset.seconds
-                            ? theme === 'dark'
-                              ? 'bg-slate-600 text-white shadow-md'
-                              : 'bg-slate-400 text-white shadow-md'
-                            : theme === 'dark'
-                            ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
-                            : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
-                        }`}
+                        href={`/${locale}/${preset.path}`}
+                        className="block"
+                        onClick={() => {
+                          // 如果点击的不是当前时间，显示进度条
+                          if (initialTime !== preset.seconds) {
+                            NProgress.start();
+                          }
+                        }}
                       >
-                        {t(`presets.${preset.key}`)}
-                      </motion.button>
+                        <motion.div
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all text-center cursor-pointer ${
+                            initialTime === preset.seconds
+                              ? theme === 'dark'
+                                ? 'bg-slate-600 text-white shadow-md'
+                                : 'bg-slate-400 text-white shadow-md'
+                              : theme === 'dark'
+                              ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
+                              : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
+                          }`}
+                        >
+                          {t(`presets.${preset.key}`)}
+                        </motion.div>
+                      </Link>
                     ))}
                   </div>
                 </motion.div>

@@ -11,38 +11,9 @@
       "url": "/"
     },
     "nav": {
-      "items": [
-        {
-          "title": "Features",
-          "url": "/#feature",
-          "icon": "RiSparkling2Line"
-        },
-        {
-          "title": "Pricing",
-          "url": "/pricing",
-          "icon": "RiMoneyDollarCircleLine"
-        },
-        {
-          "title": "Showcase",
-          "url": "/showcase",
-          "icon": "RiApps2Line"
-        },
-        {
-          "title": "Docs",
-          "url": "/docs",
-          "icon": "RiBookOpenLine"
-        }
-      ]
+      "items": []
     },
-    "buttons": [
-      {
-        "title": "Get Timero",
-        "url": "https://timero.ai",
-        "target": "_blank",
-        "variant": "link",
-        "icon": "RiArrowRightUpLine"
-      }
-    ],
+    "buttons": [],
     "show_sign": true,
     "show_theme": true,
     "show_locale": true
