@@ -1,6 +1,6 @@
-# ShipAny Template One
+# Timero - Your Ultimate Time Management Tool
 
-Ship Any AI SaaS Startups in hours.
+A powerful online timer and clock tool with timer, stopwatch, alarm, and world clock features.
 
 ![preview](preview.png)
 
@@ -9,7 +9,7 @@ Ship Any AI SaaS Startups in hours.
 1. Clone the repository
 
 ```bash
-git clone https://github.com/shipanyai/shipany-template-one.git
+git clone https://github.com/your-username/timero.git
 ```
 
 2. Install dependencies
@@ -44,44 +44,17 @@ cp .env.example .env.development
 
 - Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fshipanyai%2Fshipany-template-one&project-name=my-shipany-project&repository-name=my-shipany-project&redirect-url=https%3A%2F%2Fshipany.ai&demo-title=ShipAny&demo-description=Ship%20Any%20AI%20Startup%20in%20hours%2C%20not%20days&demo-url=https%3A%2F%2Fshipany.ai&demo-image=https%3A%2F%2Fpbs.twimg.com%2Fmedia%2FGgGSW3La8AAGJgU%3Fformat%3Djpg%26name%3Dlarge)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 
-- Deploy to Cloudflare
+## Features
 
-for new project, clone with branch "cloudflare"
-
-```shell
-git clone -b cloudflare https://github.com/shipanyai/shipany-template-one.git
-```
-
-for exist project, checkout to branch "cloudflare"
-
-```shell
-git checkout cloudflare
-```
-
-1. Customize your environment variables
-
-```bash
-cp .env.example .env.production
-cp wrangler.toml.example wrangler.toml
-```
-
-edit your environment variables in `.env.production`
-
-and put all the environment variables under `[vars]` in `wrangler.toml`
-
-2. Deploy
-
-```bash
-npm run cf:deploy
-```
-
-## Community
-
-- [ShipAny](https://shipany.ai)
-- [Documentation](https://docs.shipany.ai)
+- ⏰ **Timer**: Customizable countdown timer with presets
+- ⏱️ **Stopwatch**: Precise time tracking
+- 🔔 **Alarm**: Multiple alarms with custom labels
+- 🌍 **World Clock**: View time across different timezones
+- 🎨 **Customizable**: Theme colors, backgrounds, and sounds
+- 📱 **Responsive**: Works on all devices
 
 ## License
 
-- [ShipAny AI SaaS Boilerplate License Agreement](LICENSE)
+MIT License
