@@ -1225,22 +1225,48 @@ export default function HomePage() {
 
   const playNotificationSound = () => {
     try {
-      const selectedSoundOption = SOUND_OPTIONS.find(s => s.id === selectedSound) || SOUND_OPTIONS[0];
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = selectedSoundOption.frequency;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 1);
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const master = ctx.createGain();
+      master.gain.value = 0.8;
+      master.connect(ctx.destination);
+
+      const mkBeep = (t: number, freq: number, type: OscillatorType = 'sine', dur = 0.12, gain = 0.7) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(gain, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25);
+        o.connect(g).connect(master);
+        o.start(t);
+        o.stop(t + dur + 0.3);
+      };
+
+      const total = 10;
+      const start = ctx.currentTime;
+      const every = (interval: number, fn: (t: number) => void) => {
+        for (let t = 0; t < total; t += interval) fn(start + t);
+      };
+
+      const opt = SOUND_OPTIONS.find(s => s.id === selectedSound) || SOUND_OPTIONS[0];
+      // 根据频率粗略选择不同节奏
+      if (opt.frequency >= 1000) {
+        every(1.0, (t) => {
+          mkBeep(t + 0.00, opt.frequency, 'square', 0.1, 0.6);
+          mkBeep(t + 0.12, opt.frequency * 0.75, 'square', 0.08, 0.5);
+        });
+      } else {
+        every(1.2, (t) => {
+          mkBeep(t + 0.00, opt.frequency, 'sine', 0.16, 0.7);
+          mkBeep(t + 0.18, opt.frequency * 1.2, 'sine', 0.12, 0.6);
+        });
+      }
+
+      // 暴露停止函数到 window，供停止按钮/交互调用
+      (window as any).__alarmNotifyStop = () => { try { ctx.close(); } catch {} };
+      setTimeout(() => { try { (window as any).__alarmNotifyStop?.(); } catch {} }, (total + 0.5) * 1000);
     } catch (error) {
       console.log('Audio notification not available');
     }
@@ -1368,6 +1394,8 @@ export default function HomePage() {
   };
 
   const stopAlarmRinging = () => {
+    // 停止提示音
+    try { (window as any).__alarmNotifyStop?.(); } catch {}
     // 计算响铃时长
     if (alarmRingStartTimeRef.current) {
       const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);

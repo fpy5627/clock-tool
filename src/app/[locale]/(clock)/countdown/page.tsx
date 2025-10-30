@@ -33,13 +33,477 @@ const PRESET_TIMES = [
   { key: '1hour', seconds: 3600, path: '1-hour-timer' },
 ];
 
-// 声音选项
+// 声音选项 - 按流行度排序（基于YouTube和计时器应用使用统计）
 const SOUND_OPTIONS = [
-  { id: 'bell', key: 'bell', frequency: 800 },
-  { id: 'chime', key: 'chime', frequency: 1000 },
-  { id: 'beep', key: 'beep', frequency: 600 },
-  { id: 'digital', key: 'digital', frequency: 1200 },
+  // 原有的4个提示音
+  { 
+    id: 'bell', 
+    key: 'bell',
+    name: '铃铛',
+    nameEn: 'Bell',
+    description: '经典铃声',
+    descriptionEn: 'Classic bell sound',
+    frequency: 800,
+    type: 'bell',
+    popularity: 100 // 最高人气
+  },
+  { 
+    id: 'chime', 
+    key: 'chime',
+    name: '提示音',
+    nameEn: 'Chime',
+    description: '钟声提示',
+    descriptionEn: 'Chime notification',
+    frequency: 1000,
+    type: 'chime',
+    popularity: 95
+  },
+  { 
+    id: 'beep', 
+    key: 'beep',
+    name: '哔哔声',
+    nameEn: 'Beep',
+    description: '数字提示音',
+    descriptionEn: 'Digital beep',
+    frequency: 600,
+    type: 'beep',
+    popularity: 90
+  },
+  { 
+    id: 'digital', 
+    key: 'digital',
+    name: '电子音',
+    nameEn: 'Digital',
+    description: '电子提示音',
+    descriptionEn: 'Electronic sound',
+    frequency: 1200,
+    type: 'digital',
+    popularity: 85
+  },
+  // 新增的流行提示音 - 基于YouTube和商用音频库
+  { 
+    id: 'notification-pop', 
+    key: 'notification_pop',
+    name: '通知弹音',
+    nameEn: 'Notification Pop',
+    description: '现代应用通知音',
+    descriptionEn: 'Modern app notification sound',
+    type: 'notification',
+    popularity: 88
+  },
+  { 
+    id: 'success-chime', 
+    key: 'success_chime',
+    name: '成功钟声',
+    nameEn: 'Success Chime',
+    description: '任务完成提示音',
+    descriptionEn: 'Task completion sound',
+    type: 'success',
+    popularity: 82
+  },
+  { 
+    id: 'soft-bell', 
+    key: 'soft_bell',
+    name: '柔和铃声',
+    nameEn: 'Soft Bell',
+    description: '温和的铃声提示',
+    descriptionEn: 'Gentle bell notification',
+    type: 'bell',
+    popularity: 78
+  },
+  { 
+    id: 'kitchen-timer', 
+    key: 'kitchen_timer',
+    name: '厨房计时器',
+    nameEn: 'Kitchen Timer',
+    description: '传统厨房计时器铃声',
+    descriptionEn: 'Classic kitchen timer ring',
+    type: 'kitchen',
+    popularity: 75
+  },
+  { 
+    id: 'alarm-clock', 
+    key: 'alarm_clock',
+    name: '闹钟铃声',
+    nameEn: 'Alarm Clock',
+    description: '传统闹钟铃声',
+    descriptionEn: 'Traditional alarm clock ring',
+    type: 'alarm',
+    popularity: 72
+  },
+  { 
+    id: 'gentle-notification', 
+    key: 'gentle_notification',
+    name: '轻柔通知',
+    nameEn: 'Gentle Notification',
+    description: '不打扰的轻柔提示',
+    descriptionEn: 'Gentle non-intrusive alert',
+    type: 'notification',
+    popularity: 70
+  },
+  { 
+    id: 'meditation-bowl', 
+    key: 'meditation_bowl',
+    name: '冥想钵声',
+    nameEn: 'Meditation Bowl',
+    description: '平静的冥想钵声',
+    descriptionEn: 'Calm meditation bowl',
+    type: 'meditation',
+    popularity: 68
+  },
+  { 
+    id: 'electronic-chime', 
+    key: 'electronic_chime',
+    name: '电子钟声',
+    nameEn: 'Electronic Chime',
+    description: '现代电子钟声',
+    descriptionEn: 'Modern electronic chime',
+    type: 'electronic',
+    popularity: 65
+  },
+  { 
+    id: 'success-sound', 
+    key: 'success_sound',
+    name: '成功提示',
+    nameEn: 'Success Sound',
+    description: '令人愉悦的成功音',
+    descriptionEn: 'Pleasant success tone',
+    type: 'success',
+    popularity: 62
+  },
+  { 
+    id: 'gentle-wake', 
+    key: 'gentle_wake',
+    name: '温和唤醒',
+    nameEn: 'Gentle Wake',
+    description: '渐强的温和唤醒音',
+    descriptionEn: 'Gradual gentle wake-up tone',
+    type: 'wake',
+    popularity: 60
+  },
+  { 
+    id: 'classic-bell', 
+    key: 'classic_bell',
+    name: '经典铃声',
+    nameEn: 'Classic Bell',
+    description: '清脆的经典铃声',
+    descriptionEn: 'Crisp classic bell sound',
+    type: 'bell',
+    popularity: 58
+  },
+  { 
+    id: 'digital-beep', 
+    key: 'digital_beep',
+    name: '数字提示音',
+    nameEn: 'Digital Beep',
+    description: '现代数字提示音',
+    descriptionEn: 'Modern digital beep',
+    type: 'digital',
+    popularity: 55
+  },
+  { 
+    id: 'soft-chime', 
+    key: 'soft_chime',
+    name: '柔和钟声',
+    nameEn: 'Soft Chime',
+    description: '温柔的钟声提示',
+    descriptionEn: 'Tender chime notification',
+    type: 'chime',
+    popularity: 52
+  },
+  { 
+    id: 'notification-tone', 
+    key: 'notification_tone',
+    name: '通知音调',
+    nameEn: 'Notification Tone',
+    description: '标准通知音调',
+    descriptionEn: 'Standard notification tone',
+    type: 'notification',
+    popularity: 50
+  },
+  { 
+    id: 'gentle-alert', 
+    key: 'gentle_alert',
+    name: '温和提醒',
+    nameEn: 'Gentle Alert',
+    description: '温和的提醒音',
+    descriptionEn: 'Gentle alert sound',
+    type: 'alert',
+    popularity: 48
+  },
+  { 
+    id: 'modern-chime', 
+    key: 'modern_chime',
+    name: '现代钟声',
+    nameEn: 'Modern Chime',
+    description: '现代感钟声',
+    descriptionEn: 'Modern-style chime',
+    type: 'chime',
+    popularity: 45
+  },
+  { 
+    id: 'subtle-notification', 
+    key: 'subtle_notification',
+    name: '微妙通知',
+    nameEn: 'Subtle Notification',
+    description: '微妙的通知音',
+    descriptionEn: 'Subtle notification sound',
+    type: 'notification',
+    popularity: 42
+  },
+  { 
+    id: 'warm-bell', 
+    key: 'warm_bell',
+    name: '温暖铃声',
+    nameEn: 'Warm Bell',
+    description: '温暖的铃声',
+    descriptionEn: 'Warm bell sound',
+    type: 'bell',
+    popularity: 40
+  },
+  { 
+    id: 'crystal-chime', 
+    key: 'crystal_chime',
+    name: '水晶钟声',
+    nameEn: 'Crystal Chime',
+    description: '清脆的水晶钟声',
+    descriptionEn: 'Crisp crystal chime',
+    type: 'chime',
+    popularity: 38
+  },
+  { 
+    id: 'minimal-notification', 
+    key: 'minimal_notification',
+    name: '极简通知',
+    nameEn: 'Minimal Notification',
+    description: '极简风格通知音',
+    descriptionEn: 'Minimalist notification',
+    type: 'notification',
+    popularity: 35
+  },
+  { 
+    id: 'zen-bell', 
+    key: 'zen_bell',
+    name: '禅意铃声',
+    nameEn: 'Zen Bell',
+    description: '禅意风格的铃声',
+    descriptionEn: 'Zen-style bell sound',
+    type: 'bell',
+    popularity: 32
+  },
+  { 
+    id: 'elegant-chime', 
+    key: 'elegant_chime',
+    name: '优雅钟声',
+    nameEn: 'Elegant Chime',
+    description: '优雅的钟声',
+    descriptionEn: 'Elegant chime sound',
+    type: 'chime',
+    popularity: 30
+  },
+  { 
+    id: 'gentle-reminder', 
+    key: 'gentle_reminder',
+    name: '温和提醒',
+    nameEn: 'Gentle Reminder',
+    description: '温和的提醒音',
+    descriptionEn: 'Gentle reminder tone',
+    type: 'reminder',
+    popularity: 28
+  },
+  { 
+    id: 'peaceful-bell', 
+    key: 'peaceful_bell',
+    name: '宁静铃声',
+    nameEn: 'Peaceful Bell',
+    description: '宁静的铃声',
+    descriptionEn: 'Peaceful bell sound',
+    type: 'bell',
+    popularity: 25
+  },
+  { 
+    id: 'soft-alert', 
+    key: 'soft_alert',
+    name: '柔和提醒',
+    nameEn: 'Soft Alert',
+    description: '柔和的提醒音',
+    descriptionEn: 'Soft alert sound',
+    type: 'alert',
+    popularity: 22
+  },
+  { 
+    id: 'harmonious-chime', 
+    key: 'harmonious_chime',
+    name: '和谐钟声',
+    nameEn: 'Harmonious Chime',
+    description: '和谐的钟声',
+    descriptionEn: 'Harmonious chime',
+    type: 'chime',
+    popularity: 20
+  },
+  { 
+    id: 'delicate-notification', 
+    key: 'delicate_notification',
+    name: '精致通知',
+    nameEn: 'Delicate Notification',
+    description: '精致的通知音',
+    descriptionEn: 'Delicate notification',
+    type: 'notification',
+    popularity: 18
+  },
+  { 
+    id: 'serene-bell', 
+    key: 'serene_bell',
+    name: '宁静铃声',
+    nameEn: 'Serene Bell',
+    description: '宁静的铃声',
+    descriptionEn: 'Serene bell sound',
+    type: 'bell',
+    popularity: 15
+  },
+  { 
+    id: 'whisper-chime', 
+    key: 'whisper_chime',
+    name: '耳语钟声',
+    nameEn: 'Whisper Chime',
+    description: '轻柔如耳语的钟声',
+    descriptionEn: 'Whisper-soft chime',
+    type: 'chime',
+    popularity: 12
+  },
+  { 
+    id: 'gentle-tone', 
+    key: 'gentle_tone',
+    name: '温和音调',
+    nameEn: 'Gentle Tone',
+    description: '温和的音调',
+    descriptionEn: 'Gentle tone',
+    type: 'tone',
+    popularity: 10
+  },
+  { 
+    id: 'quiet-notification', 
+    key: 'quiet_notification',
+    name: '安静通知',
+    nameEn: 'Quiet Notification',
+    description: '安静的通知音',
+    descriptionEn: 'Quiet notification',
+    type: 'notification',
+    popularity: 8
+  },
+  { 
+    id: 'mellow-bell', 
+    key: 'mellow_bell',
+    name: '醇厚铃声',
+    nameEn: 'Mellow Bell',
+    description: '醇厚的铃声',
+    descriptionEn: 'Mellow bell sound',
+    type: 'bell',
+    popularity: 5
+  },
+  { 
+    id: 'subtle-chime', 
+    key: 'subtle_chime',
+    name: '微妙钟声',
+    nameEn: 'Subtle Chime',
+    description: '微妙的钟声',
+    descriptionEn: 'Subtle chime',
+    type: 'chime',
+    popularity: 3
+  },
+  { 
+    id: 'whisper-notification', 
+    key: 'whisper_notification',
+    name: '耳语通知',
+    nameEn: 'Whisper Notification',
+    description: '轻柔如耳语的通知',
+    descriptionEn: 'Whisper-soft notification',
+    type: 'notification',
+    popularity: 1
+  }
 ];
+
+// 声音播放函数 - 使用Web Audio API生成不同类型的声音
+const playNotificationSound = (soundType: string) => {
+  try {
+    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+    // 若已有在响，先停
+    stopNotificationSound();
+    const ctx = new AudioContext();
+    notificationAudioCtxRef.current = ctx;
+    const master = ctx.createGain();
+    master.gain.value = 0.8;
+    master.connect(ctx.destination);
+
+    const mkBeep = (t: number, freq: number, type: OscillatorType = 'sine', dur = 0.15, gain = 0.7) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25);
+      o.connect(g).connect(master);
+      o.start(t);
+      o.stop(t + dur + 0.3);
+    };
+
+    const total = 10; // seconds
+    const start = ctx.currentTime;
+    // 连续响铃（不间断）——更接近真实闹钟
+    const sustain = (freq: number, type: OscillatorType = 'sine') => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(freq, start);
+      g.gain.setValueAtTime(0.001, start);
+      g.gain.linearRampToValueAtTime(0.25, start + 0.1);
+      g.gain.setValueAtTime(0.25, start + total - 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + total);
+      o.connect(g).connect(master);
+      o.start(start);
+      o.stop(start + total + 0.05);
+    };
+
+    switch (soundType) {
+      case 'bell':
+      case 'classic-bell': {
+        sustain(1000, 'sine');
+        break;
+      }
+      case 'chime':
+      case 'gentle-chime': {
+        sustain(880, 'triangle');
+        break;
+      }
+      case 'digital':
+      case 'digital-beep': {
+        sustain(1100, 'square');
+        break;
+      }
+      case 'kitchen-timer': {
+        sustain(880, 'triangle');
+        break;
+      }
+      case 'success-sound': {
+        sustain(700, 'sine');
+        break;
+      }
+      case 'gentle-wake':
+      case 'soft-notification':
+      default: {
+        sustain(780, 'sine');
+        break;
+      }
+    }
+
+    notificationStopTimeoutRef.current = window.setTimeout(() => {
+      stopNotificationSound();
+    }, (total + 0.5) * 1000);
+  } catch (error) {
+    console.error('Error playing sound:', error);
+  }
+};
 
 // 主题颜色选项
 const THEME_COLORS = [
@@ -181,6 +645,7 @@ export default function HomePage() {
   
   // 新增功能状态
   const [selectedSound, setSelectedSound] = useState('bell');
+  const [soundUsageStats, setSoundUsageStats] = useState<Record<string, number>>({});
   const [timerColor, setTimerColor] = useState('blue'); // 倒计时颜色
   const [stopwatchColor, setStopwatchColor] = useState('blue'); // 秒表颜色
   const [worldClockColor, setWorldClockColor] = useState('blue'); // 世界时间大卡片颜色
@@ -296,6 +761,21 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
+
+  // —— 提示音播放控制：可在用户点击时提前停止 ——
+  const notificationAudioCtxRef = useRef<AudioContext | null>(null);
+  const notificationStopTimeoutRef = useRef<number | null>(null);
+
+  const stopNotificationSound = () => {
+    if (notificationStopTimeoutRef.current) {
+      window.clearTimeout(notificationStopTimeoutRef.current);
+      notificationStopTimeoutRef.current = null;
+    }
+    if (notificationAudioCtxRef.current) {
+      try { notificationAudioCtxRef.current.close(); } catch {}
+      notificationAudioCtxRef.current = null;
+    }
+  };
 
   // 添加上传图片到历史记录
   const addToImageHistory = (imageDataUrl: string) => {
@@ -499,7 +979,7 @@ export default function HomePage() {
               }
               setIsRunning(false);
               if (soundEnabled) {
-                playNotificationSound();
+                playTimerNotificationSound();
               }
               // 桌面通知
               showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
@@ -647,6 +1127,17 @@ export default function HomePage() {
       
       // theme 由 next-themes 自动管理，无需手动加载
       if (savedSound) setSelectedSound(savedSound);
+      
+      // 加载声音使用统计
+      const savedSoundUsageStats = localStorage.getItem('timer-sound-usage-stats');
+      if (savedSoundUsageStats) {
+        try {
+          setSoundUsageStats(JSON.parse(savedSoundUsageStats));
+        } catch (e) {
+          console.error('Failed to parse saved sound usage stats');
+        }
+      }
+      
       // 加载独立的颜色设置
       const savedTimerColor = localStorage.getItem('timer-timer-color');
       const savedStopwatchColor = localStorage.getItem('timer-stopwatch-color');
@@ -765,6 +1256,7 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('timer-sound', selectedSound);
+      localStorage.setItem('timer-sound-usage-stats', JSON.stringify(soundUsageStats));
       localStorage.setItem('timer-timer-color', timerColor);
       localStorage.setItem('timer-stopwatch-color', stopwatchColor);
       localStorage.setItem('timer-worldclock-color', worldClockColor);
@@ -1170,7 +1662,7 @@ export default function HomePage() {
             alarmRingStartTimeRef.current = startTime; // 使用ref记录开始响铃的时间
             setRingingAlarmId(alarm.id);
             setRingingAlarm(alarm); // 保存完整的闹钟对象
-            playNotificationSound();
+            playTimerNotificationSound();
             showDesktopNotification(t('notifications.alarm_title'), alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
             
             // 如果是单次闹钟，响铃后删除
@@ -1283,26 +1775,10 @@ export default function HomePage() {
     }, 10);
   };
 
-  const playNotificationSound = () => {
-    try {
-      const selectedSoundOption = SOUND_OPTIONS.find(s => s.id === selectedSound) || SOUND_OPTIONS[0];
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = selectedSoundOption.frequency;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 1);
-    } catch (error) {
-      console.log('Audio notification not available');
+  // 播放提示音
+  const playTimerNotificationSound = () => {
+    if (soundEnabled) {
+      playNotificationSound(selectedSound);
     }
   };
 
@@ -1321,6 +1797,8 @@ export default function HomePage() {
   const toggleTimer = () => {
     if (mode === 'timer' && timeLeft === 0) return;
     setIsRunning(!isRunning);
+    // 停止提示音
+    stopNotificationSound();
     // 关闭倒计时结束模态框（如果正在显示）
     if (showTimerEndModal) {
       setShowTimerEndModal(false);
@@ -1340,6 +1818,8 @@ export default function HomePage() {
     } else {
       setStopwatchTime(0);
     }
+    // 停止提示音
+    stopNotificationSound();
     // 关闭倒计时结束模态框（如果正在显示）
     if (showTimerEndModal) {
       setShowTimerEndModal(false);
@@ -1355,6 +1835,8 @@ export default function HomePage() {
   const closeTimerEndModal = () => {
     setShowTimerEndModal(false);
     setTimerOvertime(0);
+    // 停止正在响的提示音
+    stopNotificationSound();
     // 清除超时计时器
     if (overtimeIntervalRef.current) {
       clearInterval(overtimeIntervalRef.current);
@@ -1381,6 +1863,8 @@ export default function HomePage() {
         overtimeIntervalRef.current = null;
       }
     }
+    // 停止提示音
+    stopNotificationSound();
   };
 
   // 闹钟相关函数
@@ -4045,42 +4529,107 @@ export default function HomePage() {
               {/* 提示音选择 */}
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
-                  {t('settings_panel.sound')}
+                  {t('settings_panel.notification_sound')}
                 </label>
                 <div className="space-y-2">
-                  {SOUND_OPTIONS.map((sound) => (
-                    <button
-                      key={sound.id}
-                      onClick={() => {
-                        setSelectedSound(sound.id);
-                        // 试听音效
-                        if (soundEnabled) {
-                          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                          const oscillator = audioContext.createOscillator();
-                          const gainNode = audioContext.createGain();
-                          oscillator.connect(gainNode);
-                          gainNode.connect(audioContext.destination);
-                          oscillator.frequency.value = sound.frequency;
-                          oscillator.type = 'sine';
-                          gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-                          oscillator.start(audioContext.currentTime);
-                          oscillator.stop(audioContext.currentTime + 0.5);
-                        }
-                      }}
-                      className={`w-full px-4 py-3 rounded-lg text-left transition-all ${
-                        selectedSound === sound.id
-                          ? theme === 'dark'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-blue-500 text-white'
-                          : theme === 'dark'
-                          ? 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {t(`sounds.${sound.key}`)}
-                    </button>
-                  ))}
+                  {SOUND_OPTIONS
+                    .sort((a, b) => {
+                      // 先按人气排序，再按使用统计排序
+                      const aUsage = soundUsageStats[a.id] || 0;
+                      const bUsage = soundUsageStats[b.id] || 0;
+                      if (aUsage !== bUsage) return bUsage - aUsage; // 使用次数多的在前
+                      return b.popularity - a.popularity; // 人气高的在前
+                    })
+                    .map((sound, index) => {
+                    const usageCount = soundUsageStats[sound.id] || 0;
+                    const isSelected = selectedSound === sound.id;
+                    
+                    return (
+                      <div
+                        key={sound.id}
+                        className={`flex items-center gap-2 p-3 rounded-lg transition-all border ${
+                          isSelected
+                            ? theme === 'dark'
+                              ? 'bg-blue-500/20 border-blue-500'
+                              : 'bg-blue-50 border-blue-500'
+                            : theme === 'dark'
+                            ? 'bg-slate-800 border-slate-700 hover:bg-slate-700'
+                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {/* 左侧：选择按钮和名称 */}
+                        <button
+                          onClick={() => {
+                            setSelectedSound(sound.id);
+                            // 更新使用统计
+                            setSoundUsageStats(prev => ({
+                              ...prev,
+                              [sound.id]: (prev[sound.id] || 0) + 1
+                            }));
+                          }}
+                          className="flex-1 text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-500'
+                                : theme === 'dark'
+                                ? 'border-slate-400'
+                                : 'border-gray-400'
+                            }`}>
+                              {isSelected && (
+                                <div className="w-2 h-2 rounded-full bg-white"></div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${
+                                  isSelected
+                                    ? theme === 'dark' ? 'text-blue-300' : 'text-blue-700'
+                                    : theme === 'dark' ? 'text-slate-200' : 'text-gray-800'
+                                }`}>
+                                  {locale === 'zh' ? sound.name : sound.nameEn}
+                                </span>
+                                {index === 0 && (
+                                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                    theme === 'dark' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-yellow-100 text-yellow-700'
+                                  }`}>
+                                    {t('settings_panel.most_popular')}
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-xs mt-0.5 ${
+                                theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
+                              }`}>
+                                {locale === 'zh' ? sound.description : sound.descriptionEn}
+                                {usageCount > 0 && (
+                                  <span className="ml-2">
+                                    · {t('settings_panel.usage_count', { count: usageCount })}
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* 右侧：试听按钮 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playNotificationSound(sound.id);
+                          }}
+                          className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                            theme === 'dark'
+                              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                          title={t('settings_panel.sound_preview')}
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
