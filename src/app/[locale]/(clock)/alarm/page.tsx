@@ -2587,21 +2587,23 @@ export default function HomePage() {
               </motion.button>
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
-              <div className="mt-8">
-                <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
-                  theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
-                }`}>
-                  {t('alarm.quick_add')}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { key: '1min', seconds: 60 },
-                    { key: '3min', seconds: 180 },
-                    { key: '5min', seconds: 300 },
-                    { key: '15min', seconds: 900 },
-                    { key: '30min', seconds: 1800 },
-                    { key: '1hour', seconds: 3600 },
-                  ].map((preset) => (
+              <div className="mt-8 space-y-6">
+                {/* 相对时间快捷设置 */}
+                <div>
+                  <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
+                    theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    {t('alarm.quick_add')}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { key: '1min', seconds: 60 },
+                      { key: '3min', seconds: 180 },
+                      { key: '5min', seconds: 300 },
+                      { key: '15min', seconds: 900 },
+                      { key: '30min', seconds: 1800 },
+                      { key: '1hour', seconds: 3600 },
+                    ].map((preset) => (
                     <motion.button
                       key={preset.seconds}
                       whileHover={{ scale: 1.02 }}
@@ -2676,6 +2678,128 @@ export default function HomePage() {
                       {t(`presets.${preset.key}`)}
                     </motion.button>
                   ))}
+                </div>
+                </div>
+
+                {/* 具体时间快捷设置 */}
+                <div>
+                  <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
+                    theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                  }`}>
+                    {t('alarm.set_specific_time')}
+                  </p>
+                  
+                  {/* AM 整点 */}
+                  <div className="mb-4">
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('alarm.morning_hours')}
+                    </p>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                      {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
+                        <motion.button
+                          key={`am-${hour}`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            const alarmHour = hour === 12 ? 0 : hour;
+                            const existingAlarm = alarms.find(
+                              alarm => alarm.hour === alarmHour && alarm.minute === 0 && alarm.repeat === 'once'
+                            );
+                            
+                            if (existingAlarm) {
+                              setLastAddedAlarmId(existingAlarm.id);
+                              const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                              showToast('info', t('notifications.alarm_exists'), t('notifications.alarm_exists_desc', { time: timeStr }), `alarm-exists-${alarmHour}-0`);
+                              return;
+                            }
+                            
+                            const newAlarm: Alarm = {
+                              id: Date.now().toString(),
+                              hour: alarmHour,
+                              minute: 0,
+                              enabled: true,
+                              repeat: 'once',
+                              label: `${hour}:00 AM`,
+                            };
+                            
+                            const updatedAlarms = [...alarms, newAlarm];
+                            setAlarms(updatedAlarms);
+                            setLastAddedAlarmId(newAlarm.id);
+                            
+                            if (typeof window !== 'undefined') {
+                              localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+                            }
+                            
+                            const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                            showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 AM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                          }}
+                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm ${
+                            theme === 'dark'
+                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                          }`}
+                        >
+                          {hour}:00 AM
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* PM 整点 */}
+                  <div>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('alarm.afternoon_evening_hours')}
+                    </p>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                      {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
+                        <motion.button
+                          key={`pm-${hour}`}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            const alarmHour = hour === 12 ? 12 : hour + 12;
+                            const existingAlarm = alarms.find(
+                              alarm => alarm.hour === alarmHour && alarm.minute === 0 && alarm.repeat === 'once'
+                            );
+                            
+                            if (existingAlarm) {
+                              setLastAddedAlarmId(existingAlarm.id);
+                              const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                              showToast('info', t('notifications.alarm_exists'), t('notifications.alarm_exists_desc', { time: timeStr }), `alarm-exists-${alarmHour}-0`);
+                              return;
+                            }
+                            
+                            const newAlarm: Alarm = {
+                              id: Date.now().toString(),
+                              hour: alarmHour,
+                              minute: 0,
+                              enabled: true,
+                              repeat: 'once',
+                              label: `${hour}:00 PM`,
+                            };
+                            
+                            const updatedAlarms = [...alarms, newAlarm];
+                            setAlarms(updatedAlarms);
+                            setLastAddedAlarmId(newAlarm.id);
+                            
+                            if (typeof window !== 'undefined') {
+                              localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+                            }
+                            
+                            const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                            showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 PM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                          }}
+                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm ${
+                            theme === 'dark'
+                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                          }`}
+                        >
+                          {hour}:00 PM
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
               </div>

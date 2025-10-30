@@ -21,12 +21,15 @@ NProgress.configure({
 // 预设时间选项
 const PRESET_TIMES = [
   { key: '1min', seconds: 60, path: '1-minute-timer' },
+  { key: '2min', seconds: 120, path: '2-minute-timer' },
   { key: '3min', seconds: 180, path: '3-minute-timer' },
   { key: '5min', seconds: 300, path: '5-minute-timer' },
   { key: '10min', seconds: 600, path: '10-minute-timer' },
   { key: '15min', seconds: 900, path: '15-minute-timer' },
+  { key: '20min', seconds: 1200, path: '20-minute-timer' },
   { key: '25min', seconds: 1500, path: '25-minute-timer' },
   { key: '30min', seconds: 1800, path: '30-minute-timer' },
+  { key: '40min', seconds: 2400, path: '40-minute-timer' },
   { key: '45min', seconds: 2700, path: '45-minute-timer' },
   { key: '1hour', seconds: 3600, path: '1-hour-timer' },
 ];
@@ -447,15 +450,15 @@ export default function HomePage() {
       }
     }
     
-    // 只有当时间不同且计时器未运行时才更新
-    if (newTime !== initialTime && !isRunning) {
+    // 只在路径实际改变时更新（不检查 initialTime，避免覆盖用户手动设置的值）
+    if (!isRunning) {
       setInitialTime(newTime);
       setTimeLeft(newTime);
     }
     
     // 完成进度条加载
     NProgress.done();
-  }, [pathname, searchParams, initialTime, isRunning]);
+  }, [pathname, searchParams]);
 
   // 监听背景颜色变化，自动切换主题
   useEffect(() => {
@@ -3354,44 +3357,118 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3 }}
-                  className="inline-block"
+                  className="inline-block space-y-6"
                   style={{
                     width: 'var(--timer-width, auto)',
                     minWidth: '300px',
                     maxWidth: '90vw'
                   }}
                 >
-                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center`}>{t('timer.quick_settings')}</p>
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-2 md:gap-3">
-                    {PRESET_TIMES.map((preset) => (
-                      <Link
-                        key={preset.seconds}
-                        href={`/${locale}/${preset.path}`}
-                        className="block"
-                        onClick={() => {
-                          // 如果点击的不是当前时间，显示进度条
-                          if (initialTime !== preset.seconds) {
-                            NProgress.start();
-                          }
-                        }}
-                      >
-                        <motion.div
+                  <p className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'} mb-3 sm:mb-4 text-center font-medium`}>{t('timer.quick_settings')}</p>
+                  
+                  {/* 秒级计时器 */}
+                  <div>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('timer.second_timers')}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { label: '10s', seconds: 10 },
+                        { label: '20s', seconds: 20 },
+                        { label: '30s', seconds: 30 },
+                        { label: '45s', seconds: 45 },
+                        { label: '60s', seconds: 60 },
+                        { label: '90s', seconds: 90 },
+                      ].map((preset) => (
+                        <motion.button
+                          key={preset.seconds}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          className={`px-2 py-1.5 sm:px-3 sm:py-2 md:px-4 md:py-2.5 rounded-[8px] text-xs sm:text-sm font-medium transition-all text-center cursor-pointer ${
+                          onClick={() => setPresetTime(preset.seconds)}
+                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
                             initialTime === preset.seconds
                               ? theme === 'dark'
                                 ? 'bg-slate-600 text-white shadow-md'
                                 : 'bg-slate-400 text-white shadow-md'
                               : theme === 'dark'
-                              ? 'bg-slate-700/20 text-slate-300 hover:bg-slate-600/30 border border-slate-600/10'
-                              : 'bg-gray-50/50 text-slate-600 hover:bg-slate-100/80 border border-slate-200/30'
+                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                           }`}
                         >
-                          {t(`presets.${preset.key}`)}
-                        </motion.div>
-                      </Link>
-                    ))}
+                          {preset.label}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 分钟级计时器 */}
+                  <div>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('timer.minute_timers')}
+                    </p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {PRESET_TIMES.map((preset) => (
+                        <Link
+                          key={preset.seconds}
+                          href={`/${locale}/${preset.path}`}
+                          className="block"
+                          onClick={() => {
+                            if (initialTime !== preset.seconds) {
+                              NProgress.start();
+                            }
+                          }}
+                        >
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
+                              initialTime === preset.seconds
+                                ? theme === 'dark'
+                                  ? 'bg-slate-600 text-white shadow-md'
+                                  : 'bg-slate-400 text-white shadow-md'
+                                : theme === 'dark'
+                                ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                                : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                            }`}
+                          >
+                            {t(`presets.${preset.key}`)}
+                          </motion.div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 小时级计时器 */}
+                  <div>
+                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('timer.hour_timers')}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: '2h', seconds: 7200 },
+                        { label: '4h', seconds: 14400 },
+                        { label: '8h', seconds: 28800 },
+                        { label: '12h', seconds: 43200 },
+                      ].map((preset) => (
+                        <motion.button
+                          key={preset.seconds}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setPresetTime(preset.seconds)}
+                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
+                            initialTime === preset.seconds
+                              ? theme === 'dark'
+                                ? 'bg-slate-600 text-white shadow-md'
+                                : 'bg-slate-400 text-white shadow-md'
+                              : theme === 'dark'
+                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                          }`}
+                        >
+                          {preset.label}
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               </div>

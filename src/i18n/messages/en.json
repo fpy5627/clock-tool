@@ -132,12 +132,15 @@
   "clock": {
     "presets": {
       "1min": "1 Minute",
+      "2min": "2 Minutes",
       "3min": "3 Minutes",
       "5min": "5 Minutes",
       "10min": "10 Minutes",
       "15min": "15 Minutes",
+      "20min": "20 Minutes",
       "25min": "25 Minutes",
       "30min": "30 Minutes",
+      "40min": "40 Minutes",
       "45min": "45 Minutes",
       "1hour": "1 Hour"
     },
@@ -250,7 +253,10 @@
     "timer": {
       "time_up": "Time's Up!",
       "progress": "Progress",
-      "quick_settings": "Quick Settings"
+      "quick_settings": "Quick Settings",
+      "second_timers": "Second Timers",
+      "minute_timers": "Minute Timers",
+      "hour_timers": "Hour Timers"
     },
     "alarm": {
       "no_alarms": "No alarms yet, click button below to add",
@@ -266,6 +272,9 @@
       "repeat_weekdays": "Weekdays",
       "repeat_weekends": "Weekends",
       "quick_add": "Quick Add",
+      "set_specific_time": "Set Specific Time",
+      "morning_hours": "Morning Hours (AM)",
+      "afternoon_evening_hours": "Afternoon/Evening Hours (PM)",
       "time_now": "Time's up",
       "snooze_label": "Snooze",
       "snooze_button": "Remind in 5 minutes",

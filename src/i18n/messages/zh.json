@@ -132,12 +132,15 @@
   "clock": {
     "presets": {
       "1min": "1分钟",
+      "2min": "2分钟",
       "3min": "3分钟",
       "5min": "5分钟",
       "10min": "10分钟",
       "15min": "15分钟",
+      "20min": "20分钟",
       "25min": "25分钟",
       "30min": "30分钟",
+      "40min": "40分钟",
       "45min": "45分钟",
       "1hour": "1小时"
     },
@@ -250,7 +253,10 @@
     "timer": {
       "time_up": "时间到！",
       "progress": "进度",
-      "quick_settings": "快捷设置"
+      "quick_settings": "快捷设置",
+      "second_timers": "秒级计时器",
+      "minute_timers": "分钟级计时器",
+      "hour_timers": "小时级计时器"
     },
     "alarm": {
       "no_alarms": "暂无闹钟，点击下方按钮添加",
@@ -266,6 +272,9 @@
       "repeat_weekdays": "工作日",
       "repeat_weekends": "周末",
       "quick_add": "快捷设置",
+      "set_specific_time": "设置具体时间",
+      "morning_hours": "上午时间段",
+      "afternoon_evening_hours": "下午/晚上时间段",
       "time_now": "时间到了",
       "snooze_label": "稍后提醒",
       "snooze_button": "5分钟后提醒",
