@@ -1120,16 +1120,20 @@ export default function HomePage() {
               }, 1000);
             }
           }
-        } else if (alarm.repeat === 'once' && alarm.enabled) {
-          // 自动关闭过期的单次闹钟
-          const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
-          const currentTimeInMinutes = currentHour * 60 + currentMinute;
-          
-          // 如果当前时间已经超过闹钟时间，自动关闭闹钟
-          if (currentTimeInMinutes > alarmTimeInMinutes) {
-            toggleAlarm(alarm.id);
-          }
         }
+        // 注释掉自动关闭过期单次闹钟的逻辑
+        // 因为用户设置已过时间的闹钟时，应该理解为次日响铃
+        // 单次闹钟会在响铃后自动删除
+        // else if (alarm.repeat === 'once' && alarm.enabled) {
+        //   // 自动关闭过期的单次闹钟
+        //   const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
+        //   const currentTimeInMinutes = currentHour * 60 + currentMinute;
+        //   
+        //   // 如果当前时间已经超过闹钟时间，自动关闭闹钟
+        //   if (currentTimeInMinutes > alarmTimeInMinutes) {
+        //     toggleAlarm(alarm.id);
+        //   }
+        // }
       });
     }, 1000);
 
@@ -2202,7 +2206,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="w-full flex flex-col items-center justify-center"
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
@@ -2707,11 +2711,43 @@ export default function HomePage() {
                             );
                             
                             if (existingAlarm) {
+                              // 如果闹钟已存在但是关闭状态，自动开启它
+                              if (!existingAlarm.enabled) {
+                                const updatedAlarms = alarms.map(alarm =>
+                                  alarm.id === existingAlarm.id ? { ...alarm, enabled: true } : alarm
+                                );
+                                setAlarms(updatedAlarms);
+                                if (typeof window !== 'undefined') {
+                                  localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+                                }
+                                setLastAddedAlarmId(existingAlarm.id);
+                                const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                                
+                                // 检查时间是否已过去
+                                const now = new Date();
+                                const currentHour = now.getHours();
+                                const currentMinute = now.getMinutes();
+                                const isPast = (alarmHour < currentHour) || (alarmHour === currentHour && 0 <= currentMinute);
+                                
+                                if (isPast) {
+                                  showToast('success', t('notifications.alarm_enabled'), locale === 'zh' ? `已开启，将在次日 ${timeStr} 响铃` : `Enabled, will ring tomorrow at ${timeStr}`, `alarm-enabled-${alarmHour}-0`);
+                                } else {
+                                  showToast('success', t('notifications.alarm_enabled'), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-enabled-${alarmHour}-0`);
+                                }
+                                return;
+                              }
+                              // 如果已存在且已开启，仅提示
                               setLastAddedAlarmId(existingAlarm.id);
                               const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
                               showToast('info', t('notifications.alarm_exists'), t('notifications.alarm_exists_desc', { time: timeStr }), `alarm-exists-${alarmHour}-0`);
                               return;
                             }
+                            
+                            // 检查设置的时间是否已经过去
+                            const now = new Date();
+                            const currentHour = now.getHours();
+                            const currentMinute = now.getMinutes();
+                            const isPast = (alarmHour < currentHour) || (alarmHour === currentHour && 0 <= currentMinute);
                             
                             const newAlarm: Alarm = {
                               id: Date.now().toString(),
@@ -2731,7 +2767,12 @@ export default function HomePage() {
                             }
                             
                             const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
-                            showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 AM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                            // 根据时间是否已过去显示不同的提示
+                            if (isPast) {
+                              showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 AM` }), locale === 'zh' ? `将在次日 ${timeStr} 响铃` : `Will ring tomorrow at ${timeStr}`, `alarm-success-${alarmHour}-0`);
+                            } else {
+                              showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 AM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                            }
                           }}
                           className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm ${
                             theme === 'dark'
@@ -2763,11 +2804,43 @@ export default function HomePage() {
                             );
                             
                             if (existingAlarm) {
+                              // 如果闹钟已存在但是关闭状态，自动开启它
+                              if (!existingAlarm.enabled) {
+                                const updatedAlarms = alarms.map(alarm =>
+                                  alarm.id === existingAlarm.id ? { ...alarm, enabled: true } : alarm
+                                );
+                                setAlarms(updatedAlarms);
+                                if (typeof window !== 'undefined') {
+                                  localStorage.setItem('timer-alarms', JSON.stringify(updatedAlarms));
+                                }
+                                setLastAddedAlarmId(existingAlarm.id);
+                                const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
+                                
+                                // 检查时间是否已过去
+                                const now = new Date();
+                                const currentHour = now.getHours();
+                                const currentMinute = now.getMinutes();
+                                const isPast = (alarmHour < currentHour) || (alarmHour === currentHour && 0 <= currentMinute);
+                                
+                                if (isPast) {
+                                  showToast('success', t('notifications.alarm_enabled'), locale === 'zh' ? `已开启，将在次日 ${timeStr} 响铃` : `Enabled, will ring tomorrow at ${timeStr}`, `alarm-enabled-${alarmHour}-0`);
+                                } else {
+                                  showToast('success', t('notifications.alarm_enabled'), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-enabled-${alarmHour}-0`);
+                                }
+                                return;
+                              }
+                              // 如果已存在且已开启，仅提示
                               setLastAddedAlarmId(existingAlarm.id);
                               const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
                               showToast('info', t('notifications.alarm_exists'), t('notifications.alarm_exists_desc', { time: timeStr }), `alarm-exists-${alarmHour}-0`);
                               return;
                             }
+                            
+                            // 检查设置的时间是否已经过去
+                            const now = new Date();
+                            const currentHour = now.getHours();
+                            const currentMinute = now.getMinutes();
+                            const isPast = (alarmHour < currentHour) || (alarmHour === currentHour && 0 <= currentMinute);
                             
                             const newAlarm: Alarm = {
                               id: Date.now().toString(),
@@ -2787,7 +2860,12 @@ export default function HomePage() {
                             }
                             
                             const timeStr = `${String(alarmHour).padStart(2, '0')}:00`;
-                            showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 PM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                            // 根据时间是否已过去显示不同的提示
+                            if (isPast) {
+                              showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 PM` }), locale === 'zh' ? `将在次日 ${timeStr} 响铃` : `Will ring tomorrow at ${timeStr}`, `alarm-success-${alarmHour}-0`);
+                            } else {
+                              showToast('success', t('notifications.alarm_success', { preset: `${hour}:00 PM` }), t('notifications.alarm_success_desc', { time: timeStr }), `alarm-success-${alarmHour}-0`);
+                            }
                           }}
                           className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm ${
                             theme === 'dark'

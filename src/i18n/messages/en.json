@@ -131,6 +131,12 @@
   },
   "clock": {
     "presets": {
+      "10s": "10 Seconds",
+      "20s": "20 Seconds",
+      "30s": "30 Seconds",
+      "45s": "45 Seconds",
+      "60s": "60 Seconds",
+      "90s": "90 Seconds",
       "1min": "1 Minute",
       "2min": "2 Minutes",
       "3min": "3 Minutes",
@@ -142,7 +148,11 @@
       "30min": "30 Minutes",
       "40min": "40 Minutes",
       "45min": "45 Minutes",
-      "1hour": "1 Hour"
+      "1hour": "1 Hour",
+      "2hour": "2 Hours",
+      "4hour": "4 Hours",
+      "8hour": "8 Hours",
+      "12hour": "12 Hours"
     },
     "sounds": {
       "bell": "Bell",

@@ -8,7 +8,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
-import Link from 'next/link';
 import NProgress from 'nprogress';
 
 // 配置 NProgress
@@ -1181,16 +1180,20 @@ export default function HomePage() {
               }, 1000);
             }
           }
-        } else if (alarm.repeat === 'once' && alarm.enabled) {
-          // 自动关闭过期的单次闹钟
-          const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
-          const currentTimeInMinutes = currentHour * 60 + currentMinute;
-          
-          // 如果当前时间已经超过闹钟时间，自动关闭闹钟
-          if (currentTimeInMinutes > alarmTimeInMinutes) {
-            toggleAlarm(alarm.id);
-          }
         }
+        // 注释掉自动关闭过期单次闹钟的逻辑
+        // 因为用户设置已过时间的闹钟时，应该理解为次日响铃
+        // 单次闹钟会在响铃后自动删除
+        // else if (alarm.repeat === 'once' && alarm.enabled) {
+        //   // 自动关闭过期的单次闹钟
+        //   const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
+        //   const currentTimeInMinutes = currentHour * 60 + currentMinute;
+        //   
+        //   // 如果当前时间已经超过闹钟时间，自动关闭闹钟
+        //   if (currentTimeInMinutes > alarmTimeInMinutes) {
+        //     toggleAlarm(alarm.id);
+        //   }
+        // }
       });
     }, 1000);
 
@@ -1318,6 +1321,16 @@ export default function HomePage() {
   const toggleTimer = () => {
     if (mode === 'timer' && timeLeft === 0) return;
     setIsRunning(!isRunning);
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
+    }
   };
 
   const resetTimer = () => {
@@ -1326,6 +1339,16 @@ export default function HomePage() {
       setTimeLeft(initialTime);
     } else {
       setStopwatchTime(0);
+    }
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
     }
   };
 
@@ -1348,6 +1371,16 @@ export default function HomePage() {
     setIsRunning(false);
     setInitialTime(seconds);
     setTimeLeft(seconds);
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
+    }
   };
 
   // 闹钟相关函数
@@ -2263,7 +2296,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="w-full flex flex-col items-center justify-center"
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
@@ -2420,7 +2453,7 @@ export default function HomePage() {
             </div>
           ) : mode === 'alarm' ? (
             /* 闹钟模式 */
-            <>
+            <div className={`w-full ${!isFullscreen ? 'pt-24 sm:pt-28 md:pt-32 lg:pt-40' : ''}`}>
               {/* 日期和天气显示 - 非全屏时显示 */}
               {!isFullscreen && (
                 <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8 px-4">
@@ -2741,10 +2774,15 @@ export default function HomePage() {
               </div>
               </div>
             </div>
-            </>
+            </div>
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
-            <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`w-full overflow-x-hidden ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : ''}`} 
+              style={{ paddingLeft: '32px', paddingRight: '32px' }}
+            >
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
                 {(selectedCity || userLocation) && (() => {
@@ -3199,7 +3237,7 @@ export default function HomePage() {
                   )}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           ) : null}
 
           {/* 进度条 - 仅非全屏模式显示 */}
@@ -3373,12 +3411,12 @@ export default function HomePage() {
                     </p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { label: '10s', seconds: 10 },
-                        { label: '20s', seconds: 20 },
-                        { label: '30s', seconds: 30 },
-                        { label: '45s', seconds: 45 },
-                        { label: '60s', seconds: 60 },
-                        { label: '90s', seconds: 90 },
+                        { key: '10s', seconds: 10 },
+                        { key: '20s', seconds: 20 },
+                        { key: '30s', seconds: 30 },
+                        { key: '45s', seconds: 45 },
+                        { key: '60s', seconds: 60 },
+                        { key: '90s', seconds: 90 },
                       ].map((preset) => (
                         <motion.button
                           key={preset.seconds}
@@ -3395,7 +3433,7 @@ export default function HomePage() {
                               : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                           }`}
                         >
-                          {preset.label}
+                          {t(`presets.${preset.key}`)}
                         </motion.button>
                       ))}
                     </div>
@@ -3408,32 +3446,23 @@ export default function HomePage() {
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {PRESET_TIMES.map((preset) => (
-                        <Link
+                        <motion.button
                           key={preset.seconds}
-                          href={`/${locale}/${preset.path}`}
-                          className="block"
-                          onClick={() => {
-                            if (initialTime !== preset.seconds) {
-                              NProgress.start();
-                            }
-                          }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setPresetTime(preset.seconds)}
+                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
+                            initialTime === preset.seconds
+                              ? theme === 'dark'
+                                ? 'bg-slate-600 text-white shadow-md'
+                                : 'bg-slate-400 text-white shadow-md'
+                              : theme === 'dark'
+                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                          }`}
                         >
-                          <motion.div
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
-                                ? theme === 'dark'
-                                  ? 'bg-slate-600 text-white shadow-md'
-                                  : 'bg-slate-400 text-white shadow-md'
-                                : theme === 'dark'
-                                ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
-                                : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
-                            }`}
-                          >
-                            {t(`presets.${preset.key}`)}
-                          </motion.div>
-                        </Link>
+                          {t(`presets.${preset.key}`)}
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -3445,10 +3474,10 @@ export default function HomePage() {
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { label: '2h', seconds: 7200 },
-                        { label: '4h', seconds: 14400 },
-                        { label: '8h', seconds: 28800 },
-                        { label: '12h', seconds: 43200 },
+                        { key: '2hour', seconds: 7200 },
+                        { key: '4hour', seconds: 14400 },
+                        { key: '8hour', seconds: 28800 },
+                        { key: '12hour', seconds: 43200 },
                       ].map((preset) => (
                         <motion.button
                           key={preset.seconds}
@@ -3465,7 +3494,7 @@ export default function HomePage() {
                               : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                           }`}
                         >
-                          {preset.label}
+                          {t(`presets.${preset.key}`)}
                         </motion.button>
                       ))}
                     </div>
