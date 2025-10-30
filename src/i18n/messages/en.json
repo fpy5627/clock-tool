@@ -365,8 +365,12 @@
     "modals": {
       "custom_timer": "Custom Timer",
       "set_stopwatch": "Set Stopwatch Time",
+      "hours": "Hours",
       "minutes": "Minutes",
-      "seconds": "Seconds"
+      "seconds": "Seconds",
+      "timer_completed": "Timer Completed",
+      "overtime": "Overtime",
+      "got_it": "Got It"
     }
   }
 }

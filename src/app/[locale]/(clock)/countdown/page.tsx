@@ -2049,25 +2049,6 @@ export default function HomePage() {
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (mode === 'alarm') {
-                      setShowAddAlarm(true);
-                    } else {
-                      // 根据当前模式设置初始值
-                      const currentSeconds = mode === 'timer' ? timeLeft : stopwatchTime;
-                      setCustomMinutes(Math.floor(currentSeconds / 60));
-                      setCustomSeconds(currentSeconds % 60);
-                      setShowEditModal(true);
-                    }
-                  }}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={mode === 'alarm' ? t('buttons.add_alarm') : t('tooltips.custom_time')}
-                >
-                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
                 {/* 移动端隐藏通知按钮 */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -5328,23 +5309,23 @@ export default function HomePage() {
                         
                         if (hours > 0) {
                           if (mins > 0) {
-                            return `${hours}小时${mins}分钟`;
+                            return `${hours} ${t('modals.hours')} ${mins} ${t('modals.minutes')}`;
                           }
-                          return `${hours}小时`;
+                          return `${hours} ${t('modals.hours')}`;
                         } else if (mins > 0) {
                           if (secs > 0) {
-                            return `${mins}分${secs}秒`;
+                            return `${mins} ${t('modals.minutes')} ${secs} ${t('modals.seconds')}`;
                           }
-                          return `${mins}分钟`;
+                          return `${mins} ${t('modals.minutes')}`;
                         } else {
-                          return `${secs}秒`;
+                          return `${secs} ${t('modals.seconds')}`;
                         }
                       })()}
                     </h2>
                     <p className={`text-sm xs:text-base sm:text-lg md:text-xl ${
                       theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                     }`}>
-                      倒计时已完成
+                      {t('modals.timer_completed')}
                     </p>
                   </motion.div>
                 </div>
@@ -5379,7 +5360,7 @@ export default function HomePage() {
                     <p className={`text-xs xs:text-sm sm:text-base font-bold uppercase tracking-wider xs:tracking-widest mb-3 xs:mb-4 sm:mb-6 ${
                       theme === 'dark' ? 'text-red-400' : 'text-red-600'
                     }`}>
-                      已超时
+                      {t('modals.overtime')}
                     </p>
                     <motion.div 
                       className={`text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black ${
@@ -5431,7 +5412,7 @@ export default function HomePage() {
                       : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
                   }`}
                 >
-                  知道了
+                  {t('modals.got_it')}
                 </motion.button>
               </div>
             </motion.div>
@@ -5811,6 +5792,15 @@ export default function HomePage() {
                     setApplyColorToAllPages(true);
                     setBackgroundColor(pendingBackgroundColor);
                     
+                    // 保存到通用 localStorage
+                    localStorage.setItem('timer-background-color', pendingBackgroundColor);
+                    
+                    // 清除各个功能页面的专用背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      localStorage.removeItem(`timer-background-color-${modeKey}`);
+                    });
+                    
                     // 分析颜色亮度并自动设置主题
                     const isLight = isLightColor(pendingBackgroundColor);
                     setTimeout(() => {
@@ -5839,6 +5829,9 @@ export default function HomePage() {
                     console.log('用户选择了"仅应用到当前功能页面"');
                     setApplyColorToAllPages(false);
                     setBackgroundColor(pendingBackgroundColor);
+                    
+                    // 保存当前页面的背景颜色到 localStorage
+                    localStorage.setItem(`timer-background-color-${mode}`, pendingBackgroundColor);
                     
                     // 清除其他功能页面的背景设置
                     const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];

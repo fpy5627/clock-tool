@@ -365,8 +365,12 @@
     "modals": {
       "custom_timer": "自定义倒计时",
       "set_stopwatch": "设置秒表时间",
+      "hours": "小时",
       "minutes": "分钟",
-      "seconds": "秒"
+      "seconds": "秒",
+      "timer_completed": "倒计时已完成",
+      "overtime": "已超时",
+      "got_it": "知道了"
     }
   }
 }
