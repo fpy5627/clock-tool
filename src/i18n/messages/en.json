@@ -329,7 +329,13 @@
       "timezone_placeholder": "e.g., Asia/Shanghai",
       "add_custom": "Add Custom Timezone",
       "timezone_hint": "Please enter IANA timezone identifier",
-      "required_fields": "Please fill in all required fields"
+      "required_fields": "Please fill in all required fields",
+      "common_timezone_references": "Common Timezone References:",
+      "timezone_reference_shanghai": "Asia/Shanghai",
+      "timezone_reference_newyork": "America/New_York",
+      "timezone_reference_london": "Europe/London",
+      "timezone_reference_tokyo": "Asia/Tokyo",
+      "timezone_reference_sydney": "Australia/Sydney"
     },
     "settings_panel": {
       "title": "Settings",
@@ -385,7 +391,26 @@
       "restore_defaults": "Restore Defaults",
       "restore_defaults_desc": "Automatically detect and restore default theme based on your IP address time",
       "restoring_defaults": "Restoring default settings...",
-      "defaults_restored": "Default settings restored"
+      "defaults_restored": "Default settings restored",
+      "confirm_modify_color": "Confirm Color Modification",
+      "preview_new_color": "Preview new color:",
+      "modify_small_cards_question": "Do you want to modify the color of small cards at the same time?",
+      "yes_modify_together": "Yes, modify together",
+      "no_only_large_card": "No, only modify large cards",
+      "current_background_color": "Current background color",
+      "color_applied_all": "Applied to all functional pages",
+      "color_applied_current": "Applied to {pageName} page only",
+      "custom_color": "Custom color",
+      "apply_solid_color_background": "Apply Solid Color Background",
+      "select_application_scope": "Select application scope:",
+      "all_functional_pages": "All functional pages",
+      "current_functional_page_only": "Current functional page only",
+      "all_pages_use_this_background": "Timer, stopwatch, alarm, world clock all use this background",
+      "only_this_page_uses_this_background": "Only {pageName} page uses this background",
+      "background_applied_to_page": "Background has been applied to {pageName} page",
+      "background_applied_to_current_page": "Background has been applied to {pageName} page only, other pages restored to default background ({themeText})",
+      "light_mode": "Light mode",
+      "dark_mode": "Dark mode"
     },
     "modals": {
       "custom_timer": "Custom Timer",

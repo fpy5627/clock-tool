@@ -39,7 +39,7 @@ export default function Header({ header }: { header: HeaderType }) {
   }
 
   return (
-    <section className="py-3">
+    <section className="sticky top-0 z-50 py-3 bg-background/80 backdrop-blur-sm border-b fullscreen-mode:hidden" data-header>
       <div className="container">
         <nav className="hidden justify-between lg:flex">
           <div className="flex items-center gap-6">

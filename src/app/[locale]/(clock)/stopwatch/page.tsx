@@ -510,6 +510,15 @@ export default function HomePage() {
     };
   }, []);
 
+  // 同步 isFullscreen 状态到 body 类名（用于隐藏 Header 和 Footer）
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.classList.add('fullscreen-mode');
+    } else {
+      document.body.classList.remove('fullscreen-mode');
+    }
+  }, [isFullscreen]);
+
   // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
   useEffect(() => {
     const handleInteraction = () => {
@@ -1671,7 +1680,7 @@ export default function HomePage() {
 
   return (
     <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${
+      className={`${isFullscreen ? 'fixed inset-0 z-50 h-screen' : 'min-h-screen'} ${
         backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
       } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
       style={{ 
@@ -1698,7 +1707,7 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col flex-1">
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+        <div className={`sm:hidden sticky top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
           {/* 主要功能按钮 */}
           <div className="flex items-center justify-around py-3 px-2">
             <button
@@ -1889,7 +1898,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative w-full">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (
@@ -1900,7 +1909,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none"
+                className="hidden sm:flex fixed top-20 sm:top-24 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none z-40"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -1972,29 +1981,10 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 right-2 sm:right-4 gap-0.5 sm:gap-2"
+                className="hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-40"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (mode === 'alarm') {
-                      setShowAddAlarm(true);
-                    } else {
-                      // 根据当前模式设置初始值
-                      const currentSeconds = mode === 'timer' ? timeLeft : stopwatchTime;
-                      setCustomMinutes(Math.floor(currentSeconds / 60));
-                      setCustomSeconds(currentSeconds % 60);
-                      setShowEditModal(true);
-                    }
-                  }}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={mode === 'alarm' ? t('buttons.add_alarm') : t('tooltips.custom_time')}
-                >
-                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
                 {/* 移动端隐藏通知按钮 */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -2223,7 +2213,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="w-full flex flex-col items-center justify-center"
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center' : 'justify-center flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
@@ -2282,8 +2272,8 @@ export default function HomePage() {
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
             <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1' : ''
-            }`}>
+              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[60vh] sm:min-h-[50vh]'
+            }`} style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : undefined}>
               <div 
                 id="timer-display"
                 className={`${
@@ -2300,7 +2290,7 @@ export default function HomePage() {
                         : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
                     }
                   })()
-                } leading-none flex items-center justify-center whitespace-nowrap`}
+                } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
                 style={{
                   fontFamily: '"Rajdhani", sans-serif',
                   fontWeight: '580',
@@ -2368,7 +2358,7 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 ${
+                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full ${
                     isFullscreen 
                       ? 'text-3xl sm:text-4xl md:text-5xl' 
                       : 'text-2xl sm:text-3xl'
@@ -2585,29 +2575,32 @@ export default function HomePage() {
               </div>
 
               {/* 添加闹钟按钮 */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  const now = new Date();
-                  setNewAlarmHour(now.getHours());
-                  setNewAlarmMinute(now.getMinutes());
-                  setNewAlarmRepeat('daily');
-                  setNewAlarmLabel('');
-                  setEditingAlarmId(null);
-                  setShowAddAlarm(true);
-                }}
-                className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
-                  theme === 'dark' 
-                    ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
-                    : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
-                }`}
-              >
-                <Plus className="w-5 h-5" />
-                  <span className="font-medium">{t('buttons.add_alarm')}</span>
-              </motion.button>
+              {!isFullscreen && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    const now = new Date();
+                    setNewAlarmHour(now.getHours());
+                    setNewAlarmMinute(now.getMinutes());
+                    setNewAlarmRepeat('daily');
+                    setNewAlarmLabel('');
+                    setEditingAlarmId(null);
+                    setShowAddAlarm(true);
+                  }}
+                  className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
+                    theme === 'dark' 
+                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
+                      : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
+                  }`}
+                >
+                  <Plus className="w-5 h-5" />
+                    <span className="font-medium">{t('buttons.add_alarm')}</span>
+                </motion.button>
+              )}
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
+              {!isFullscreen && (
               <div className="mt-8">
                 <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
                   theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
@@ -2699,6 +2692,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
+              )}
               </div>
             </div>
             </>
@@ -4077,11 +4071,11 @@ export default function HomePage() {
                             style={{ backgroundColor: backgroundColor }}
                           />
                           <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                            当前背景颜色
+                            {t('settings_panel.current_background_color')}
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyColorToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                          {applyColorToAllPages ? t('settings_panel.color_applied_all') : t('settings_panel.color_applied_current', { pageName: t(`modes.${mode}`) })}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4144,9 +4138,9 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                              const themeText = isLightBackground ? '白天模式' : '夜间模式';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                              const pageName = t(`modes.${mode}`);
+                              const themeText = isLightBackground ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
+                              toast.success(t('settings_panel.background_applied_to_current_page', { pageName, themeText }));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyColorToAllPages 
@@ -4164,7 +4158,7 @@ export default function HomePage() {
                       </div>
                     )}
                     {/* 深色系背景 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.dark_colors')}</p>
                     <div className="grid grid-cols-6 gap-2 mb-4">
                       {[
                         '#1e293b', '#0f172a', '#1e1b4b', '#1f2937', '#18181b',
@@ -4189,7 +4183,7 @@ export default function HomePage() {
                     </div>
                     
                     {/* 浅色系背景 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>浅色系</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.light_colors')}</p>
                     <div className="grid grid-cols-6 gap-2 mb-4">
                       {[
                         '#f8fafc', '#f1f5f9', '#e0e7ff', '#dbeafe', '#e0f2fe',
@@ -4214,7 +4208,7 @@ export default function HomePage() {
                     </div>
                     
                     {/* 自定义颜色输入 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>自定义颜色</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.custom_color')}</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -4260,7 +4254,7 @@ export default function HomePage() {
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                          {applyToAllPages ? t('settings_panel.color_applied_all') : t('settings_panel.color_applied_current', { pageName: t(`modes.${mode}`) })}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4336,9 +4330,9 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                              const themeText = isLightImage ? '白天模式' : '夜间模式';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                              const pageName = t(`modes.${mode}`);
+                              const themeText = isLightImage ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
+                              toast.success(t('settings_panel.background_applied_to_current_page', { pageName, themeText }));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyToAllPages 
@@ -4495,7 +4489,7 @@ export default function HomePage() {
                                       }
                                       
                                       const pageName = mode === 'timer' ? t('modes.timer') : mode === 'stopwatch' ? t('modes.stopwatch') : mode === 'alarm' ? t('modes.alarm') : t('modes.worldclock');
-                                      const themeText = isLightImage ? (locale === 'zh' ? '白天模式' : 'Light mode') : (locale === 'zh' ? '夜间模式' : 'Dark mode');
+                                      const themeText = isLightImage ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
                                       toast.success(t('settings_panel.history_image_applied_current', { pageName, themeText }));
                                     }}
                                     className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
@@ -5611,8 +5605,8 @@ export default function HomePage() {
                     
                     setShowBackgroundConfirm(false);
                     setPendingBackgroundImage('');
-                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                    toast.success(`背景已应用到${pageName}功能页面`);
+                    const pageName = t(`modes.${mode}`);
+                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
                   }}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
@@ -5620,7 +5614,7 @@ export default function HomePage() {
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
                   }`}
                 >
-                  仅应用到当前功能页面
+                  {t('settings_panel.apply_to_current')}
                 </button>
                 <button
                   onClick={() => {
@@ -5664,7 +5658,7 @@ export default function HomePage() {
               }`}
             >
               <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                应用纯色背景
+                {t('settings_panel.apply_solid_color_background')}
               </h3>
               
               {/* 颜色预览 */}
@@ -5674,7 +5668,7 @@ export default function HomePage() {
                   style={{ backgroundColor: pendingBackgroundColor }}
                 />
                 <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  选择应用范围：
+                  {t('settings_panel.select_application_scope')}
                 </p>
               </div>
               
@@ -5688,10 +5682,10 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1">
                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                      所有功能页面
+                      {t('settings_panel.all_functional_pages')}
                     </p>
                     <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                      计时器、秒表、闹钟、世界时间都使用此背景
+                      {t('settings_panel.all_pages_use_this_background')}
                     </p>
                   </div>
                 </div>
@@ -5703,10 +5697,10 @@ export default function HomePage() {
                   </div>
                   <div className="flex-1">
                     <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                      仅当前功能页面
+                      {t('settings_panel.current_functional_page_only')}
                     </p>
                     <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                      {t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })}
                     </p>
                   </div>
                 </div>
@@ -5787,8 +5781,8 @@ export default function HomePage() {
                     
                     setShowColorBackgroundConfirm(false);
                     setPendingBackgroundColor('');
-                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                    toast.success(`背景已应用到${pageName}功能页面`);
+                    const pageName = t(`modes.${mode}`);
+                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
                   }}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
@@ -5796,7 +5790,7 @@ export default function HomePage() {
                       : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
                   }`}
                 >
-                  仅应用到当前功能页面
+                  {t('settings_panel.apply_to_current')}
                 </button>
                 <button
                   onClick={() => {

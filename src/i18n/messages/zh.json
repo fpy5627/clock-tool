@@ -329,7 +329,13 @@
       "timezone_placeholder": "例如：Asia/Shanghai",
       "add_custom": "添加自定义时区",
       "timezone_hint": "请输入 IANA 时区标识符",
-      "required_fields": "请填写所有必填字段"
+      "required_fields": "请填写所有必填字段",
+      "common_timezone_references": "常用时区参考：",
+      "timezone_reference_shanghai": "亚洲/上海: Asia/Shanghai",
+      "timezone_reference_newyork": "美国/纽约: America/New_York",
+      "timezone_reference_london": "欧洲/伦敦: Europe/London",
+      "timezone_reference_tokyo": "亚洲/东京: Asia/Tokyo",
+      "timezone_reference_sydney": "澳洲/悉尼: Australia/Sydney"
     },
     "settings_panel": {
       "title": "设置",
@@ -385,7 +391,26 @@
       "restore_defaults": "恢复默认",
       "restore_defaults_desc": "根据您的IP地址时间自动判断并恢复到默认主题",
       "restoring_defaults": "正在恢复默认设置...",
-      "defaults_restored": "已恢复默认设置"
+      "defaults_restored": "已恢复默认设置",
+      "confirm_modify_color": "确认修改颜色",
+      "preview_new_color": "预览新颜色：",
+      "modify_small_cards_question": "是否同时修改小卡片的颜色？",
+      "yes_modify_together": "是，一起修改",
+      "no_only_large_card": "否，只改大卡片",
+      "current_background_color": "当前背景颜色",
+      "color_applied_all": "已应用到所有功能页面",
+      "color_applied_current": "仅应用到{pageName}页面",
+      "custom_color": "自定义颜色",
+      "apply_solid_color_background": "应用纯色背景",
+      "select_application_scope": "选择应用范围：",
+      "all_functional_pages": "所有功能页面",
+      "current_functional_page_only": "仅当前功能页面",
+      "all_pages_use_this_background": "计时器、秒表、闹钟、世界时间都使用此背景",
+      "only_this_page_uses_this_background": "只在{pageName}页面使用此背景",
+      "background_applied_to_page": "背景已应用到{pageName}功能页面",
+      "background_applied_to_current_page": "当前背景仅应用到{pageName}页面，其他页面已恢复默认背景（{themeText}）",
+      "light_mode": "白天模式",
+      "dark_mode": "夜间模式"
     },
     "modals": {
       "custom_timer": "自定义倒计时",

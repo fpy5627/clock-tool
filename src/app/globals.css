@@ -184,3 +184,17 @@ input[type="range"]::-moz-range-thumb:hover {
   transform: scale(1.1);
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
+
+/* 全屏模式下隐藏 Header 和 Footer */
+body.fullscreen-mode [data-header],
+body.fullscreen-mode [data-footer],
+body.fullscreen-mode section[data-footer],
+body.fullscreen-mode section[data-header] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
