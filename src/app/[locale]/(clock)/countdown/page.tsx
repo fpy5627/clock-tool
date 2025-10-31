@@ -1692,6 +1692,9 @@ export default function HomePage() {
 
   // 全屏功能
   useEffect(() => {
+    /**
+     * 处理全屏状态变化
+     */
     const handleFullscreenChange = () => {
       const isFullscreenActive = !!(
         document.fullscreenElement || 
@@ -1700,6 +1703,11 @@ export default function HomePage() {
         (document as any).msFullscreenElement
       );
       setIsFullscreen(isFullscreenActive);
+      
+      // 如果退出全屏，清除sessionStorage中的标记
+      if (!isFullscreenActive && typeof window !== 'undefined') {
+        sessionStorage.removeItem('shouldEnterFullscreen');
+      }
     };
 
     // 监听各种全屏事件
@@ -1707,6 +1715,52 @@ export default function HomePage() {
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    
+    // 初始检查全屏状态
+    handleFullscreenChange();
+    
+    // 检查是否需要自动进入全屏（从其他页面跳转过来时）
+    if (typeof window !== 'undefined') {
+      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
+      if (shouldEnterFullscreen) {
+        // 清除标记，避免重复进入
+        sessionStorage.removeItem('shouldEnterFullscreen');
+        
+        // 延迟执行以确保页面完全加载
+        const timer = setTimeout(async () => {
+          // 检查全屏API是否支持
+          if (document.fullscreenEnabled || (document as any).webkitFullscreenEnabled) {
+            try {
+              // 尝试进入全屏
+              if (document.documentElement.requestFullscreen) {
+                await document.documentElement.requestFullscreen();
+              } else if ((document.documentElement as any).webkitRequestFullscreen) {
+                await (document.documentElement as any).webkitRequestFullscreen();
+              } else if ((document.documentElement as any).mozRequestFullScreen) {
+                await (document.documentElement as any).mozRequestFullScreen();
+              } else if ((document.documentElement as any).msRequestFullscreen) {
+                await (document.documentElement as any).msRequestFullscreen();
+              }
+            } catch (error) {
+              console.log('Auto fullscreen failed, using simulated fullscreen:', error);
+              // 如果API不可用，使用模拟全屏
+              setIsFullscreen(true);
+            }
+          } else {
+            // 如果不支持全屏API，使用模拟全屏
+            setIsFullscreen(true);
+          }
+        }, 100);
+        
+        return () => {
+          clearTimeout(timer);
+          document.removeEventListener('fullscreenchange', handleFullscreenChange);
+          document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+          document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+          document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
+      }
+    }
     
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -2541,10 +2595,28 @@ export default function HomePage() {
     }
   };
 
+  /**
+   * 导航到指定页面
+   * 如果当前处于全屏模式，保存状态到sessionStorage以便在新页面自动进入全屏
+   * @param page - 目标页面路径（不包含locale前缀）
+   */
   const navigateToPage = (page: string) => {
     const currentLocale = locale || 'en';
     const targetPath = `/${currentLocale}/${page}`;
     if (pathname !== targetPath) {
+      // 检查当前是否处于全屏模式
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement || 
+        (document as any).webkitFullscreenElement || 
+        (document as any).mozFullScreenElement || 
+        (document as any).msFullscreenElement
+      ) || isFullscreen; // 也检查本地状态（用于模拟全屏）
+      
+      // 如果处于全屏模式，保存状态到sessionStorage
+      if (isCurrentlyFullscreen && typeof window !== 'undefined') {
+        sessionStorage.setItem('shouldEnterFullscreen', 'true');
+      }
+      
       router.push(targetPath);
     }
   };
