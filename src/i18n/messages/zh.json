@@ -156,10 +156,26 @@
       "12hour": "12小时"
     },
     "sounds": {
-      "bell": "铃铛",
-      "chime": "提示音",
-      "beep": "哔哔声",
-      "digital": "电子音"
+      "night_sky": "夜空",
+      "shining_stars": "闪耀的星",
+      "sunrise": "日出",
+      "sunset": "日落",
+      "meditation": "冥思",
+      "distant_serene": "悠远",
+      "emerald_lotus_pond": "翠绿荷塘",
+      "moonlit_lotus": "月下荷花",
+      "rippling_water": "水波荡漾",
+      "faint_light": "微光",
+      "bathing_earth": "沐浴大地",
+      "jungle_morning": "丛林晨景",
+      "silver_clad": "银装素裹",
+      "elegant_tranquil": "优雅恬静",
+      "midsummer_beach": "盛夏海边",
+      "midsummer_night": "仲夏的夜",
+      "ice_snow_day": "冰雪天",
+      "winter_snow_falling": "冬雪飘落",
+      "primeval_rainforest": "原始雨林",
+      "rain_nourishes_all": "雨润万物"
     },
     "colors": {
       "blue": "蓝色",

@@ -156,10 +156,26 @@
       "12hour": "12 Hours"
     },
     "sounds": {
-      "bell": "Bell",
-      "chime": "Chime",
-      "beep": "Beep",
-      "digital": "Digital"
+      "night_sky": "Night Sky",
+      "shining_stars": "Shining Stars",
+      "sunrise": "Sunrise",
+      "sunset": "Sunset",
+      "meditation": "Meditation",
+      "distant_serene": "Distant Serene",
+      "emerald_lotus_pond": "Emerald Lotus Pond",
+      "moonlit_lotus": "Moonlit Lotus",
+      "rippling_water": "Rippling Water",
+      "faint_light": "Faint Light",
+      "bathing_earth": "Bathing the Earth",
+      "jungle_morning": "Jungle Morning Scene",
+      "silver_clad": "Silver-clad",
+      "elegant_tranquil": "Elegant and Tranquil",
+      "midsummer_beach": "Midsummer Beach",
+      "midsummer_night": "Midsummer Night",
+      "ice_snow_day": "Ice and Snow Day",
+      "winter_snow_falling": "Winter Snow Falling",
+      "primeval_rainforest": "Primeval Rainforest",
+      "rain_nourishes_all": "Rain Nourishes All Things"
     },
     "colors": {
       "blue": "Blue",
