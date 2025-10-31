@@ -3461,7 +3461,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center flex-1 h-full'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (
@@ -3618,7 +3618,7 @@ export default function HomePage() {
             </div>
           ) : mode === 'alarm' ? (
             /* 闹钟模式 */
-            <div className={`w-full ${!isFullscreen ? 'pt-24 sm:pt-28 md:pt-32 lg:pt-40' : ''}`}>
+            <div className={`w-full flex flex-col ${!isFullscreen ? 'pt-24 sm:pt-28 md:pt-32 lg:pt-40' : 'flex-1 h-full'}`}>
               {/* 日期和天气显示 - 非全屏时显示 */}
               {!isFullscreen && (
                 <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8 px-4">
@@ -3674,17 +3674,22 @@ export default function HomePage() {
               )}
               
               {/* 闹钟列表 */}
-            <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
-              <div 
-                className="w-full overflow-x-hidden no-horizontal-scroll"
-                style={{
-                  width: '100%',
-                  minWidth: '300px',
-                  maxWidth: 'min(var(--timer-width, 672px), 90vw)'
-                }}
-              >
-                {/* 闹钟列表 */}
-                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
+            <div className={`w-full flex flex-col ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
+              <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
+                <div 
+                  className="w-full overflow-x-hidden no-horizontal-scroll"
+                  style={{
+                    width: '100%',
+                    minWidth: '300px',
+                    maxWidth: 'min(var(--timer-width, 672px), 90vw)'
+                  }}
+                >
+                  {/* 闹钟列表 */}
+                  <div className={`space-y-3 mb-4 overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll ${
+                    isFullscreen 
+                      ? 'max-h-[calc(100vh-500px)] sm:max-h-[calc(100vh-550px)] md:max-h-[calc(100vh-600px)] min-h-[150px] sm:min-h-[200px]' 
+                      : 'max-h-[calc(100vh-500px)] min-h-[200px]'
+                  }`}>
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 rounded-lg ${
                     theme === 'dark' 
@@ -3820,42 +3825,50 @@ export default function HomePage() {
                     </motion.div>
                   ))
                 )}
+                  </div>
+                </div>
               </div>
 
               {/* 添加闹钟按钮 */}
-              {!isFullscreen && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    const now = new Date();
-                    setNewAlarmHour(now.getHours());
-                    setNewAlarmMinute(now.getMinutes());
-                    setNewAlarmRepeat('daily');
-                    setNewAlarmLabel('');
-                    setEditingAlarmId(null);
-                    setShowAddAlarm(true);
+              <div className={`w-full flex justify-center px-4 ${isFullscreen ? 'pb-4 sm:pb-6 md:pb-8' : ''}`}>
+                <div 
+                  className="w-full"
+                  style={{
+                    width: '100%',
+                    minWidth: '300px',
+                    maxWidth: 'min(var(--timer-width, 672px), 90vw)'
                   }}
-                  className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
-                    theme === 'dark' 
-                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
-                      : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
-                  }`}
                 >
-                  <Plus className="w-5 h-5" />
-                    <span className="font-medium">{t('buttons.add_alarm')}</span>
-                </motion.button>
-              )}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  const now = new Date();
+                  setNewAlarmHour(now.getHours());
+                  setNewAlarmMinute(now.getMinutes());
+                  setNewAlarmRepeat('daily');
+                  setNewAlarmLabel('');
+                  setEditingAlarmId(null);
+                  setShowAddAlarm(true);
+                }}
+                className={`w-full ${isFullscreen ? 'p-3 sm:p-4 md:p-5' : 'p-4'} mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
+                  theme === 'dark' 
+                    ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
+                    : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
+                }`}
+              >
+                <Plus className={`${isFullscreen ? 'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6' : 'w-5 h-5'}`} />
+                <span className={`${isFullscreen ? 'text-sm sm:text-base md:text-lg' : 'font-medium'}`}>{t('buttons.add_alarm')}</span>
+              </motion.button>
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
-              {!isFullscreen && (
-              <div className="mt-8">
-                <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
+              <div className={`${isFullscreen ? 'mt-4 sm:mt-6 md:mt-8 pb-4 sm:pb-6 md:pb-8' : 'mt-8'}`}>
+                <p className={`${isFullscreen ? 'text-xs sm:text-sm md:text-base' : 'text-xs sm:text-sm'} mb-3 sm:mb-4 text-center font-medium ${
                   theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                 }`}>
                   {t('alarm.quick_add')}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid ${isFullscreen ? 'grid-cols-3 sm:grid-cols-3 md:grid-cols-3' : 'grid-cols-2'} gap-2`}>
                   {[
                     { key: '1min', seconds: 60 },
                     { key: '3min', seconds: 180 },
@@ -3929,7 +3942,7 @@ export default function HomePage() {
                           `alarm-success-${hour}-${minute}`
                         );
                       }}
-                      className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all backdrop-blur-sm ${
+                      className={`${isFullscreen ? 'px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-xs sm:text-sm md:text-base' : 'px-4 py-3 text-sm'} font-medium rounded-[8px] transition-all backdrop-blur-sm ${
                         theme === 'dark'
                           ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
                           : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
@@ -3940,7 +3953,7 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-              )}
+                </div>
               </div>
             </div>
             </div>
@@ -4459,9 +4472,12 @@ export default function HomePage() {
                 transition={{ duration: 0.3 }}
                 className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
                   isFullscreen 
-                    ? 'mt-8 sm:mt-16 md:mt-20 lg:mt-24 xl:mt-28 px-2' 
+                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
                     : 'mt-6 sm:mt-8 md:mt-12'
                 }`}
+                style={isFullscreen ? {
+                  marginTop: 'auto'
+                } : {}}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >

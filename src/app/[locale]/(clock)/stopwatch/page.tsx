@@ -2213,7 +2213,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center' : 'justify-center flex-1 h-full'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
@@ -3204,11 +3204,14 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 ${
+                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
                   isFullscreen 
-                    ? 'mt-4 sm:mt-12 md:mt-16 lg:mt-20 px-2' 
+                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
                     : 'mt-6 sm:mt-8 md:mt-12'
                 }`}
+                style={isFullscreen ? {
+                  marginTop: 'auto'
+                } : {}}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >

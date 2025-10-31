@@ -1695,7 +1695,7 @@ export default function HomePage() {
 
   return (
     <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${
+      className={`${isFullscreen ? 'fixed inset-0 z-50 h-screen' : 'min-h-screen'} ${
         backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
       } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
       style={{ 
@@ -3363,11 +3363,14 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 ${
+                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
                   isFullscreen 
-                    ? 'mt-4 sm:mt-12 md:mt-16 lg:mt-20 px-2' 
+                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
                     : 'mt-6 sm:mt-8 md:mt-12'
                 }`}
+                style={isFullscreen ? {
+                  marginTop: 'auto'
+                } : {}}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -3452,6 +3455,33 @@ export default function HomePage() {
                       <span>{t('buttons.settings')}</span>
                     </motion.button>
                   </>
+                )}
+                {mode === 'alarm' && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      const now = new Date();
+                      setNewAlarmHour(now.getHours());
+                      setNewAlarmMinute(now.getMinutes());
+                      setNewAlarmRepeat('daily');
+                      setNewAlarmLabel('');
+                      setEditingAlarmId(null);
+                      setShowAddAlarm(true);
+                    }}
+                    className={`flex items-center gap-1 sm:gap-2 ${
+                      isFullscreen 
+                        ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
+                        : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
+                    } ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-[8px] font-semibold shadow-lg transition-all`}
+                  >
+                    <Plus className={
+                      isFullscreen 
+                        ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
+                        : 'w-4 h-4 sm:w-5 sm:h-5'
+                    } />
+                    <span>{t('buttons.add_alarm')}</span>
+                  </motion.button>
                 )}
               </motion.div>
             )}
