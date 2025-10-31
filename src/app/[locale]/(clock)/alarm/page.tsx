@@ -195,12 +195,16 @@ export default function HomePage() {
   const [showDate, setShowDate] = useState(true);
   const [showWeekday, setShowWeekday] = useState(true);
   
-  // 天气相关状态
+  // 天气相关状态 - 初始化为默认值，确保始终有数据显示
   const [weather, setWeather] = useState<{
     temp: number;
     condition: string;
     icon: string;
-  } | null>(null);
+  } | null>({
+    temp: 21,
+    condition: 'Partly cloudy',
+    icon: '116'
+  });
   
   // 用户位置相关状态
   const [userLocation, setUserLocation] = useState<{
@@ -985,7 +989,7 @@ export default function HomePage() {
         const apiLang = langMap[locale] || 'en';
         
         // 获取IP定位 (使用支持多语言的ip-api.com)
-        const locationRes = await fetch(`http://ip-api.com/json/?lang=${apiLang}`);
+        const locationRes = await fetch(`https://ip-api.com/json/?lang=${apiLang}`);
         const locationData = await locationRes.json();
         
         if (locationData.status === 'success') {
@@ -2237,7 +2241,7 @@ export default function HomePage() {
           className={`w-full flex flex-col items-center ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
-          {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
+          {!isFullscreen && (
             <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
@@ -2392,60 +2396,6 @@ export default function HomePage() {
           ) : mode === 'alarm' ? (
             /* 闹钟模式 */
             <>
-              {/* 日期和天气显示 - 非全屏时显示 */}
-              {!isFullscreen && (
-                <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8 px-4">
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="inline-flex items-center justify-between"
-                    style={{
-                      width: '100%',
-                      minWidth: '300px',
-                      maxWidth: 'min(var(--timer-width, 672px), 90vw)'
-                    }}
-                  >
-                    {/* 左侧：天气图标和温度 */}
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      {weather && (showWeatherIcon || showTemperature) ? (
-                        <>
-                          {showWeatherIcon && (
-                            <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                              {getWeatherIcon(weather.icon)}
-                            </div>
-                          )}
-                          {showTemperature && (
-                            <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                              {weather.temp}°C
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
-                      )}
-                    </div>
-                    
-                    {/* 右侧：日期 */}
-                    <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
-                      style={{
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {(() => {
-                        const { dateStr, weekdayStr } = formatDate();
-                        return (
-                          <>
-                            {showDate && <span>{dateStr}</span>}
-                            {showDate && showWeekday && <span>&nbsp;</span>}
-                            {showWeekday && <span>{weekdayStr}</span>}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </motion.div>
-                </div>
-              )}
-              
               {/* 闹钟列表 */}
             <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
               <div 

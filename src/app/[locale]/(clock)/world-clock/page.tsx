@@ -195,12 +195,16 @@ export default function HomePage() {
   const [showDate, setShowDate] = useState(true);
   const [showWeekday, setShowWeekday] = useState(true);
   
-  // 天气相关状态
+  // 天气相关状态 - 初始化为默认值，确保始终有数据显示
   const [weather, setWeather] = useState<{
     temp: number;
     condition: string;
     icon: string;
-  } | null>(null);
+  } | null>({
+    temp: 21,
+    condition: 'Partly cloudy',
+    icon: '116'
+  });
   
   // 用户位置相关状态
   const [userLocation, setUserLocation] = useState<{
@@ -973,9 +977,19 @@ export default function HomePage() {
     };
   }, [timeLeft, stopwatchTime, mode, isFullscreen]);
 
-  // 获取天气和位置数据
+  // 获取天气和位置数据 - 优化加载速度，添加超时处理
   useEffect(() => {
     const fetchWeatherAndLocation = async () => {
+      // 创建带超时的fetch函数
+      const fetchWithTimeout = (url: string, timeout = 5000) => {
+        return Promise.race([
+          fetch(url),
+          new Promise<Response>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          )
+        ]);
+      };
+
       try {
         // 根据当前语言设置API语言参数
         const langMap: Record<string, string> = {
@@ -984,8 +998,8 @@ export default function HomePage() {
         };
         const apiLang = langMap[locale] || 'en';
         
-        // 获取IP定位 (使用支持多语言的ip-api.com)
-        const locationRes = await fetch(`http://ip-api.com/json/?lang=${apiLang}`);
+        // 获取IP定位 (使用支持多语言的ip-api.com) - 添加超时
+        const locationRes = await fetchWithTimeout(`https://ip-api.com/json/?lang=${apiLang}`, 3000);
         const locationData = await locationRes.json();
         
         if (locationData.status === 'success') {
@@ -1019,17 +1033,22 @@ export default function HomePage() {
             country
           });
         
-        // 获取天气数据 (使用wttr.in API)
-          const weatherRes = await fetch(`https://wttr.in/${locationData.city || 'Beijing'}?format=j1`);
-        const weatherData = await weatherRes.json();
-        
-        if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
-          const current = weatherData.current_condition[0];
-          setWeather({
-            temp: parseInt(current.temp_C),
-            condition: current.weatherDesc[0].value,
-            icon: current.weatherCode
-          });
+          // 获取天气数据 (使用wttr.in API) - 添加超时，如果失败使用默认值
+          try {
+            const weatherRes = await fetchWithTimeout(`https://wttr.in/${city || 'Beijing'}?format=j1`, 3000);
+            const weatherData = await weatherRes.json();
+            
+            if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
+              const current = weatherData.current_condition[0];
+              setWeather({
+                temp: parseInt(current.temp_C) || 21,
+                condition: current.weatherDesc[0]?.value || 'Partly cloudy',
+                icon: current.weatherCode || '116'
+              });
+            }
+          } catch (weatherError) {
+            // 天气API失败时使用默认值，但保留位置信息
+            console.warn('Weather API failed, using default:', weatherError);
           }
         } else {
           throw new Error('Location API failed');
@@ -1041,7 +1060,8 @@ export default function HomePage() {
           ? { city: '北京', country: '中国' }
           : { city: 'Beijing', country: 'China' };
         
-        setWeather({
+        // 确保使用默认天气（如果还没有设置）
+        setWeather(prev => prev || {
           temp: 21,
           condition: 'Partly cloudy',
           icon: '116'
@@ -1053,6 +1073,7 @@ export default function HomePage() {
       }
     };
 
+    // 立即显示默认天气，然后异步加载真实数据
     fetchWeatherAndLocation();
     // 每30分钟更新一次天气和位置
     const weatherInterval = setInterval(fetchWeatherAndLocation, 30 * 60 * 1000);
