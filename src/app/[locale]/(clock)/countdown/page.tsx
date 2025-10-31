@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import NProgress from 'nprogress';
+import LocaleToggle from '@/components/locale/toggle';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -2288,7 +2289,7 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col flex-1">
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+        <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-50 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
           {/* 主要功能按钮 */}
           <div className="flex items-center justify-around py-3 px-2">
             <button
@@ -2490,7 +2491,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none"
+                className="hidden sm:flex fixed top-2 sm:top-4 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -2562,7 +2563,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 right-2 sm:right-4 gap-0.5 sm:gap-2"
+                className="hidden sm:flex fixed top-2 sm:top-4 right-2 sm:right-4 gap-0.5 sm:gap-2 z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -2794,7 +2795,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (
@@ -4398,6 +4399,69 @@ export default function HomePage() {
                     </span>
                   )}
                 </label>
+                
+                {/* 默认选项 */}
+                <div className="mb-4">
+                  {(() => {
+                    // 根据当前主题确定默认颜色：白天模式为黑色，夜晚模式为白色
+                    const defaultColor = theme === 'dark' ? 'white' : 'black';
+                    const currentColor = mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor;
+                    const isDefault = currentColor === defaultColor;
+                    
+                    return (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // 根据当前主题设置对应的默认颜色：白天模式为黑色，夜晚模式为白色
+                          const defaultColorToSet = theme === 'dark' ? 'white' : 'black';
+                          if (mode === 'timer') {
+                            setTimerColor(defaultColorToSet);
+                          } else if (mode === 'stopwatch') {
+                            setStopwatchColor(defaultColorToSet);
+                          } else if (mode === 'worldclock') {
+                            // 世界时间模式下，弹出确认对话框
+                            setPendingWorldClockColor(defaultColorToSet);
+                            setShowWorldClockColorConfirm(true);
+                          }
+                        }}
+                        className={`w-full py-2 px-4 rounded-lg transition-all relative border-2 flex items-center justify-center gap-2 ${
+                          theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
+                        } ${
+                          isDefault
+                            ? theme === 'dark'
+                              ? 'bg-slate-700/50 border-slate-500 ring-2 ring-offset-2 ring-slate-500'
+                              : 'bg-gray-100 border-gray-400 ring-2 ring-offset-2 ring-gray-400'
+                            : theme === 'dark'
+                            ? 'bg-slate-800 hover:bg-slate-700'
+                            : 'bg-white hover:bg-gray-50'
+                        }`}
+                      >
+                        <div 
+                          className="w-6 h-6 rounded border-2 flex items-center justify-center"
+                          style={{
+                            backgroundColor: defaultColor === 'white' ? '#ffffff' : '#000000',
+                            borderColor: theme === 'dark' ? '#475569' : '#cbd5e1'
+                          }}
+                        />
+                        <span className={`text-sm font-medium ${
+                          isDefault
+                            ? theme === 'dark' ? 'text-white' : 'text-black'
+                            : theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
+                        }`}>
+                          {t('settings_panel.default')}
+                        </span>
+                        {isDefault && (
+                          <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border-2 border-white flex items-center justify-center ${
+                            theme === 'dark' ? 'bg-white' : 'bg-black'
+                          }`}>
+                            <span className={`text-[10px] ${theme === 'dark' ? 'text-black' : 'text-white'}`}>✓</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })()}
+                </div>
                 
                 {/* 深色系 */}
                 <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.dark_colors')}</p>
