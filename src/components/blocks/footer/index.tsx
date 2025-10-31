@@ -21,6 +21,7 @@ export default function Footer({ footer }: { footer: FooterType }) {
                         src={footer.brand.logo.src}
                         alt={footer.brand.logo.alt || footer.brand.title}
                         className="h-11"
+                        style={{ background: 'transparent' }}
                       />
                     )}
                     {footer.brand.title && (

@@ -364,7 +364,11 @@
       "change_image": "Change image",
       "image_processing_failed": "Image processing failed, please try again",
       "invalid_timezone_format": "Invalid timezone format, please enter a valid IANA timezone identifier",
-      "timezone_added": "Added {cityName}"
+      "timezone_added": "Added {cityName}",
+      "restore_defaults": "Restore Defaults",
+      "restore_defaults_desc": "Automatically detect and restore default theme based on your IP address time",
+      "restoring_defaults": "Restoring default settings...",
+      "defaults_restored": "Default settings restored"
     },
     "modals": {
       "custom_timer": "Custom Timer",

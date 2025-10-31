@@ -1704,21 +1704,6 @@ export default function HomePage() {
           {/* 主要功能按钮 */}
           <div className="flex items-center justify-around py-3 px-2">
             <button
-              onClick={() => navigateToPage('countdown')}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'timer' 
-                  ? theme === 'dark'
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-400 text-white'
-                  : theme === 'dark'
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Timer className="w-5 h-5" />
-              <span className="text-xs font-medium">{t('modes.timer')}</span>
-            </button>
-            <button
               onClick={() => navigateToPage('stopwatch')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'stopwatch' 
@@ -1906,21 +1891,6 @@ export default function HomePage() {
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('countdown')}
-                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'timer' 
-                      ? 'bg-blue-500 text-white' 
-                      : theme === 'dark'
-                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
-                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
-                  }`}
-                  title={t('modes.timer')}
-                >
-                  <Timer className="w-4 h-4 sm:w-6 sm:h-6" />
-                </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -2736,25 +2706,138 @@ export default function HomePage() {
                       }}
                     >
                       <div className="w-full">
-                        {/* 顶部：城市和白天/黑夜图标 */}
+                        {/* 顶部：城市、白天/黑夜图标和恢复默认按钮 */}
                         <div className="flex items-center justify-between mb-7">
                           <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
                             {displayCity.city} | {displayCity.country}
                           </h2>
-                          {(() => {
-                            const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
-                            const hours = userTime.getHours();
-                            const isNight = hours < 6 || hours >= 18;
-                            
-                            return isNight ? (
-                              <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
-                            ) : (
-                              <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                            );
-                          })()}
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            {(() => {
+                              const now = new Date();
+                              const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                              const hours = userTime.getHours();
+                              const isNight = hours < 6 || hours >= 18;
+                              
+                              return isNight ? (
+                                <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                              ) : (
+                                <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                              );
+                            })()}
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={async () => {
+                                toast.loading(t('settings_panel.restoring_defaults'), { id: 'restore-defaults-worldclock' });
+                                
+                                // 根据IP地址判断白天/夜晚
+                                const determineThemeByIP = async (): Promise<'light' | 'dark'> => {
+                                  try {
+                                    // 先设置默认白天模式
+                                    setTheme('light');
+                                    
+                                    // 获取IP地址和时区信息
+                                    const langMap: Record<string, string> = {
+                                      'zh': 'zh-CN',
+                                      'en': 'en',
+                                    };
+                                    const apiLang = langMap[locale] || 'en';
+                                    
+                                    const locationRes = await fetch(`https://ip-api.com/json/?lang=${apiLang}`);
+                                    const locationData = await locationRes.json();
+                                    
+                                    if (locationData.status === 'success') {
+                                      // 获取用户时区的当前时间
+                                      const timezone = locationData.timezone || 'Asia/Shanghai';
+                                      
+                                      // 使用Intl API获取该时区的当前时间
+                                      const now = new Date();
+                                      const formatter = new Intl.DateTimeFormat('en-US', {
+                                        timeZone: timezone,
+                                        hour: 'numeric',
+                                        hour12: false
+                                      });
+                                      const parts = formatter.formatToParts(now);
+                                      const hours = parseInt(parts.find(part => part.type === 'hour')?.value || '12');
+                                      
+                                      // 判断白天（6:00-18:00）或夜晚（18:00-6:00）
+                                      if (hours >= 6 && hours < 18) {
+                                        return 'light'; // 白天
+                                      } else {
+                                        return 'dark'; // 夜晚
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Failed to determine theme by IP:', error);
+                                  }
+                                  // 默认返回白天模式
+                                  return 'light';
+                                };
+
+                                try {
+                                  // 根据IP判断主题
+                                  const detectedTheme = await determineThemeByIP();
+                                  setTheme(detectedTheme);
+                                  
+                                  // 清除所有自定义设置
+                                  const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                                  allModes.forEach(modeKey => {
+                                    localStorage.removeItem(`timer-background-image-${modeKey}`);
+                                    localStorage.removeItem(`timer-manual-theme-${modeKey}`);
+                                    localStorage.removeItem(`timer-background-color-${modeKey}`);
+                                  });
+                                  
+                                  // 清除通用设置
+                                  localStorage.removeItem('timer-background-image');
+                                  localStorage.removeItem('timer-background-color');
+                                  localStorage.removeItem('timer-manual-theme');
+                                  
+                                  // 恢复默认颜色
+                                  setTimerColor('blue');
+                                  setStopwatchColor('blue');
+                                  setWorldClockColor('blue');
+                                  setWorldClockSmallCardColor('blue');
+                                  
+                                  // 恢复默认背景
+                                  setBackgroundType('default');
+                                  setBackgroundColor('#1e293b');
+                                  setBackgroundImage('');
+                                  setImageOverlayOpacity(40);
+                                  setImagePositionX(50);
+                                  setImagePositionY(50);
+                                  setApplyColorToAllPages(false);
+                                  
+                                  // 恢复默认显示选项
+                                  setProgressVisible(true);
+                                  setShowWeatherIcon(true);
+                                  setShowTemperature(true);
+                                  setShowDate(true);
+                                  setShowWeekday(true);
+                                  
+                                  // 恢复默认声音
+                                  setSelectedSound('bell');
+                                  
+                                  toast.success(t('settings_panel.defaults_restored'), { id: 'restore-defaults-worldclock' });
+                                } catch (error) {
+                                  console.error('Failed to restore defaults:', error);
+                                  toast.error(t('settings_panel.defaults_restored'), { id: 'restore-defaults-worldclock' });
+                                }
+                              }}
+                              className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-all ${
+                                theme === 'dark'
+                                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+                              }`}
+                              title={t('settings_panel.restore_defaults')}
+                            >
+                              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+                                {t('settings_panel.restore_defaults')}
+                              </span>
+                            </motion.button>
+                          </div>
                         </div>
                         
                         {/* 分隔线 */}
@@ -4851,6 +4934,121 @@ export default function HomePage() {
                 </div>
                 </div>
               </div>
+
+              {/* 恢复默认按钮 */}
+              <div className="flex-shrink-0 border-t p-6" style={{ borderColor: theme === 'dark' ? '#334155' : '#e5e7eb' }}>
+                <button
+                  onClick={async () => {
+                    toast.loading(t('settings_panel.restoring_defaults'), { id: 'restore-defaults' });
+                    
+                    // 根据IP地址判断白天/夜晚
+                    const determineThemeByIP = async (): Promise<'light' | 'dark'> => {
+                      try {
+                        // 先设置默认白天模式
+                        setTheme('light');
+                        
+                        // 获取IP地址和时区信息
+                        const langMap: Record<string, string> = {
+                          'zh': 'zh-CN',
+                          'en': 'en',
+                        };
+                        const apiLang = langMap[locale] || 'en';
+                        
+                        const locationRes = await fetch(`https://ip-api.com/json/?lang=${apiLang}`);
+                        const locationData = await locationRes.json();
+                        
+                        if (locationData.status === 'success') {
+                          // 获取用户时区的当前时间
+                          const timezone = locationData.timezone || 'Asia/Shanghai';
+                          
+                          // 使用Intl API获取该时区的当前时间
+                          const now = new Date();
+                          const formatter = new Intl.DateTimeFormat('en-US', {
+                            timeZone: timezone,
+                            hour: 'numeric',
+                            hour12: false
+                          });
+                          const parts = formatter.formatToParts(now);
+                          const hours = parseInt(parts.find(part => part.type === 'hour')?.value || '12');
+                          
+                          // 判断白天（6:00-18:00）或夜晚（18:00-6:00）
+                          if (hours >= 6 && hours < 18) {
+                            return 'light'; // 白天
+                          } else {
+                            return 'dark'; // 夜晚
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Failed to determine theme by IP:', error);
+                      }
+                      // 默认返回白天模式
+                      return 'light';
+                    };
+
+                    try {
+                      // 根据IP判断主题
+                      const detectedTheme = await determineThemeByIP();
+                      setTheme(detectedTheme);
+                      
+                      // 清除所有自定义设置
+                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                      allModes.forEach(modeKey => {
+                        localStorage.removeItem(`timer-background-image-${modeKey}`);
+                        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
+                        localStorage.removeItem(`timer-background-color-${modeKey}`);
+                      });
+                      
+                      // 清除通用设置
+                      localStorage.removeItem('timer-background-image');
+                      localStorage.removeItem('timer-background-color');
+                      localStorage.removeItem('timer-manual-theme');
+                      
+                      // 恢复默认颜色
+                      setTimerColor('blue');
+                      setStopwatchColor('blue');
+                      setWorldClockColor('blue');
+                      setWorldClockSmallCardColor('blue');
+                      
+                      // 恢复默认背景
+                      setBackgroundType('default');
+                      setBackgroundColor('#1e293b');
+                      setBackgroundImage('');
+                      setImageOverlayOpacity(40);
+                      setImagePositionX(50);
+                      setImagePositionY(50);
+                      setApplyColorToAllPages(false);
+                      
+                      // 恢复默认显示选项
+                      setProgressVisible(true);
+                      setShowWeatherIcon(true);
+                      setShowTemperature(true);
+                      setShowDate(true);
+                      setShowWeekday(true);
+                      
+                      // 恢复默认声音
+                      setSelectedSound('bell');
+                      
+                      toast.success(t('settings_panel.defaults_restored'), { id: 'restore-defaults' });
+                    } catch (error) {
+                      console.error('Failed to restore defaults:', error);
+                      toast.error(t('settings_panel.defaults_restored'), { id: 'restore-defaults' });
+                    }
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <RotateCcw className="w-5 h-5" />
+                    <span>{t('settings_panel.restore_defaults')}</span>
+                  </div>
+                  <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-200' : 'text-blue-100'}`}>
+                    {t('settings_panel.restore_defaults_desc')}
+                  </p>
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
@@ -5749,7 +5947,7 @@ export default function HomePage() {
                         if (theme !== 'light') setTheme('light');
                       } else {
                         if (theme !== 'dark') setTheme('dark');
-                      }
+                      }                                                                                                     *******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************
                     }, 0);
                     
                     setShowColorBackgroundConfirm(false);

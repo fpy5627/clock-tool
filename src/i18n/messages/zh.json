@@ -364,7 +364,11 @@
       "change_image": "更换图片",
       "image_processing_failed": "图片处理失败，请重试",
       "invalid_timezone_format": "时区格式无效，请输入正确的 IANA 时区标识符",
-      "timezone_added": "已添加 {cityName}"
+      "timezone_added": "已添加 {cityName}",
+      "restore_defaults": "恢复默认",
+      "restore_defaults_desc": "根据您的IP地址时间自动判断并恢复到默认主题",
+      "restoring_defaults": "正在恢复默认设置...",
+      "defaults_restored": "已恢复默认设置"
     },
     "modals": {
       "custom_timer": "自定义倒计时",
