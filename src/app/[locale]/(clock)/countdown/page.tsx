@@ -6,6 +6,7 @@ import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer,
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import NProgress from 'nprogress';
@@ -19,6 +20,12 @@ NProgress.configure({
 
 // 预设时间选项
 const PRESET_TIMES = [
+  { key: '10s', seconds: 10, path: '10-second-timer' },
+  { key: '20s', seconds: 20, path: '20-second-timer' },
+  { key: '30s', seconds: 30, path: '30-second-timer' },
+  { key: '45s', seconds: 45, path: '45-second-timer' },
+  { key: '60s', seconds: 60, path: '60-second-timer' },
+  { key: '90s', seconds: 90, path: '90-second-timer' },
   { key: '1min', seconds: 60, path: '1-minute-timer' },
   { key: '2min', seconds: 120, path: '2-minute-timer' },
   { key: '3min', seconds: 180, path: '3-minute-timer' },
@@ -30,7 +37,12 @@ const PRESET_TIMES = [
   { key: '30min', seconds: 1800, path: '30-minute-timer' },
   { key: '40min', seconds: 2400, path: '40-minute-timer' },
   { key: '45min', seconds: 2700, path: '45-minute-timer' },
+  { key: '60min', seconds: 3600, path: '60-minute-timer' },
   { key: '1hour', seconds: 3600, path: '1-hour-timer' },
+  { key: '2hour', seconds: 7200, path: '2-hour-timer' },
+  { key: '4hour', seconds: 14400, path: '4-hour-timer' },
+  { key: '8hour', seconds: 28800, path: '8-hour-timer' },
+  { key: '12hour', seconds: 43200, path: '12-hour-timer' },
 ];
 
 // 声音选项 - 按流行度排序（基于YouTube和计时器应用使用统计）
@@ -3896,31 +3908,31 @@ export default function HomePage() {
                       {t('timer.second_timers')}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { key: '10s', seconds: 10 },
-                        { key: '20s', seconds: 20 },
-                        { key: '30s', seconds: 30 },
-                        { key: '45s', seconds: 45 },
-                        { key: '60s', seconds: 60 },
-                        { key: '90s', seconds: 90 },
-                      ].map((preset) => (
-                        <motion.button
+                      {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => (
+                        <Link
                           key={preset.seconds}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setPresetTime(preset.seconds)}
-                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
-                            initialTime === preset.seconds
-                              ? theme === 'dark'
-                                ? 'bg-slate-600 text-white shadow-md'
-                                : 'bg-slate-400 text-white shadow-md'
-                              : theme === 'dark'
-                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
-                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
-                          }`}
+                          href={`/${locale}/${preset.path}`}
+                          className="block"
+                          onClick={() => {
+                            NProgress.start();
+                          }}
                         >
-                          {t(`presets.${preset.key}`)}
-                        </motion.button>
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
+                              initialTime === preset.seconds
+                                ? theme === 'dark'
+                                  ? 'bg-slate-600 text-white shadow-md'
+                                  : 'bg-slate-400 text-white shadow-md'
+                                : theme === 'dark'
+                                ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                                : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                            }`}
+                          >
+                            {t(`presets.${preset.key}`)}
+                          </motion.div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -3931,24 +3943,31 @@ export default function HomePage() {
                       {t('timer.minute_timers')}
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {PRESET_TIMES.map((preset) => (
-                        <motion.button
+                      {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => (
+                        <Link
                           key={preset.seconds}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setPresetTime(preset.seconds)}
-                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
-                            initialTime === preset.seconds
-                              ? theme === 'dark'
-                                ? 'bg-slate-600 text-white shadow-md'
-                                : 'bg-slate-400 text-white shadow-md'
-                              : theme === 'dark'
-                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
-                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
-                          }`}
+                          href={`/${locale}/${preset.path}`}
+                          className="block"
+                          onClick={() => {
+                            NProgress.start();
+                          }}
                         >
-                          {t(`presets.${preset.key}`)}
-                        </motion.button>
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
+                              initialTime === preset.seconds
+                                ? theme === 'dark'
+                                  ? 'bg-slate-600 text-white shadow-md'
+                                  : 'bg-slate-400 text-white shadow-md'
+                                : theme === 'dark'
+                                ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                                : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                            }`}
+                          >
+                            {preset.seconds === 3600 ? t('presets.60min') : t(`presets.${preset.key}`)}
+                          </motion.div>
+                        </Link>
                       ))}
                     </div>
                   </div>
@@ -3959,29 +3978,31 @@ export default function HomePage() {
                       {t('timer.hour_timers')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { key: '2hour', seconds: 7200 },
-                        { key: '4hour', seconds: 14400 },
-                        { key: '8hour', seconds: 28800 },
-                        { key: '12hour', seconds: 43200 },
-                      ].map((preset) => (
-                        <motion.button
-                          key={preset.seconds}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setPresetTime(preset.seconds)}
-                          className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all backdrop-blur-sm cursor-pointer ${
-                            initialTime === preset.seconds
-                              ? theme === 'dark'
-                                ? 'bg-slate-600 text-white shadow-md'
-                                : 'bg-slate-400 text-white shadow-md'
-                              : theme === 'dark'
-                              ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
-                              : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
-                          }`}
+                      {PRESET_TIMES.filter(preset => preset.seconds >= 3600 && (preset.key.endsWith('min') || preset.key.endsWith('hour'))).map((preset) => (
+                        <Link
+                          key={preset.key}
+                          href={`/${locale}/${preset.path}`}
+                          className="block"
+                          onClick={() => {
+                            NProgress.start();
+                          }}
                         >
-                          {t(`presets.${preset.key}`)}
-                        </motion.button>
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
+                              initialTime === preset.seconds
+                                ? theme === 'dark'
+                                  ? 'bg-slate-600 text-white shadow-md'
+                                  : 'bg-slate-400 text-white shadow-md'
+                                : theme === 'dark'
+                                ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
+                                : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
+                            }`}
+                          >
+                            {preset.key === '60min' ? t('presets.60min') : preset.key === '1hour' ? t('presets.1hour') : t(`presets.${preset.key}`)}
+                          </motion.div>
+                        </Link>
                       ))}
                     </div>
                   </div>
