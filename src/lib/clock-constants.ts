@@ -1,3 +1,5 @@
+import type { SoundOption } from '@/types/sound';
+
 // 预设时间选项
 export const PRESET_TIMES = [
   { key: '1min', seconds: 60 },
@@ -11,12 +13,236 @@ export const PRESET_TIMES = [
   { key: '1hour', seconds: 3600 },
 ];
 
-// 声音选项
-export const SOUND_OPTIONS = [
-  { id: 'bell', key: 'bell', frequency: 800 },
-  { id: 'chime', key: 'chime', frequency: 1000 },
-  { id: 'beep', key: 'beep', frequency: 600 },
-  { id: 'digital', key: 'digital', frequency: 1200 },
+// 声音选项 - 自然铃声
+
+/**
+ * 声音选项列表
+ * 
+ * 包含各种自然铃声选项，分为平和之声和自然的生命力两大类
+ */
+export const SOUND_OPTIONS: SoundOption[] = [
+  // 平和之声 (Sounds of Peace)
+  { 
+    id: 'night_sky', 
+    key: 'night_sky',
+    name: '夜空',
+    nameEn: 'Night Sky',
+    description: '深邃宁静的夜空氛围',
+    descriptionEn: 'Deep and peaceful night sky ambiance',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 100
+  },
+  { 
+    id: 'shining_stars', 
+    key: 'shining_stars',
+    name: '闪耀的星',
+    nameEn: 'Shining Stars',
+    description: '闪烁星光的温柔音调',
+    descriptionEn: 'Gentle tones of twinkling starlight',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 98
+  },
+  { 
+    id: 'sunrise', 
+    key: 'sunrise',
+    name: '日出',
+    nameEn: 'Sunrise',
+    description: '温暖渐升的日出之光',
+    descriptionEn: 'Warm rising light of sunrise',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 96
+  },
+  { 
+    id: 'sunset', 
+    key: 'sunset',
+    name: '日落',
+    nameEn: 'Sunset',
+    description: '柔和温暖的日落余晖',
+    descriptionEn: 'Soft and warm sunset glow',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 94
+  },
+  { 
+    id: 'meditation', 
+    key: 'meditation',
+    name: '冥思',
+    nameEn: 'Meditation',
+    description: '深度冥想的宁静之音',
+    descriptionEn: 'Peaceful sounds for deep meditation',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 92
+  },
+  { 
+    id: 'distant_serene', 
+    key: 'distant_serene',
+    name: '悠远',
+    nameEn: 'Distant Serene',
+    description: '悠远深邃的宁静空间',
+    descriptionEn: 'Distant and deep serene space',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 90
+  },
+  { 
+    id: 'emerald_lotus_pond', 
+    key: 'emerald_lotus_pond',
+    name: '翠绿荷塘',
+    nameEn: 'Emerald Lotus Pond',
+    description: '翠绿荷塘的清新音韵',
+    descriptionEn: 'Fresh sounds of emerald lotus pond',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 88
+  },
+  { 
+    id: 'moonlit_lotus', 
+    key: 'moonlit_lotus',
+    name: '月下荷花',
+    nameEn: 'Moonlit Lotus',
+    description: '月光下荷花的优雅音色',
+    descriptionEn: 'Elegant sounds of lotus under moonlight',
+    type: 'peace',
+    mode: 'peace',
+    popularity: 86
+  },
+  // 自然的生命力 (Natural Vitality)
+  { 
+    id: 'rippling_water', 
+    key: 'rippling_water',
+    name: '水波荡漾',
+    nameEn: 'Rippling Water',
+    description: '水波轻柔荡漾的自然韵律',
+    descriptionEn: 'Natural rhythm of gently rippling water',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 100
+  },
+  { 
+    id: 'faint_light', 
+    key: 'faint_light',
+    name: '微光',
+    nameEn: 'Faint Light',
+    description: '微弱光线的细腻音色',
+    descriptionEn: 'Delicate tones of faint light',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 98
+  },
+  { 
+    id: 'bathing_earth', 
+    key: 'bathing_earth',
+    name: '沐浴大地',
+    nameEn: 'Bathing the Earth',
+    description: '阳光沐浴大地的温暖之声',
+    descriptionEn: 'Warm sounds of sunlight bathing the earth',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 96
+  },
+  { 
+    id: 'jungle_morning', 
+    key: 'jungle_morning',
+    name: '丛林晨景',
+    nameEn: 'Jungle Morning Scene',
+    description: '丛林清晨的生机勃勃',
+    descriptionEn: 'Vibrant sounds of jungle morning',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 94
+  },
+  { 
+    id: 'silver_clad', 
+    key: 'silver_clad',
+    name: '银装素裹',
+    nameEn: 'Silver-clad',
+    description: '银装素裹的纯净音色',
+    descriptionEn: 'Pure sounds of silver-clad landscape',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 92
+  },
+  { 
+    id: 'elegant_tranquil', 
+    key: 'elegant_tranquil',
+    name: '优雅恬静',
+    nameEn: 'Elegant and Tranquil',
+    description: '优雅恬静的自然和谐',
+    descriptionEn: 'Elegant and tranquil natural harmony',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 90
+  },
+  { 
+    id: 'midsummer_beach', 
+    key: 'midsummer_beach',
+    name: '盛夏海边',
+    nameEn: 'Midsummer Beach',
+    description: '盛夏海边的清新活力',
+    descriptionEn: 'Fresh vitality of midsummer beach',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 88
+  },
+  { 
+    id: 'midsummer_night', 
+    key: 'midsummer_night',
+    name: '仲夏的夜',
+    nameEn: 'Midsummer Night',
+    description: '仲夏夜晚的宁静凉爽',
+    descriptionEn: 'Peaceful coolness of midsummer night',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 86
+  },
+  { 
+    id: 'ice_snow_day', 
+    key: 'ice_snow_day',
+    name: '冰雪天',
+    nameEn: 'Ice and Snow Day',
+    description: '冰雪世界的纯净清冷',
+    descriptionEn: 'Pure and cool sounds of ice and snow',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 84
+  },
+  { 
+    id: 'winter_snow_falling', 
+    key: 'winter_snow_falling',
+    name: '冬雪飘落',
+    nameEn: 'Winter Snow Falling',
+    description: '冬雪飘落的轻柔韵律',
+    descriptionEn: 'Gentle rhythm of falling winter snow',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 82
+  },
+  { 
+    id: 'primeval_rainforest', 
+    key: 'primeval_rainforest',
+    name: '原始雨林',
+    nameEn: 'Primeval Rainforest',
+    description: '原始雨林的神秘生机',
+    descriptionEn: 'Mysterious vitality of primeval rainforest',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 80
+  },
+  { 
+    id: 'rain_nourishes_all', 
+    key: 'rain_nourishes_all',
+    name: '雨润万物',
+    nameEn: 'Rain Nourishes All Things',
+    description: '春雨滋润万物的生机之声',
+    descriptionEn: 'Vital sounds of rain nourishing all things',
+    type: 'nature',
+    mode: 'nature',
+    popularity: 78
+  },
 ];
 
 // 主题颜色选项

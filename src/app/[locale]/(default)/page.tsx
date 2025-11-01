@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
+import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter } from 'next/navigation';
@@ -10,6 +11,7 @@ import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import NProgress from 'nprogress';
+import { SOUND_OPTIONS } from '@/lib/clock-constants';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -45,231 +47,6 @@ const PRESET_TIMES = [
   { key: '12hour', seconds: 43200, path: '12-hour-timer' },
 ];
 
-// 声音选项 - 自然铃声
-const SOUND_OPTIONS = [
-  // 平和之声 (Sounds of Peace)
-  { 
-    id: 'night_sky', 
-    key: 'night_sky',
-    name: '夜空',
-    nameEn: 'Night Sky',
-    description: '深邃宁静的夜空氛围',
-    descriptionEn: 'Deep and peaceful night sky ambiance',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 100
-  },
-  { 
-    id: 'shining_stars', 
-    key: 'shining_stars',
-    name: '闪耀的星',
-    nameEn: 'Shining Stars',
-    description: '闪烁星光的温柔音调',
-    descriptionEn: 'Gentle tones of twinkling starlight',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 98
-  },
-  { 
-    id: 'sunrise', 
-    key: 'sunrise',
-    name: '日出',
-    nameEn: 'Sunrise',
-    description: '温暖渐升的日出之光',
-    descriptionEn: 'Warm rising light of sunrise',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 96
-  },
-  { 
-    id: 'sunset', 
-    key: 'sunset',
-    name: '日落',
-    nameEn: 'Sunset',
-    description: '柔和温暖的日落余晖',
-    descriptionEn: 'Soft and warm sunset glow',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 94
-  },
-  { 
-    id: 'meditation', 
-    key: 'meditation',
-    name: '冥思',
-    nameEn: 'Meditation',
-    description: '深度冥想的宁静之音',
-    descriptionEn: 'Peaceful sounds for deep meditation',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 92
-  },
-  { 
-    id: 'distant_serene', 
-    key: 'distant_serene',
-    name: '悠远',
-    nameEn: 'Distant Serene',
-    description: '悠远深邃的宁静空间',
-    descriptionEn: 'Distant and deep serene space',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 90
-  },
-  { 
-    id: 'emerald_lotus_pond', 
-    key: 'emerald_lotus_pond',
-    name: '翠绿荷塘',
-    nameEn: 'Emerald Lotus Pond',
-    description: '翠绿荷塘的清新音韵',
-    descriptionEn: 'Fresh sounds of emerald lotus pond',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 88
-  },
-  { 
-    id: 'moonlit_lotus', 
-    key: 'moonlit_lotus',
-    name: '月下荷花',
-    nameEn: 'Moonlit Lotus',
-    description: '月光下荷花的优雅音色',
-    descriptionEn: 'Elegant sounds of lotus under moonlight',
-    type: 'peace',
-    mode: 'peace',
-    popularity: 86
-  },
-  // 自然的生命力 (Natural Vitality)
-  { 
-    id: 'rippling_water', 
-    key: 'rippling_water',
-    name: '水波荡漾',
-    nameEn: 'Rippling Water',
-    description: '水波轻柔荡漾的自然韵律',
-    descriptionEn: 'Natural rhythm of gently rippling water',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 100
-  },
-  { 
-    id: 'faint_light', 
-    key: 'faint_light',
-    name: '微光',
-    nameEn: 'Faint Light',
-    description: '微弱光线的细腻音色',
-    descriptionEn: 'Delicate tones of faint light',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 98
-  },
-  { 
-    id: 'bathing_earth', 
-    key: 'bathing_earth',
-    name: '沐浴大地',
-    nameEn: 'Bathing the Earth',
-    description: '阳光沐浴大地的温暖之声',
-    descriptionEn: 'Warm sounds of sunlight bathing the earth',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 96
-  },
-  { 
-    id: 'jungle_morning', 
-    key: 'jungle_morning',
-    name: '丛林晨景',
-    nameEn: 'Jungle Morning Scene',
-    description: '丛林清晨的生机勃勃',
-    descriptionEn: 'Vibrant sounds of jungle morning',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 94
-  },
-  { 
-    id: 'silver_clad', 
-    key: 'silver_clad',
-    name: '银装素裹',
-    nameEn: 'Silver-clad',
-    description: '银装素裹的纯净音色',
-    descriptionEn: 'Pure sounds of silver-clad landscape',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 92
-  },
-  { 
-    id: 'elegant_tranquil', 
-    key: 'elegant_tranquil',
-    name: '优雅恬静',
-    nameEn: 'Elegant and Tranquil',
-    description: '优雅恬静的自然和谐',
-    descriptionEn: 'Elegant and tranquil natural harmony',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 90
-  },
-  { 
-    id: 'midsummer_beach', 
-    key: 'midsummer_beach',
-    name: '盛夏海边',
-    nameEn: 'Midsummer Beach',
-    description: '盛夏海边的清新活力',
-    descriptionEn: 'Fresh vitality of midsummer beach',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 88
-  },
-  { 
-    id: 'midsummer_night', 
-    key: 'midsummer_night',
-    name: '仲夏的夜',
-    nameEn: 'Midsummer Night',
-    description: '仲夏夜晚的宁静凉爽',
-    descriptionEn: 'Peaceful coolness of midsummer night',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 86
-  },
-  { 
-    id: 'ice_snow_day', 
-    key: 'ice_snow_day',
-    name: '冰雪天',
-    nameEn: 'Ice and Snow Day',
-    description: '冰雪世界的纯净清冷',
-    descriptionEn: 'Pure and cool sounds of ice and snow',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 84
-  },
-  { 
-    id: 'winter_snow_falling', 
-    key: 'winter_snow_falling',
-    name: '冬雪飘落',
-    nameEn: 'Winter Snow Falling',
-    description: '冬雪飘落的轻柔韵律',
-    descriptionEn: 'Gentle rhythm of falling winter snow',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 82
-  },
-  { 
-    id: 'primeval_rainforest', 
-    key: 'primeval_rainforest',
-    name: '原始雨林',
-    nameEn: 'Primeval Rainforest',
-    description: '原始雨林的神秘生机',
-    descriptionEn: 'Mysterious vitality of primeval rainforest',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 80
-  },
-  { 
-    id: 'rain_nourishes_all', 
-    key: 'rain_nourishes_all',
-    name: '雨润万物',
-    nameEn: 'Rain Nourishes All Things',
-    description: '春雨滋润万物的生机之声',
-    descriptionEn: 'Vital sounds of rain nourishing all things',
-    type: 'nature',
-    mode: 'nature',
-    popularity: 78
-  },
-];
 
 // 主题颜色选项
 const THEME_COLORS = [
@@ -1477,9 +1254,13 @@ export default function HomePage() {
     }, 10);
   };
 
-  const playNotificationSound = () => {
+  /**
+   * 播放通知声音
+   * 
+   * @param soundId - 可选的声音 ID，如果未提供则使用当前选中的声音
+   */
+  const playNotificationSound = (soundId?: string) => {
     try {
-      const selectedSoundOption = SOUND_OPTIONS.find(s => s.id === selectedSound) || SOUND_OPTIONS[0];
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -1487,7 +1268,8 @@ export default function HomePage() {
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      oscillator.frequency.value = selectedSoundOption.frequency;
+      // 使用默认频率 440Hz (A4)
+      oscillator.frequency.value = 440;
       oscillator.type = 'sine';
       
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
@@ -4386,111 +4168,17 @@ export default function HomePage() {
               </div>
 
               {/* 提示音选择 */}
-              <div className="mb-6">
-                <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
-                  {t('settings_panel.notification_sound')}
-                </label>
-                <div className="space-y-2">
-                  {SOUND_OPTIONS
-                    .sort((a, b) => {
-                      // 先按人气排序，再按使用统计排序
-                      const aUsage = soundUsageStats[a.id] || 0;
-                      const bUsage = soundUsageStats[b.id] || 0;
-                      if (aUsage !== bUsage) return bUsage - aUsage; // 使用次数多的在前
-                      return b.popularity - a.popularity; // 人气高的在前
-                    })
-                    .map((sound, index) => {
-                    const usageCount = soundUsageStats[sound.id] || 0;
-                    const isSelected = selectedSound === sound.id;
-                    
-                    return (
-                      <div
-                        key={sound.id}
-                        className={`flex items-center gap-2 p-3 rounded-lg transition-all border ${
-                          isSelected
-                            ? theme === 'dark'
-                              ? 'bg-blue-500/20 border-blue-500'
-                              : 'bg-blue-50 border-blue-500'
-                            : theme === 'dark'
-                            ? 'bg-slate-800 border-slate-700 hover:bg-slate-700'
-                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                        }`}
-                      >
-                        {/* 左侧：选择按钮和名称 */}
-                        <button
-                          onClick={() => {
-                            setSelectedSound(sound.id);
-                            // 更新使用统计
-                            setSoundUsageStats(prev => ({
-                              ...prev,
-                              [sound.id]: (prev[sound.id] || 0) + 1
-                            }));
-                          }}
-                          className="flex-1 text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                              isSelected
-                                ? 'border-blue-500 bg-blue-500'
-                                : theme === 'dark'
-                                ? 'border-slate-400'
-                                : 'border-gray-400'
-                            }`}>
-                              {isSelected && (
-                                <div className="w-2 h-2 rounded-full bg-white"></div>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className={`font-medium ${
-                                  isSelected
-                                    ? theme === 'dark' ? 'text-blue-300' : 'text-blue-700'
-                                    : theme === 'dark' ? 'text-slate-200' : 'text-gray-800'
-                                }`}>
-                                  {locale === 'zh' ? sound.name : sound.nameEn}
-                                </span>
-                                {index === 0 && (
-                                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                    theme === 'dark' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-yellow-100 text-yellow-700'
-                                  }`}>
-                                    {t('settings_panel.most_popular')}
-                                  </span>
-                                )}
-                              </div>
-                              <p className={`text-xs mt-0.5 ${
-                                theme === 'dark' ? 'text-slate-400' : 'text-gray-500'
-                              }`}>
-                                {locale === 'zh' ? sound.description : sound.descriptionEn}
-                                {usageCount > 0 && (
-                                  <span className="ml-2">
-                                    · {t('settings_panel.usage_count', { count: usageCount })}
-                                  </span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </button>
-
-                        {/* 右侧：试听按钮 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            playNotificationSound(sound.id);
-                          }}
-                          className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
-                            theme === 'dark'
-                              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                          }`}
-                          title={t('settings_panel.sound_preview')}
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <NotificationSoundSelector
+                selectedSound={selectedSound}
+                setSelectedSound={setSelectedSound}
+                soundOptions={SOUND_OPTIONS}
+                soundUsageStats={soundUsageStats}
+                setSoundUsageStats={setSoundUsageStats}
+                theme={theme}
+                locale={locale}
+                t={t}
+                playNotificationSound={playNotificationSound}
+              />
 
               {/* 背景自定义 */}
               <div className="mb-6">
