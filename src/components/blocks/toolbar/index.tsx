@@ -13,14 +13,21 @@ export default function Toolbar({ items }: { items?: ButtonType[] }) {
           size="sm"
           className={item.className}
         >
-          <Link
-            href={item.url as any}
-            target={item.target}
-            className="flex items-center gap-1"
-          >
-            {item.icon && <Icon name={item.icon} />}
-            {item.title}
-          </Link>
+          {item.url ? (
+            <Link
+              href={item.url as any}
+              target={item.target}
+              className="flex items-center gap-1"
+            >
+              {item.icon && <Icon name={item.icon} />}
+              {item.title}
+            </Link>
+          ) : (
+            <span className="flex items-center gap-1">
+              {item.icon && <Icon name={item.icon} />}
+              {item.title}
+            </span>
+          )}
         </Button>
       ))}
     </div>

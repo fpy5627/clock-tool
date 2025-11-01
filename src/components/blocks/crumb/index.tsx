@@ -9,14 +9,24 @@ export default function Crumb({ items }: { items: NavItem[] }) {
         const isActive = item.is_active;
         return (
           <div key={index} className="flex items-center">
-            <Link
-              href={item.url || ""}
-              className={`hover:text-foreground transition-colors ${
-                isActive ? "text-primary font-medium hover:text-primary" : ""
-              }`}
-            >
-              {item.title}
-            </Link>
+            {item.url ? (
+              <Link
+                href={item.url}
+                className={`hover:text-foreground transition-colors ${
+                  isActive ? "text-primary font-medium hover:text-primary" : ""
+                }`}
+              >
+                {item.title}
+              </Link>
+            ) : (
+              <span
+                className={`transition-colors ${
+                  isActive ? "text-primary font-medium" : ""
+                }`}
+              >
+                {item.title}
+              </span>
+            )}
 
             {!isActive && (
               <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground/40" />

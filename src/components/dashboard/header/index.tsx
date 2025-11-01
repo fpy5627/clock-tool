@@ -35,12 +35,16 @@ export default function ({ crumb }: { crumb?: Crumb }) {
                   return (
                     <Fragment key={index}>
                       <BreadcrumbItem className="hidden md:block">
-                        <Link
-                          href={item.url || ""}
-                          className="hover:text-primary"
-                        >
-                          {item.title}
-                        </Link>
+                        {item.url ? (
+                          <Link
+                            href={item.url}
+                            className="hover:text-primary"
+                          >
+                            {item.title}
+                          </Link>
+                        ) : (
+                          <span>{item.title}</span>
+                        )}
                       </BreadcrumbItem>
                       <BreadcrumbSeparator className="hidden md:block" />
                     </Fragment>

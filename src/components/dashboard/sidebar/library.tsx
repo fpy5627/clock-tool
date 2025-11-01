@@ -40,19 +40,26 @@ export function Library({ library }: { library: LibraryType }) {
             <SidebarMenuButton
               tooltip={item.title}
               className={`${
-                item.is_active || pathname.endsWith(item.url as string)
+                item.is_active || (item.url && pathname.endsWith(item.url as string))
                   ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
                   : ""
               }`}
             >
-              <Link
-                href={(item.url || "") as any}
-                target={item.target}
-                className="w-full flex items-center gap-2 cursor-pointer"
-              >
-                {item.icon && <Icon name={item.icon} />}
-                <span>{item.title}</span>
-              </Link>
+              {item.url ? (
+                <Link
+                  href={item.url as any}
+                  target={item.target}
+                  className="w-full flex items-center gap-2 cursor-pointer"
+                >
+                  {item.icon && <Icon name={item.icon} />}
+                  <span>{item.title}</span>
+                </Link>
+              ) : (
+                <div className="w-full flex items-center gap-2 cursor-pointer">
+                  {item.icon && <Icon name={item.icon} />}
+                  <span>{item.title}</span>
+                </div>
+              )}
             </SidebarMenuButton>
             <DropdownMenu>
               {/* <DropdownMenuTrigger asChild>

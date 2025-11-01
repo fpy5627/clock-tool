@@ -25,12 +25,19 @@ export function BottomNav({
         <SidebarMenu>
           {nav.items?.map((item, index) => (
             <SidebarMenuItem key={index}>
-              <SidebarMenuButton asChild>
-                <Link href={item.url as any} target={item.target}>
+              {item.url ? (
+                <SidebarMenuButton asChild>
+                  <Link href={item.url as any} target={item.target}>
+                    {item.icon && <Icon name={item.icon} />}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton>
                   {item.icon && <Icon name={item.icon} />}
                   <span>{item.title}</span>
-                </Link>
-              </SidebarMenuButton>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

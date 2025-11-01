@@ -23,16 +23,25 @@ export default function CTA({ section }: { section: SectionType }) {
               <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
                 {section.buttons.map((item, idx) => (
                   <Button key={idx} variant={item.variant || "default"}>
-                    <Link
-                      href={item.url || ""}
-                      target={item.target}
-                      className="flex items-center justify-center gap-1"
-                    >
-                      {item.title}
-                      {item.icon && (
-                        <Icon name={item.icon as string} className="size-6" />
-                      )}
-                    </Link>
+                    {item.url ? (
+                      <Link
+                        href={item.url}
+                        target={item.target}
+                        className="flex items-center justify-center gap-1"
+                      >
+                        {item.title}
+                        {item.icon && (
+                          <Icon name={item.icon as string} className="size-6" />
+                        )}
+                      </Link>
+                    ) : (
+                      <span className="flex items-center justify-center gap-1">
+                        {item.title}
+                        {item.icon && (
+                          <Icon name={item.icon as string} className="size-6" />
+                        )}
+                      </span>
+                    )}
                   </Button>
                 ))}
               </div>
