@@ -3075,10 +3075,10 @@ export default function HomePage() {
               {/* 右上角：功能按钮 - 移动端隐藏 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: showSettingsPanel ? 0 : 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-50"
+                className={`hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-50 ${showSettingsPanel ? 'pointer-events-none' : ''}`}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -4905,7 +4905,7 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-4 top-20 bottom-4 z-40 w-80 flex flex-col"
+            className="fixed right-4 top-20 bottom-4 z-[60] w-80 flex flex-col"
           >
             <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl flex flex-col max-h-full overflow-hidden`}>
               {/* 固定头部 */}
