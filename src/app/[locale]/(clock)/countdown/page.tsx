@@ -3394,9 +3394,11 @@ export default function HomePage() {
           {(mode === 'timer' || mode === 'stopwatch') ? (
             <div 
               className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
-                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
+                isFullscreen ? 'flex-1 min-h-0' : (mode === 'timer' ? 'min-h-[25vh] sm:min-h-[50vh] mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8' : 'min-h-[25vh] sm:min-h-[50vh]')
               }`}
-              style={!isFullscreen && mode === 'stopwatch' ? { marginTop: '-1rem', marginBottom: '0.5rem' } : {}}
+              style={!isFullscreen && mode === 'stopwatch' 
+                ? { marginTop: '-1rem', marginBottom: '0.5rem' } 
+                : {}}
             >
               <div 
                 id="timer-display"
@@ -3488,7 +3490,7 @@ export default function HomePage() {
                       : 'text-2xl sm:text-3xl'
                   }`}
                 >
-                  时间到
+                  {t('timer.time_up')}
                 </motion.div>
               )}
             </div>
@@ -4300,7 +4302,7 @@ export default function HomePage() {
 
           {/* 进度条 - 仅非全屏模式显示 */}
           {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
-            <div className="w-full flex justify-center -mt-4 sm:mt-8 md:mt-10">
+            <div className="w-full flex justify-center mt-4 sm:-mt-4 md:-mt-4 lg:-mt-4">
               <motion.div 
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
@@ -4349,7 +4351,7 @@ export default function HomePage() {
                 className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
                   isFullscreen 
                     ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
-                    : 'mt-6 sm:mt-8 md:mt-12'
+                    : (mode === 'timer' ? 'mt-10 sm:mt-8 md:mt-12' : 'mt-6 sm:mt-8 md:mt-12')
                 }`}
                 style={isFullscreen ? {
                   marginTop: 'auto'
