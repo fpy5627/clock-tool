@@ -2970,6 +2970,29 @@ export default function HomePage() {
                     </span>
                   </motion.button>
                   
+                  {/* 白天/夜晚模式切换 */}
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
+                      theme === 'dark'
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                        : 'bg-gradient-to-br from-blue-400 to-indigo-500 text-white shadow-lg shadow-blue-400/30'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-white/20' : 'bg-white/20'}`}>
+                      {theme === 'dark' ? (
+                        <Sun className="w-5 h-5" />
+                      ) : (
+                        <Moon className="w-5 h-5" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {theme === 'dark' ? '白天模式' : '夜晚模式'}
+                    </span>
+                  </motion.button>
+                  
                   {/* 全屏模式 */}
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
@@ -3311,11 +3334,11 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-between flex-1 h-full'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? (mode === 'stopwatch' ? 'pt-0 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'pt-4 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28') : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (
-            <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
+            <div className={`w-full flex justify-center ${mode === 'stopwatch' ? 'mt-2 mb-0 sm:mt-0 sm:mb-6 md:mb-8' : 'mt-8 mb-1 sm:mt-0 sm:mb-6 md:mb-8'}`}>
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -3369,9 +3392,12 @@ export default function HomePage() {
 
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
-            <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[60vh] sm:min-h-[50vh]'
-            }`}>
+            <div 
+              className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
+                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
+              }`}
+              style={!isFullscreen && mode === 'stopwatch' ? { marginTop: '-1rem', marginBottom: '0.5rem' } : {}}
+            >
               <div 
                 id="timer-display"
                 className={`${
@@ -4274,7 +4300,7 @@ export default function HomePage() {
 
           {/* 进度条 - 仅非全屏模式显示 */}
           {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
-            <div className="w-full flex justify-center mt-6 sm:mt-8 md:mt-10">
+            <div className="w-full flex justify-center -mt-4 sm:mt-8 md:mt-10">
               <motion.div 
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
@@ -4327,7 +4353,9 @@ export default function HomePage() {
                 }`}
                 style={isFullscreen ? {
                   marginTop: 'auto'
-                } : {}}
+                } : (mode === 'stopwatch' ? {
+                  marginTop: '-1rem'
+                } : {})}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -4421,7 +4449,7 @@ export default function HomePage() {
           <AnimatePresence>
             {!isFullscreen && mode === 'timer' && showControls && (
               <div 
-                className="mt-6 sm:mt-8 md:mt-12 w-full flex justify-center"
+                className="mt-10 sm:mt-8 md:mt-12 w-full flex justify-center"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >

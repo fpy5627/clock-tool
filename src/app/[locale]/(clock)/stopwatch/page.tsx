@@ -2835,6 +2835,29 @@ export default function HomePage() {
                     </span>
                   </motion.button>
                   
+                  {/* 白天/夜晚模式切换 */}
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
+                      theme === 'dark'
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
+                        : 'bg-gradient-to-br from-blue-400 to-indigo-500 text-white shadow-lg shadow-blue-400/30'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-white/20' : 'bg-white/20'}`}>
+                      {theme === 'dark' ? (
+                        <Sun className="w-5 h-5" />
+                      ) : (
+                        <Moon className="w-5 h-5" />
+                      )}
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {theme === 'dark' ? '白天模式' : '夜晚模式'}
+                    </span>
+                  </motion.button>
+                  
                   {/* 全屏模式 */}
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
@@ -3234,9 +3257,12 @@ export default function HomePage() {
 
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
-            <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[60vh] sm:min-h-[50vh]'
-            }`} style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : undefined}>
+            <div 
+              className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
+                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
+              }`} 
+              style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '-1rem', marginBottom: '0.5rem' }}
+            >
               <div 
                 id="timer-display"
                 className={`${
@@ -4174,7 +4200,9 @@ export default function HomePage() {
                 }`}
                 style={isFullscreen ? {
                   marginTop: 'auto'
-                } : {}}
+                } : {
+                  marginTop: '-1rem'
+                }}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
