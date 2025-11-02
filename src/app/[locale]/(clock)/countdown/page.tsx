@@ -46,6 +46,7 @@ const PRESET_TIMES = [
   { key: '4hour', seconds: 14400, path: '4-hour-timer' },
   { key: '8hour', seconds: 28800, path: '8-hour-timer' },
   { key: '12hour', seconds: 43200, path: '12-hour-timer' },
+  { key: '16hour', seconds: 57600, path: '16-hour-timer' },
 ];
 
 
