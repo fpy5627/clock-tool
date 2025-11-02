@@ -4444,7 +4444,9 @@ export default function HomePage() {
                       {t('timer.second_timers')}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
@@ -4457,7 +4459,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -4469,7 +4471,7 @@ export default function HomePage() {
                             {t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
 
@@ -4479,7 +4481,9 @@ export default function HomePage() {
                       {t('timer.minute_timers')}
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
@@ -4492,7 +4496,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -4504,7 +4508,7 @@ export default function HomePage() {
                             {preset.seconds === 3600 ? t('presets.60min') : t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
 
@@ -4514,7 +4518,9 @@ export default function HomePage() {
                       {t('timer.hour_timers')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds >= 3600 && (preset.key.endsWith('min') || preset.key.endsWith('hour'))).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.key.endsWith('hour')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.key}
                           href={`/${locale}/${preset.path}`}
@@ -4527,7 +4533,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -4536,10 +4542,10 @@ export default function HomePage() {
                                 : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                             }`}
                           >
-                            {preset.key === '60min' ? t('presets.60min') : preset.key === '1hour' ? t('presets.1hour') : t(`presets.${preset.key}`)}
+                            {t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 </motion.div>
