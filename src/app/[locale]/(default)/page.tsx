@@ -6,7 +6,7 @@ import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer,
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
@@ -143,14 +143,35 @@ export default function HomePage() {
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   
-  // 模式：'timer' 倒计时, 'stopwatch' 秒表, 'alarm' 闹钟, 'worldclock' 世界时间
-  const [mode, setMode] = useState<'timer' | 'stopwatch' | 'alarm' | 'worldclock'>('timer');
+  // 固定模式为 timer
+  const mode = 'timer' as const;
+  
+  // 从URL路径或参数读取预设时间
+  const getInitialTime = () => {
+    // 先检查URL参数
+    const presetFromUrl = searchParams.get('preset');
+    if (presetFromUrl) {
+      return parseInt(presetFromUrl);
+    }
+    
+    // 检查URL路径来确定预设时间（使用endsWith确保精确匹配，加上斜杠避免部分匹配）
+    const pathMatch = PRESET_TIMES.find(preset => pathname.endsWith(`/${preset.path}`));
+    if (pathMatch) {
+      return pathMatch.seconds;
+    }
+    
+    // 默认5分钟
+    return 300;
+  };
+  
+  const initialPresetTime = getInitialTime();
   
   // 倒计时相关
-  const [timeLeft, setTimeLeft] = useState(300); // Default 5 minutes
-  const [initialTime, setInitialTime] = useState(300);
+  const [timeLeft, setTimeLeft] = useState(initialPresetTime);
+  const [initialTime, setInitialTime] = useState(initialPresetTime);
   
   // 秒表相关
   const [stopwatchTime, setStopwatchTime] = useState(0); // 秒表时间（秒）
@@ -1324,16 +1345,6 @@ export default function HomePage() {
     router.push(`/${currentLocale}/${page}`);
   };
 
-  const switchMode = (newMode: 'timer' | 'stopwatch' | 'alarm' | 'worldclock') => {
-    setIsRunning(false);
-    setMode(newMode);
-    if (newMode === 'timer') {
-      setTimeLeft(initialTime);
-    } else if (newMode === 'stopwatch') {
-      setStopwatchTime(0);
-    }
-  };
-
   const setPresetTime = (seconds: number) => {
     setIsRunning(false);
     setInitialTime(seconds);
@@ -1728,9 +1739,24 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col flex-1">
       {/* 移动端顶部导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden w-full ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+        <div className={`sm:hidden sticky top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
           {/* 主要功能按钮 */}
           <div className="flex items-center justify-around py-3 px-2">
+            <button
+              onClick={() => navigateToPage('countdown')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                mode === 'timer' 
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Timer className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.timer')}</span>
+            </button>
             <button
               onClick={() => navigateToPage('stopwatch')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
@@ -1915,10 +1941,25 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none"
+                className="hidden sm:flex fixed top-20 sm:top-24 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none z-50"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigateToPage('countdown')}
+                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
+                    mode === 'timer' 
+                      ? 'bg-blue-500 text-white' 
+                      : theme === 'dark'
+                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
+                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
+                  }`}
+                  title={t('modes.timer')}
+                >
+                  <Timer className="w-4 h-4 sm:w-6 sm:h-6" />
+                </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -1969,32 +2010,13 @@ export default function HomePage() {
               {/* 右上角：功能按钮 - 移动端隐藏 */}
               <motion.div 
                 initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: showSettingsPanel ? 0 : 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
-                className="hidden sm:flex absolute top-2 sm:top-4 right-2 sm:right-4 gap-0.5 sm:gap-2"
+                className={`hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-50 ${showSettingsPanel ? 'pointer-events-none' : ''}`}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    if (mode === 'alarm') {
-                      setShowAddAlarm(true);
-                    } else {
-                      // 根据当前模式设置初始值
-                      const currentSeconds = mode === 'timer' ? timeLeft : stopwatchTime;
-                      setCustomMinutes(Math.floor(currentSeconds / 60));
-                      setCustomSeconds(currentSeconds % 60);
-                      setShowEditModal(true);
-                    }
-                  }}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={mode === 'alarm' ? t('buttons.add_alarm') : t('tooltips.custom_time')}
-                >
-                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
                 {/* 移动端隐藏通知按钮 */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -2223,10 +2245,10 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="w-full flex flex-col items-center justify-center"
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
-          {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
+          {!isFullscreen && (
             <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
@@ -2240,7 +2262,7 @@ export default function HomePage() {
               >
                 {/* 左侧：天气图标和温度 */}
                 <div className="flex items-center gap-1 sm:gap-1.5">
-                  {weather && (showWeatherIcon || showTemperature) ? (
+                  {(showWeatherIcon || showTemperature) && weather ? (
                     <>
                       {showWeatherIcon && (
                         <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
@@ -2282,7 +2304,7 @@ export default function HomePage() {
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
             <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1' : ''
+              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[60vh] sm:min-h-[50vh]'
             }`}>
               <div 
                 id="timer-display"
@@ -2300,7 +2322,7 @@ export default function HomePage() {
                         : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
                     }
                   })()
-                } leading-none flex items-center justify-center whitespace-nowrap`}
+                } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
                 style={{
                   fontFamily: '"Rajdhani", sans-serif',
                   fontWeight: '580',
@@ -2368,7 +2390,7 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 ${
+                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full ${
                     isFullscreen 
                       ? 'text-3xl sm:text-4xl md:text-5xl' 
                       : 'text-2xl sm:text-3xl'
@@ -3480,7 +3502,9 @@ export default function HomePage() {
                       {t('timer.minute_timers')}
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
@@ -3493,7 +3517,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -3505,7 +3529,7 @@ export default function HomePage() {
                             {preset.seconds === 3600 ? t('presets.60min') : t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
 
@@ -3515,7 +3539,9 @@ export default function HomePage() {
                       {t('timer.hour_timers')}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds >= 3600 && (preset.key.endsWith('min') || preset.key.endsWith('hour'))).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.key.endsWith('hour')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.key}
                           href={`/${locale}/${preset.path}`}
@@ -3528,7 +3554,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -3537,10 +3563,10 @@ export default function HomePage() {
                                 : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                             }`}
                           >
-                            {preset.key === '60min' ? t('presets.60min') : preset.key === '1hour' ? t('presets.1hour') : t(`presets.${preset.key}`)}
+                            {t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
                 </motion.div>

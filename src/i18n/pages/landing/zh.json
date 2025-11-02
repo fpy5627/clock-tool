@@ -11,7 +11,13 @@
       "url": "/"
     },
     "nav": {
-      "items": []
+      "items": [
+        {
+          "title": "常见问题",
+          "url": "/faq",
+          "target": "_self"
+        }
+      ]
     },
     "buttons": [],
     "show_sign": true,
@@ -19,28 +25,28 @@
     "show_locale": true
   },
   "hero": {
-    "title": "几小时内快速构建 AI 创业项目，而不是几天",
-    "highlight_text": "快速构建",
-    "description": "Timero 是一个用于构建 AI SaaS 创业项目的 NextJS 模板。<br/>通过丰富的模板和组件快速启动。",
+    "title": "您的终极时间管理工具 - 倒计时、秒表、闹钟与世界时间",
+    "highlight_text": "Timero",
+    "description": "免费在线计时工具，集倒计时、秒表、闹钟和世界时间于一体。<br/>完美适用于生产力提升、健身、烹饪和时间追踪。",
     "announcement": {
-      "label": "2025",
-      "title": "🎉 新年快乐",
-      "url": "/pricing"
+      "label": "免费",
+      "title": "🎉 完全免费使用",
+      "url": "/countdown"
     },
-    "tip": "🎁 2025年前五折优惠",
+    "tip": "🎁 无需注册 - 立即开始使用",
     "buttons": [
       {
-        "title": "立即开始",
+        "title": "开始计时",
         "icon": "RiFlashlightFill",
-        "url": "/pricing",
+        "url": "/countdown",
         "target": "_self",
         "variant": "default"
       },
       {
-        "title": "阅读文档",
+        "title": "试试秒表",
         "icon": "RiBookOpenLine",
-        "url": "https://docs.timero.ai",
-        "target": "_blank",
+        "url": "/stopwatch",
+        "target": "_self",
         "variant": "outline"
       }
     ],
@@ -48,7 +54,7 @@
     "show_badge": false
   },
   "branding": {
-    "title": "Timero 建立在巨人的肩膀上",
+    "title": "基于现代 Web 技术构建",
     "items": [
       {
         "title": "Next.js",
@@ -91,24 +97,24 @@
     "name": "introduce",
     "title": "什么是 Timero",
     "label": "介绍",
-    "description": "Timero 是一个用于构建 AI SaaS 创业项目的 NextJS 模板，内置多种模板和组件。",
+    "description": "Timero 是一款综合性的在线时间管理工具，将倒计时、秒表、闹钟和世界时间集于一个便捷平台。完美帮助您高效管理时间。",
     "image": {
       "src": "/imgs/features/1.png"
     },
     "items": [
       {
-        "title": "即用型模板",
-        "description": "从数十个生产就绪的 AI SaaS 模板中选择，快速启动您的项目。",
+        "title": "倒计时器",
+        "description": "设置从秒到小时的 custom 倒计时。完美适用于健身、烹饪、工作效率和时间管理任务。",
         "icon": "RiNextjsFill"
       },
       {
-        "title": "基础设施配置",
-        "description": "立即获取内置最佳实践的可扩展基础设施。",
+        "title": "秒表",
+        "description": "精确的时间追踪功能，支持圈数计时。适合测量表现、追踪活动和计时赛事。",
         "icon": "RiDatabase2Line"
       },
       {
-        "title": "快速部署",
-        "description": "在几小时内将您的 AI SaaS 应用部署到生产环境，而不是几天。",
+        "title": "闹钟",
+        "description": "设置多个闹钟，支持自定义标签和重复选项。再也不会错过重要的约会或截止日期。",
         "icon": "RiCloudyFill"
       }
     ]
@@ -117,27 +123,27 @@
     "name": "benefit",
     "title": "为什么选择 Timero",
     "label": "优势",
-    "description": "获取启动 AI 创业所需的一切 - 从即用型模板到技术支持。",
+    "description": "高效时间管理所需的一切 - 全部集成在一个免费、易用的在线工具中。",
     "items": [
       {
-        "title": "完整框架",
-        "description": "基于 Next.js 构建，集成身份验证、支付和 AI 功能 - 一切开箱即用。",
+        "title": "一体化解决方案",
+        "description": "四个必备时间工具集成在一个平台：计时器、秒表、闹钟和世界时间。无需在不同应用间切换。",
         "icon": "RiNextjsFill",
         "image": {
           "src": "/imgs/features/2.png"
         }
       },
       {
-        "title": "丰富的模板库",
-        "description": "选择各种 AI SaaS 模板来启动您的项目 - 聊天机器人、图像生成等。",
+        "title": "可定制且灵活",
+        "description": "通过主题颜色、提示音、背景和通知设置个性化您的体验，匹配您的偏好。",
         "icon": "RiClapperboardAiLine",
         "image": {
           "src": "/imgs/features/3.png"
         }
       },
       {
-        "title": "技术指导",
-        "description": "获得专门支持并加入我们的开发者社区，确保您成功启动。",
+        "title": "免费且无需注册",
+        "description": "无需注册即可立即使用。100% 免费访问所有功能，无隐藏费用或限制。",
         "icon": "RiCodeFill",
         "image": {
           "src": "/imgs/features/4.png"
@@ -147,8 +153,8 @@
   },
   "usage": {
     "name": "usage",
-    "title": "如何使用 Timero 启动项目",
-    "description": "通过三个简单步骤启动您的 AI SaaS 创业项目：",
+    "title": "如何使用 Timero",
+    "description": "只需几个简单步骤即可开始使用 Timero：",
     "image": {
       "src": "/imgs/features/1.png"
     },
@@ -156,29 +162,29 @@
     "text_align": "center",
     "items": [
       {
-        "title": "获取 Timero",
-        "description": "一次性付款购买 Timero。查收邮件获取代码和文档。",
+        "title": "选择您的工具",
+        "description": "根据您的需求从计时器、秒表、闹钟或世界时间中选择。所有工具都可通过主菜单访问。",
         "image": {
           "src": "/imgs/features/5.png"
         }
       },
       {
-        "title": "开始您的项目",
-        "description": "阅读文档并克隆 Timero 代码。开始构建您的 AI SaaS 创业项目。",
+        "title": "自定义设置",
+        "description": "通过选择主题颜色、提示音和背景偏好来个性化您的体验，匹配您的风格。",
         "image": {
           "src": "/imgs/features/6.png"
         }
       },
       {
-        "title": "定制您的项目",
-        "description": "使用您的数据和内容修改模板。满足特定的 AI 功能需求。",
+        "title": "设置您的时间",
+        "description": "对于计时器，从预设选项中选择或设置自定义时间。对于闹钟，设置具体时间并选择重复选项。",
         "image": {
           "src": "/imgs/features/7.png"
         }
       },
       {
-        "title": "部署到生产环境",
-        "description": "通过几个步骤将项目部署到生产环境，立即开始服务客户。",
+        "title": "开始管理时间",
+        "description": "启动您的计时器、开始秒表或设置闹钟。所有功能在桌面和移动设备上都能无缝运行。",
         "image": {
           "src": "/imgs/features/8.png"
         }
@@ -188,36 +194,36 @@
   "feature": {
     "name": "feature",
     "title": "Timero 核心功能",
-    "description": "快速高效启动 AI SaaS 创业所需的一切。",
+    "description": "强大的时间管理功能，帮助您保持有序和高效。",
     "items": [
       {
-        "title": "Next.js 模板",
-        "description": "生产就绪的 Next.js 模板，支持 SEO 友好结构和国际化。",
+        "title": "倒计时器",
+        "description": "设置精确的倒计时，支持从 10 秒到 16 小时的自定义预设。完美适用于番茄工作法、健身和烹饪。",
         "icon": "RiNextjsFill"
       },
       {
-        "title": "身份验证和支付",
-        "description": "集成 Google OAuth、一键登录和 Stripe 支付处理。",
+        "title": "秒表与圈数计时",
+        "description": "精确的秒表功能，支持圈数计时，适合计时活动、健身和性能测量。",
         "icon": "RiKey2Fill"
       },
       {
-        "title": "数据基础设施",
-        "description": "内置 Supabase 集成，提供可靠和可扩展的数据存储。",
+        "title": "多闹钟系统",
+        "description": "设置无限数量的闹钟，支持自定义标签、重复计划（每日、工作日、周末）和通知音效。",
         "icon": "RiDatabase2Line"
       },
       {
-        "title": "一键部署",
-        "description": "无缝部署到 Vercel 或 Cloudflare，自动化设置。",
+        "title": "世界时间",
+        "description": "同时查看多个时区的时间。添加自定义城市并追踪全球时差。",
         "icon": "RiCloudy2Fill"
       },
       {
-        "title": "业务分析",
-        "description": "集成 Google Analytics 和 Search Console 追踪增长。",
+        "title": "可定制界面",
+        "description": "个性化设置：20+ 主题颜色、20+ 提示音和自定义背景，打造专属体验。",
         "icon": "RiBarChart2Line"
       },
       {
-        "title": "AI 就绪基础设施",
-        "description": "预配置 AI 集成，内置积分系统和 API 销售。",
+        "title": "跨平台支持",
+        "description": "在桌面、平板和移动设备上无缝运行。响应式设计，支持全屏模式。",
         "icon": "RiRobot2Line"
       }
     ]
@@ -226,23 +232,23 @@
     "name": "stats",
     "label": "统计",
     "title": "用户喜爱 Timero",
-    "description": "因为它易于使用且快速发布。",
+    "description": "因其简单、可靠和全面的功能。",
     "icon": "FaRegHeart",
     "items": [
       {
-        "title": "信任",
-        "label": "99+",
-        "description": "客户"
+        "title": "每日用户",
+        "label": "1万+",
+        "description": "信任使用"
       },
       {
-        "title": "内置",
+        "title": "支持语言",
         "label": "20+",
-        "description": "组件"
+        "description": "多种语言"
       },
       {
-        "title": "快速发布",
-        "label": "5",
-        "description": "分钟"
+        "title": "立即使用",
+        "label": "0",
+        "description": "秒即开始"
       }
     ]
   },
@@ -250,53 +256,53 @@
     "name": "testimonial",
     "label": "用户评价",
     "title": "用户如何评价 Timero",
-    "description": "听听使用 Timero 启动 AI 创业项目的开发者和创始人怎么说。",
+    "description": "听听每天使用 Timero 高效管理时间的用户怎么说。",
     "icon": "GoThumbsup",
     "items": [
       {
-        "title": "陈大卫",
-        "label": "AIWallpaper.shop 创始人",
-        "description": "Timero 为我们节省了数月的开发时间。我们仅用 2 天就启动了 AI 壁纸业务，一周内就获得了第一个付费客户！",
+        "title": "张雅",
+        "label": "健身教练",
+        "description": "Timero 的倒计时功能完美适用于我的健身课程。我每天都用它来计时间隔和休息时间。自定义预设为我节省了大量时间！",
         "image": {
           "src": "/imgs/users/1.png"
         }
       },
       {
-        "title": "金瑞秋",
-        "label": "HeyBeauty.ai 技术总监",
-        "description": "预构建的 AI 基础设施是一个游戏规则改变者。我们无需担心架构 - 只需专注于 AI 美容技术并快速上线。",
+        "title": "陈明",
+        "label": "效率教练",
+        "description": "我喜欢使用 Timero 进行番茄工作法。计时器、秒表和闹钟功能帮助我保持专注，并追踪全天的生产力。",
         "image": {
           "src": "/imgs/users/2.png"
         }
       },
       {
-        "title": "马库斯",
-        "label": "独立开发者",
-        "description": "作为独立开发者，Timero 给了我所需的一切 - 身份验证、支付、AI 集成和漂亮的 UI。一个周末就启动了我的 SaaS！",
+        "title": "李蕊",
+        "label": "远程工作者",
+        "description": "作为与国际团队合作的人，Timero 的世界时间功能不可或缺。我可以快速查看时区并为不同时区设置闹钟。",
         "image": {
           "src": "/imgs/users/3.png"
         }
       },
       {
-        "title": "索菲亚",
-        "label": "Melodisco CEO",
-        "description": "这些模板可直接用于生产且高度可定制。我们用几小时而不是几个月就建立了 AI 音乐平台。上市时间令人难以置信！",
+        "title": "王达",
+        "label": "学生",
+        "description": "多闹钟功能帮助我准时起床并记住学习时间。可自定义的声音和主题让每天都使用变得有趣！",
         "image": {
           "src": "/imgs/users/4.png"
         }
       },
       {
-        "title": "詹姆斯",
-        "label": "GPTs.works 技术主管",
-        "description": "Timero 的基础设施非常稳固。我们从 0 扩展到 1 万用户都没碰后端。这是我们 AI 创业最好的投资。",
+        "title": "刘丽",
+        "label": "家庭主厨",
+        "description": "我在烹饪时经常使用 Timero 的倒计时功能。不同烹饪时长的预设时间非常方便。再也不会煮过头了！",
         "image": {
           "src": "/imgs/users/5.png"
         }
       },
       {
-        "title": "张安娜",
-        "label": "创业者",
-        "description": "从想法到上线只用了 3 天！Timero 的模板和部署工具让我们能够以令人难以置信的速度测试 AI 业务概念。",
+        "title": "赵涛",
+        "label": "专业跑者",
+        "description": "带圈数功能的秒表正是我训练所需。它精确、易用，在跑步时在手机上运行完美。",
         "image": {
           "src": "/imgs/users/6.png"
         }
@@ -307,49 +313,49 @@
     "name": "faq",
     "label": "常见问题",
     "title": "关于 Timero 的常见问题",
-    "description": "还有其他问题？通过 Discord 或电子邮件联系我们。",
+    "description": "还有其他问题？欢迎随时联系或探索我们的功能。",
     "items": [
       {
-        "title": "Timero 究竟是什么，它是如何工作的？",
-        "description": "Timero 是一个专门为构建 AI SaaS 创业项目设计的综合性 NextJS 模板。它提供即用型模板、基础设施设置和部署工具，帮助您在几小时内而不是几天内启动 AI 业务。"
+        "title": "Timero 是什么？它是如何工作的？",
+        "description": "Timero 是一款免费的在线时间管理工具，将倒计时、秒表、闹钟和世界时间功能集于一个平台。只需访问网站，选择您的工具，设置时间，即可开始高效管理日程 - 无需注册。"
       },
       {
-        "title": "使用 Timero 需要高级技术技能吗？",
-        "description": "虽然基本的编程知识会有帮助，但 Timero 设计得非常开发者友好。我们的模板和文档使您即使不是 AI 或云基础设施专家也能轻松入门。"
+        "title": "使用 Timero 需要创建账户吗？",
+        "description": "不需要！Timero 完全免费使用，无需注册。您可以立即开始使用所有功能 - 计时器、秒表、闹钟和世界时间 - 无需注册或提供任何个人信息。"
       },
       {
-        "title": "我可以用 Timero 构建什么类型的 AI SaaS？",
-        "description": "Timero 支持广泛的 AI 应用，从内容生成到数据分析工具。我们的模板涵盖流行用例，如 AI 聊天机器人、内容生成器、图像处理应用等。"
+        "title": "倒计时器支持哪些时间范围？",
+        "description": "Timero 支持从 10 秒到 16 小时的倒计时。您可以选择快速预设（10 秒、30 秒、1 分钟、5 分钟等）或设置包含小时、分钟和秒的自定义时间。完美适用于短暂休息、健身、烹饪或长时间工作。"
       },
       {
-        "title": "使用 Timero 通常需要多长时间才能启动？",
-        "description": "使用 Timero，您可以在几小时内完成工作原型，并在几小时内完成生产就绪的应用。我们的一键部署和预配置基础设施显著缩短了传统的数月开发周期。"
+        "title": "我可以同时设置多个闹钟吗？",
+        "description": "可以！Timero 允许您设置无限数量的闹钟，支持自定义标签和重复选项。您可以设置每日例行、仅工作日、仅周末或一次性提醒的闹钟。每个闹钟都可以有自己的标签，如'起床'、'运动'或'会议'。"
       },
       {
-        "title": "Timero 的基础设施包括什么？",
-        "description": "Timero 提供完整的基础设施栈，包括身份验证、数据库设置、API 集成、支付处理和可扩展的云部署。一切都按照行业最佳实践预先配置。"
+        "title": "秒表功能的精确度如何？",
+        "description": "Timero 的秒表提供精确的时间追踪，支持圈数功能。精确到秒，可靠地用于计时健身、活动或任何事件。即使切换浏览器标签页，秒表也能无缝运行。"
       },
       {
-        "title": "我可以自定义模板以匹配我的品牌吗？",
-        "description": "当然可以！所有 Timero 模板都完全可定制。您可以修改设计、功能和功能性以匹配您的品牌标识和特定业务需求，同时保持强大的底层基础设施。"
+        "title": "我可以自定义外观和声音吗？",
+        "description": "当然可以！Timero 提供 20+ 主题颜色、20+ 提示音和可自定义背景。您可以个性化界面以匹配您的偏好，并选择最适合您的提示音，无论是轻柔的铃声还是警报音。"
       }
     ]
   },
   "cta": {
     "name": "cta",
-    "title": "启动您的第一个 AI SaaS 创业项目",
-    "description": "从这里开始，使用 Timero 启动。",
+    "title": "今天开始更好地管理您的时间",
+    "description": "免费、易用、立即可用 - 无需注册。",
     "buttons": [
       {
-        "title": "获取 Timero",
-        "url": "https://timero.ai",
-        "target": "_blank",
+        "title": "开始计时",
+        "url": "/countdown",
+        "target": "_self",
         "icon": "GoArrowUpRight"
       },
       {
-        "title": "阅读文档",
-        "url": "https://docs.timero.ai",
-        "target": "_blank",
+        "title": "试试秒表",
+        "url": "/stopwatch",
+        "target": "_self",
         "variant": "outline"
       }
     ]
@@ -358,56 +364,16 @@
     "name": "footer",
     "brand": {
       "title": "Timero",
-      "description": "Timero 是一个用于构建 AI SaaS 创业项目的 NextJS 模板。通过丰富的模板和组件快速启动。",
+      "description": "免费在线计时工具，集倒计时、秒表、闹钟和世界时间于一体。高效管理您的时间。",
       "logo": {
         "src": "/logo.svg",
         "alt": "Timero"
       },
       "url": "/"
     },
-    "copyright": "© 2025 • Timero 保留所有权利。",
+    "copyright": "© 2025 • Timero - 免费时间管理工具。保留所有权利。",
     "nav": {
       "items": [
-        {
-          "title": "关于",
-          "children": [
-            {
-              "title": "功能特点",
-              "url": "/#feature",
-              "target": "_self"
-            },
-            {
-              "title": "案例展示",
-              "url": "/#showcase",
-              "target": "_self"
-            },
-            {
-              "title": "定价",
-              "url": "/#pricing",
-              "target": "_self"
-            }
-          ]
-        },
-        {
-          "title": "资源",
-          "children": [
-            {
-              "title": "文档",
-              "url": "https://docs.timero.ai",
-              "target": "_blank"
-            },
-            {
-              "title": "组件",
-              "url": "https://timero.ai/components",
-              "target": "_blank"
-            },
-            {
-              "title": "模板",
-              "url": "https://timero.ai/templates",
-              "target": "_blank"
-            }
-          ]
-        },
         {
           "title": "友情链接",
           "children": [
