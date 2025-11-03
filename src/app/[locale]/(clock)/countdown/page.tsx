@@ -4515,7 +4515,10 @@ export default function HomePage() {
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => {
-                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        // 检查是否有任何预设路径匹配当前路径
+                        const hasPathMatch = PRESET_TIMES.some(p => pathname.endsWith(`/${p.path}`));
+                        // 如果路径匹配，则选中匹配的按钮；否则，如果初始时间是5分钟（300秒），默认选中5分钟按钮
+                        const isSelected = pathname.endsWith(`/${preset.path}`) || (!hasPathMatch && preset.seconds === 300 && initialPresetTime === 300);
                         return (
                         <Link
                           key={preset.seconds}

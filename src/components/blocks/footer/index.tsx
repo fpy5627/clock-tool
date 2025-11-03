@@ -101,9 +101,9 @@ export default function Footer({ footer }: { footer: FooterType }) {
                 {footer.agreement.items?.map((item, i) => (
                   <li key={i} className="hover:text-primary">
                     {item.url ? (
-                      <a href={item.url} target={item.target}>
+                      <Link href={item.url} target={item.target}>
                         {item.title}
-                      </a>
+                      </Link>
                     ) : (
                       <span>{item.title}</span>
                     )}
