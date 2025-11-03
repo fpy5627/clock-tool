@@ -3393,7 +3393,7 @@ export default function HomePage() {
           {/* Time Display or Alarm List or World Clock */}
           {(mode === 'timer' || mode === 'stopwatch') ? (
             <div 
-              className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
+              className={`text-center w-full flex flex-col items-center justify-center px-2 sm:px-4 ${
                 isFullscreen ? 'flex-1 min-h-0' : (mode === 'timer' ? 'min-h-[25vh] sm:min-h-[50vh] mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8' : 'min-h-[25vh] sm:min-h-[50vh]')
               }`}
               style={!isFullscreen && mode === 'stopwatch' 
@@ -3423,6 +3423,7 @@ export default function HomePage() {
                   letterSpacing: '0.05em',
                   WebkitFontSmoothing: 'antialiased',
                   MozOsxFontSmoothing: 'grayscale',
+                  order: 1
                 }}
               >
                 {(() => {
@@ -3484,11 +3485,12 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full ${
+                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full flex-shrink-0 ${
                     isFullscreen 
                       ? 'text-3xl sm:text-4xl md:text-5xl' 
                       : 'text-2xl sm:text-3xl'
                   }`}
+                  style={{ order: 2 }}
                 >
                   {t('timer.time_up')}
                 </motion.div>

@@ -3200,7 +3200,7 @@ export default function HomePage() {
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (
-            <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
+            <div className="w-full flex justify-center -mt-4 mb-4 sm:mt-0 sm:mb-6 md:mb-8">
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}

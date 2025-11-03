@@ -3199,7 +3199,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center' : 'justify-between flex-1 h-full'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center -mt-12 sm:mt-0' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
