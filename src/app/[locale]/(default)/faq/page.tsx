@@ -1,5 +1,21 @@
 import FAQ from "@/components/blocks/faq";
 import { getLandingPage } from "@/services/page";
+import { Metadata } from "next";
+import { getCanonicalUrl } from "@/lib/metadata";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  
+  return {
+    alternates: {
+      canonical: getCanonicalUrl('/faq', locale),
+    },
+  };
+}
 
 export default async function FAQPage({
   params,

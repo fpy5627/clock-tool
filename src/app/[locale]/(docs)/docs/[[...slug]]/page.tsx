@@ -52,8 +52,18 @@ export async function generateMetadata(props: {
   const page = source.getPage(params.slug, params.locale);
   if (!page) notFound();
 
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const slugPath = params.slug ? params.slug.join("/") : "";
+  let canonicalUrl = `${webUrl}/docs${slugPath ? `/${slugPath}` : ""}`;
+  if (params.locale && params.locale !== "en") {
+    canonicalUrl = `${webUrl}/${params.locale}/docs${slugPath ? `/${slugPath}` : ""}`;
+  }
+
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
   };
 }
