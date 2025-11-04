@@ -9,6 +9,7 @@ import { NextAuthSessionProvider } from "@/auth/session";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/providers/theme";
 import { Toaster } from "sonner";
+import { StructuredData } from "@/components/structured-data";
 
 export async function generateMetadata({
   params,
@@ -41,12 +42,14 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const messages = await getMessages();
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
 
   return (
     <NextIntlClientProvider messages={messages}>
       <NextAuthSessionProvider>
         <AppContextProvider>
           <ThemeProvider>
+            <StructuredData locale={locale} webUrl={webUrl} />
             {children}
             <Toaster 
               richColors 
