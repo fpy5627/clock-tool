@@ -10,6 +10,7 @@ import { useParams, usePathname, useRouter } from 'next/navigation';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import { SOUND_OPTIONS } from '@/lib/clock-constants';
+import { notifySoundMetaList } from '@/lib/notify-sound';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -122,7 +123,8 @@ export default function HomePage() {
   const { theme, setTheme } = useTheme();
   
   // 固定模式为 stopwatch
-  const mode = 'stopwatch' as const;
+  type Mode = 'timer' | 'stopwatch' | 'alarm' | 'worldclock';
+  const mode = 'stopwatch' as Mode;
   
   // 倒计时相关
   const [timeLeft, setTimeLeft] = useState(1800); // Default 30 minutes
@@ -444,41 +446,8 @@ export default function HomePage() {
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
-        if (mode === 'timer') {
-          // 倒计时模式
-          setTimeLeft((prev) => {
-            if (prev <= 1) {
-              // 立即清除定时器，防止重复执行
-              if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-              }
-              setIsRunning(false);
-              if (soundEnabled) {
-                playNotificationSound(selectedSound);
-              }
-              // 桌面通知
-              showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
-              
-              // 显示倒计时结束弹窗，并开始超时计时
-              setShowTimerEndModal(true);
-              setTimerOvertime(0);
-              
-              // 开始超时计时器
-              if (!overtimeIntervalRef.current) {
-                overtimeIntervalRef.current = setInterval(() => {
-                  setTimerOvertime((prev) => prev + 1);
-                }, 1000);
-              }
-              
-              return 0;
-            }
-            return prev - 1;
-          });
-        } else {
-          // 秒表模式
-          setStopwatchTime((prev) => prev + 1);
-        }
+        // 秒表模式
+        setStopwatchTime((prev) => prev + 1);
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -594,8 +563,8 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
       
-      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
-      if (isFullscreen && mode !== 'alarm') {
+      // 只在全屏时，1.5秒后隐藏控制按钮
+      if (isFullscreen) {
         hideControlsTimeoutRef.current = setTimeout(() => {
           if (!isHoveringControls.current) {
             setShowControls(false);
@@ -621,24 +590,22 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
     };
-  }, [isFullscreen, mode]);
+  }, [isFullscreen]);
 
-  // 非全屏模式或闹钟模式下始终显示控制按钮
+  // 非全屏模式下始终显示控制按钮
   useEffect(() => {
-    if (!isFullscreen || mode === 'alarm') {
+    if (!isFullscreen) {
       setShowControls(true);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
       }
     }
-  }, [isFullscreen, mode]);
+  }, [isFullscreen]);
 
-  // 当切换离开世界时间模式时，重置选中的城市
+  // 重置选中的城市（stopwatch模式不需要城市选择）
   useEffect(() => {
-    if (mode !== 'worldclock') {
-      setSelectedCity(null);
-    }
-  }, [mode]);
+    setSelectedCity(null);
+  }, []);
 
   // 更新日期时间
   useEffect(() => {
@@ -997,12 +964,8 @@ export default function HomePage() {
     }
   }, [theme, timerColor, stopwatchColor, worldClockColor, worldClockSmallCardColor]);
 
-  // 保存上次使用的时长
-  useEffect(() => {
-    if (typeof window !== 'undefined' && mode === 'timer' && initialTime > 0) {
-      localStorage.setItem('timer-last-time', String(initialTime));
-    }
-  }, [initialTime, mode]);
+  // 保存上次使用的时长（stopwatch模式不需要保存）
+  // useEffect removed - not needed for stopwatch mode
 
   // 请求桌面通知权限
   useEffect(() => {
@@ -1156,37 +1119,7 @@ export default function HomePage() {
   }, [locale]);
 
   // 全屏模式下鼠标移动检测 - 1.5秒后自动隐藏边框和小卡片
-  useEffect(() => {
-    let hideTimer: NodeJS.Timeout;
-    
-    const handleMouseMove = () => {
-      setShowCardBorder(true);
-      clearTimeout(hideTimer);
-      
-      // 1.5秒后自动隐藏边框
-      hideTimer = setTimeout(() => {
-        setShowCardBorder(false);
-      }, 1500);
-    };
-    
-    // 只在世界时钟模式且全屏模式下启用
-    if (mode === 'worldclock' && isFullscreen) {
-      window.addEventListener('mousemove', handleMouseMove);
-      
-      // 初始化：1.5秒后隐藏
-      hideTimer = setTimeout(() => {
-        setShowCardBorder(false);
-      }, 1500);
-      
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        clearTimeout(hideTimer);
-      };
-    } else {
-      // 非全屏模式时始终显示边框
-      setShowCardBorder(true);
-    }
-  }, [mode, isFullscreen]);
+  // Removed - not needed for stopwatch mode
 
   // 检查闹钟
   useEffect(() => {
@@ -1262,24 +1195,7 @@ export default function HomePage() {
   }, [ringingAlarmId]);
 
   // 自动滚动到最后添加的闹钟
-  useEffect(() => {
-    if (lastAddedAlarmId && mode === 'alarm') {
-      // 延迟一下，确保DOM已经渲染
-      setTimeout(() => {
-        const element = document.getElementById(`alarm-${lastAddedAlarmId}`);
-        if (element) {
-          element.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center'
-          });
-          // 清除标记
-          setTimeout(() => {
-            setLastAddedAlarmId(null);
-          }, 1000);
-        }
-      }, 100);
-    }
-  }, [lastAddedAlarmId, alarms, mode]);
+  // Removed - not needed for stopwatch mode
 
   // 防止重复显示toast的辅助函数
   const showToast = (type: 'success' | 'info', title: string, description: string, id: string) => {
@@ -1314,9 +1230,35 @@ export default function HomePage() {
     }, 10);
   };
 
-  // 声音播放函数 - 使用Web Audio API生成不同类型的声音
+  // 声音播放函数 - 优先播放实际文件，如果没有则使用Web Audio API生成
   const playNotificationSound = (soundType: string) => {
     try {
+      // 先尝试播放实际文件
+      const sound = notifySoundMetaList.find(s => s.id === soundType);
+      if (sound && sound.path) {
+        // 停止当前播放的音频（如果有）
+        stopNotificationSound();
+        const existingAudio = document.querySelector(`audio[data-sound-id="${soundType}"]`) as HTMLAudioElement;
+        if (existingAudio) {
+          existingAudio.pause();
+          existingAudio.currentTime = 0;
+        }
+        
+        // 创建新的音频元素并播放
+        // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
+        const audioPath = sound.path.startsWith('http://') || sound.path.startsWith('https://') 
+          ? sound.path 
+          : `/${sound.path}`;
+        const audio = new Audio(audioPath);
+        audio.setAttribute('data-sound-id', soundType);
+        audio.volume = 0.8;
+        audio.play().catch((error) => {
+          console.warn('Failed to play sound file:', error);
+        });
+        return; // 成功播放文件，直接返回
+      }
+      
+      // 如果没有文件路径，使用 WebAudio 合成（保留原有逻辑作为后备）
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       // 若已有在响，先停
       stopNotificationSound();
@@ -2227,17 +2169,12 @@ export default function HomePage() {
   };
 
   const toggleTimer = () => {
-    if (mode === 'timer' && timeLeft === 0) return;
     setIsRunning(!isRunning);
   };
 
   const resetTimer = () => {
     setIsRunning(false);
-    if (mode === 'timer') {
-      setTimeLeft(initialTime);
-    } else {
-      setStopwatchTime(0);
-    }
+    setStopwatchTime(0);
   };
 
   const closeTimerEndModal = () => {
@@ -2505,17 +2442,12 @@ export default function HomePage() {
 
   const applyCustomTime = () => {
     const totalSeconds = customMinutes * 60 + customSeconds;
-    if (totalSeconds > 0 || mode === 'stopwatch') {
+    if (totalSeconds > 0) {
       setIsRunning(false);
-      if (mode === 'timer') {
-        setInitialTime(totalSeconds);
-        setTimeLeft(totalSeconds);
-      } else if (mode === 'stopwatch') {
-        // 秒表模式：设置起始时间
-        setStopwatchTime(totalSeconds);
-      }
-      setShowEditModal(false);
+      // 秒表模式：设置起始时间
+      setStopwatchTime(totalSeconds);
     }
+    setShowEditModal(false);
   };
 
   const formatTime = (seconds: number) => {
@@ -2525,14 +2457,14 @@ export default function HomePage() {
     
     // 秒表模式始终显示小时:分钟:秒
     if (mode === 'stopwatch' || hours > 0) {
-  return {
+      return {
         hours: String(hours).padStart(2, '0'),
         mins: String(mins).padStart(2, '0'),
         secs: String(secs).padStart(2, '0'),
         hasHours: true
       };
     }
-  return {
+    return {
       hours: null,
       mins: String(mins).padStart(2, '0'),
       secs: String(secs).padStart(2, '0'),
@@ -2638,14 +2570,12 @@ export default function HomePage() {
   };
 
   // 根据当前模式选择对应的颜色
-  const currentColorId = mode === 'timer' ? timerColor : stopwatchColor;
+  const currentColorId = stopwatchColor;
   const themeColor = THEME_COLORS.find(c => c.id === currentColorId) || THEME_COLORS[0];
 
   return (
-    <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50 h-screen' : 'min-h-screen'} ${
-        backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
-      } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
+    <div
+      className={`${isFullscreen ? 'fixed inset-0 z-50 h-screen' : 'min-h-screen'} ${backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''} flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
       style={{ 
         cursor: !showControls ? 'none' : 'default',
         backgroundColor: backgroundType === 'color' ? backgroundColor : undefined,
@@ -2676,7 +2606,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('countdown')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'timer' 
+                pathname.includes('countdown') 
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -2706,7 +2636,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('alarm')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'alarm' 
+                pathname.includes('alarm') 
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -2721,7 +2651,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('world-clock')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'worldclock' 
+                pathname.includes('world-clock') 
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -2904,7 +2834,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('countdown')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'timer' 
+                    pathname.includes('countdown') 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -2934,7 +2864,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'alarm' 
+                    pathname.includes('alarm') 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -2949,7 +2879,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'worldclock' 
+                    pathname.includes('world-clock') 
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -3110,7 +3040,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('countdown')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'timer' 
+                    pathname.includes('countdown') 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -3136,7 +3066,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'alarm' 
+                    pathname.includes('alarm') 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -3149,7 +3079,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'worldclock' 
+                    pathname.includes('world-clock') 
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -3202,7 +3132,7 @@ export default function HomePage() {
           className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center -mt-12 sm:mt-0' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
-          {!isFullscreen && (mode === 'timer' || mode === 'stopwatch') && (
+          {!isFullscreen && (
             <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
@@ -3255,165 +3185,88 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Time Display or Alarm List or World Clock */}
-          {(mode === 'timer' || mode === 'stopwatch') ? (
+          {/* Time Display */}
+          <div 
+            className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
+              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
+            }`} 
+            style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '-1rem', marginBottom: '0.5rem' }}
+          >
             <div 
-              className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
-                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
-              }`} 
-              style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '-1rem', marginBottom: '0.5rem' }}
+              id="timer-display"
+              className={`${
+                (() => {
+                  const time = formatTime(stopwatchTime);
+                  // 根据是否有小时调整字体大小
+                  if (isFullscreen) {
+                    return time.hasHours 
+                      ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
+                      : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
+                  } else {
+                    return time.hasHours
+                      ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
+                      : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
+                  }
+                })()
+              } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
+              style={{
+                fontFamily: '"Rajdhani", sans-serif',
+                fontWeight: '580',
+                letterSpacing: '0.05em',
+                WebkitFontSmoothing: 'antialiased',
+                MozOsxFontSmoothing: 'grayscale',
+              }}
             >
-              <div 
-                id="timer-display"
-                className={`${
-                  (() => {
-                    const time = mode === 'timer' ? formatTime(timeLeft) : formatTime(stopwatchTime);
-                    // 根据是否有小时调整字体大小
-                    if (isFullscreen) {
-                      return time.hasHours 
-                        ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
-                        : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
-                    } else {
-                      return time.hasHours
-                        ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
-                        : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
-                    }
-                  })()
-                } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
-                style={{
-                  fontFamily: '"Rajdhani", sans-serif',
-                  fontWeight: '580',
-                  letterSpacing: '0.05em',
-                  WebkitFontSmoothing: 'antialiased',
-                  MozOsxFontSmoothing: 'grayscale',
-                }}
-              >
-                {(() => {
-                  const time = mode === 'timer' ? formatTime(timeLeft) : formatTime(stopwatchTime);
-                  
-                  // 检查是否使用渐变色
-                  const hasGradient = themeColor.gradient && (
-                    mode === 'stopwatch' || 
-                    (mode === 'timer' && timeLeft > 60)
-                  );
-                  
-                  // 计算当前应该使用的颜色
-                  const currentColor = mode === 'timer' 
-                    ? (timeLeft === 0 
-                        ? '#22c55e'
-                        : timeLeft < 60 
-                        ? '#ef4444'
-                        : themeColor.color)
-                    : themeColor.color;
-                  
-                  // 数字的样式
-                  const getNumberStyle = (): React.CSSProperties => {
-                    if (hasGradient) {
-                      return {
-                        backgroundImage: themeColor.gradient,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        color: 'transparent',
-                      };
-                    }
-                    return { color: currentColor };
-                  };
-                  
-                  const numberStyle = getNumberStyle();
-                  
-                  return (
-                    <>
-                      {time.hasHours && (
-                        <>
-                          <span style={numberStyle}>{time.hours}</span>
-                          <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                            <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                            <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                          </span>
-                        </>
-                      )}
-                      <span style={numberStyle}>{time.mins}</span>
-                      <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                        <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                        <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                      </span>
-                      <span style={numberStyle}>{time.secs}</span>
-                    </>
-                  );
-                })()}
-              </div>
-              {mode === 'timer' && timeLeft === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full ${
-                    isFullscreen 
-                      ? 'text-3xl sm:text-4xl md:text-5xl' 
-                      : 'text-2xl sm:text-3xl'
-                  }`}
-                >
-                  时间到
-                </motion.div>
-              )}
+              {(() => {
+                const time = formatTime(stopwatchTime);
+                
+                // 检查是否使用渐变色
+                const hasGradient = themeColor.gradient && true;
+                
+                // 计算当前应该使用的颜色
+                const currentColor = themeColor.color;
+                
+                // 数字的样式
+                const getNumberStyle = (): React.CSSProperties => {
+                  if (hasGradient) {
+                    return {
+                      backgroundImage: themeColor.gradient,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      color: 'transparent',
+                    };
+                  }
+                  return { color: currentColor };
+                };
+                
+                const numberStyle = getNumberStyle();
+                
+                return (
+                  <>
+                    {time.hasHours && (
+                      <>
+                        <span style={numberStyle}>{time.hours}</span>
+                        <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
+                          <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
+                          <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
+                        </span>
+                      </>
+                    )}
+                    <span style={numberStyle}>{time.mins}</span>
+                    <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
+                      <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
+                      <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
+                    </span>
+                    <span style={numberStyle}>{time.secs}</span>
+                  </>
+                );
+              })()}
             </div>
-          ) : mode === 'alarm' ? (
-            /* 闹钟模式 */
-            <>
-              {/* 日期和天气显示 - 非全屏时显示 */}
-              {!isFullscreen && (
-                <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8 px-4">
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="inline-flex items-center justify-between"
-                    style={{
-                      width: '100%',
-                      minWidth: '300px',
-                      maxWidth: 'min(var(--timer-width, 672px), 90vw)'
-                    }}
-                  >
-                    {/* 左侧：天气图标和温度 */}
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      {weather && (showWeatherIcon || showTemperature) ? (
-                        <>
-                          {showWeatherIcon && (
-                            <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                              {getWeatherIcon(weather.icon)}
-                            </div>
-                          )}
-                          {showTemperature && (
-                            <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                              {weather.temp}°C
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
-                      )}
-                    </div>
-                    
-                    {/* 右侧：日期 */}
-                    <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
-                      style={{
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {(() => {
-                        const { dateStr, weekdayStr } = formatDate();
-                        return (
-                          <>
-                            {showDate && <span>{dateStr}</span>}
-                            {showDate && showWeekday && <span>&nbsp;</span>}
-                            {showWeekday && <span>{weekdayStr}</span>}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </motion.div>
-                </div>
-              )}
+          </div>
               
+          {false ? (
+            <>
               {/* 闹钟列表 */}
             <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
               <div 
@@ -3685,7 +3538,7 @@ export default function HomePage() {
               </div>
             </div>
             </>
-          ) : mode === 'worldclock' ? (
+          ) : false ? (
             /* 世界时间 */
             <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
               <div className="w-full flex flex-col items-center">
@@ -3722,11 +3575,11 @@ export default function HomePage() {
                           <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
-                            {displayCity.city} | {displayCity.country}
+                            {displayCity!.city} | {displayCity!.country}
                           </h2>
                           {(() => {
                             const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity!.timezone }));
                             const hours = userTime.getHours();
                             const isNight = hours < 6 || hours >= 18;
                             
@@ -3744,7 +3597,7 @@ export default function HomePage() {
                         {/* 大时间显示 */}
                         {(() => {
                           const now = new Date();
-                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity!.timezone }));
                           const hours = String(userTime.getHours()).padStart(2, '0');
                           const minutes = String(userTime.getMinutes()).padStart(2, '0');
                           const seconds = String(userTime.getSeconds()).padStart(2, '0');
@@ -3812,7 +3665,7 @@ export default function HomePage() {
                         }`}>
                           {(() => {
                             const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity!.timezone }));
                             const year = userTime.getFullYear();
                             const month = userTime.getMonth() + 1;
                             const day = userTime.getDate();
@@ -3845,18 +3698,18 @@ export default function HomePage() {
                           {(() => {
                             // 优先使用 selectedCity 的天气，否则使用 weather 状态
                             const displayWeather = selectedCity 
-                              ? { temp: selectedCity.temp, icon: selectedCity.weatherCode }
+                              ? { temp: selectedCity!.temp, icon: selectedCity!.weatherCode }
                               : weather;
                             
                             return displayWeather ? (
                               <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
-                                  {getWeatherIcon(displayWeather.icon)}
+                                  {getWeatherIcon(displayWeather!.icon)}
                                 </div>
                                 <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                                 }`}>
-                                  {displayWeather.temp}°C
+                                  {displayWeather!.temp}°C
                                 </span>
                               </div>
                             ) : null;
@@ -3868,7 +3721,7 @@ export default function HomePage() {
                             <span className={`text-sm sm:text-base md:text-lg font-normal ${
                               theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                             }`}>
-                              {displayCity.city}
+                              {displayCity!.city}
                             </span>
                           </div>
                         </div>
@@ -4146,7 +3999,7 @@ export default function HomePage() {
           ) : null}
 
           {/* 进度条 - 仅非全屏模式显示 */}
-          {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
+          {false && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
             <div className="w-full flex justify-center mt-6 sm:mt-8 md:mt-10">
               <motion.div 
                 initial={{ opacity: 0, scaleX: 0 }}
@@ -4206,19 +4059,19 @@ export default function HomePage() {
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                {(mode === 'timer' || mode === 'stopwatch') && (
+                {(
                   <>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={toggleTimer}
-                      disabled={mode === 'timer' && timeLeft === 0}
+                      disabled={false}
                       className={`flex items-center gap-1 sm:gap-2 ${
                         isFullscreen 
                           ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
                           : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
                       } rounded-[10px] font-semibold text-white shadow-lg transition-all ${
-                        mode === 'timer' && timeLeft === 0
+                        false
                           ? 'bg-slate-700 cursor-not-allowed'
                           : isRunning
                           ? 'bg-orange-500 hover:bg-orange-600'
@@ -4268,7 +4121,7 @@ export default function HomePage() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => {
-                        const currentSeconds = mode === 'timer' ? timeLeft : stopwatchTime;
+                        const currentSeconds = stopwatchTime;
                         setCustomMinutes(Math.floor(currentSeconds / 60));
                         setCustomSeconds(currentSeconds % 60);
                         setShowEditModal(true);
@@ -4294,7 +4147,7 @@ export default function HomePage() {
 
           {/* 预设时间快捷按钮 - 仅倒计时模式显示 */}
           <AnimatePresence>
-            {!isFullscreen && mode === 'timer' && showControls && (
+            {false && (
               <div 
                 className="mt-6 sm:mt-8 md:mt-12 w-full flex justify-center"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
@@ -4360,7 +4213,7 @@ export default function HomePage() {
             >
               <div className="flex justify-between items-center mb-6">
                 <h2 className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                  {mode === 'timer' ? t('modals.custom_timer') : t('modals.set_stopwatch')}
+                  {t('modals.set_stopwatch')}
                 </h2>
                 <button
                   onClick={() => setShowEditModal(false)}
@@ -4720,7 +4573,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
-                  {mode === 'worldclock' && worldClockColor !== worldClockSmallCardColor && (
+                  {false && (
                     <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                       {t('settings_panel.large_small_card_different')}
                     </span>
@@ -4732,7 +4585,7 @@ export default function HomePage() {
                   {(() => {
                     // 根据当前主题确定默认颜色：白天模式为黑色，夜晚模式为白色
                     const defaultColor = theme === 'dark' ? 'white' : 'black';
-                    const currentColor = mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor;
+                    const currentColor = stopwatchColor;
                     const isDefault = currentColor === defaultColor;
                     
                     return (
@@ -4742,15 +4595,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           // 根据当前主题设置对应的默认颜色：白天模式为黑色，夜晚模式为白色
                           const defaultColorToSet = theme === 'dark' ? 'white' : 'black';
-                          if (mode === 'timer') {
-                            setTimerColor(defaultColorToSet);
-                          } else if (mode === 'stopwatch') {
-                            setStopwatchColor(defaultColorToSet);
-                          } else if (mode === 'worldclock') {
-                            // 世界时间模式下，弹出确认对话框
-                            setPendingWorldClockColor(defaultColorToSet);
-                            setShowWorldClockColorConfirm(true);
-                          }
+                          setStopwatchColor(defaultColorToSet);
                         }}
                         className={`w-full py-2 px-4 rounded-lg transition-all relative border-2 flex items-center justify-center gap-2 ${
                           theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
@@ -4797,9 +4642,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    const isSelectedPrimary = stopwatchColor === color.id;
                     // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedSecondary = false;
                     
                     return (
                     <button
@@ -4809,15 +4654,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           if (!isDisabled) {
                             // 根据当前模式设置对应的颜色
-                            if (mode === 'timer') {
-                              setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
-                              setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            setStopwatchColor(color.id);
                           }
                         }}
                         disabled={isDisabled}
@@ -4853,9 +4690,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    const isSelectedPrimary = stopwatchColor === color.id;
                     // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedSecondary = false;
                     
                     return (
                       <button
@@ -4865,15 +4702,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           if (!isDisabled) {
                             // 根据当前模式设置对应的颜色
-                            if (mode === 'timer') {
-                              setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
-                              setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            setStopwatchColor(color.id);
                           }
                         }}
                         disabled={isDisabled}
@@ -4909,9 +4738,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    const isSelectedPrimary = stopwatchColor === color.id;
                     // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedSecondary = false;
                     
                     return (
                       <button
@@ -4921,15 +4750,7 @@ export default function HomePage() {
                           e.stopPropagation();
                           if (!isDisabled) {
                             // 根据当前模式设置对应的颜色
-                            if (mode === 'timer') {
-                              setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
-                              setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            setStopwatchColor(color.id);
                           }
                         }}
                         disabled={isDisabled}
@@ -5453,7 +5274,7 @@ export default function HomePage() {
                                         }
                                       }
                                       
-                                      const pageName = mode === 'timer' ? t('modes.timer') : mode === 'stopwatch' ? t('modes.stopwatch') : mode === 'alarm' ? t('modes.alarm') : t('modes.worldclock');
+                                      const pageName = t('modes.stopwatch');
                                       const themeText = isLightImage ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
                                       toast.success(t('settings_panel.history_image_applied_current', { pageName, themeText }));
                                     }}
@@ -6307,6 +6128,7 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
       {/* 世界时间颜色修改确认对话框 */}
       <AnimatePresence>
@@ -6486,7 +6308,7 @@ export default function HomePage() {
                       仅当前页面
                     </p>
                     <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                      只在秒表页面使用此背景
                     </p>
                   </div>
                 </div>
@@ -6775,7 +6597,6 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
-      </div>
     </div>
-  );
+  )
 }

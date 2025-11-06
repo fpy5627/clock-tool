@@ -23,7 +23,7 @@ import { notifySoundMetaList } from "@/lib/notify-sound";
  */
 const NOTIFY_SOUND_KEY = "notifySoundId";
 // 默认音效ID（与notify-sound.ts首个保持一致）
-const DEFAULT_NOTIFY_SOUND = notifySoundMetaList[0]?.id || "pop-cc0";
+const DEFAULT_NOTIFY_SOUND = notifySoundMetaList[0]?.id || "bell";
 
 const AppContext = createContext({} as ContextValue);
 

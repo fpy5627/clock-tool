@@ -8,7 +8,7 @@ export default function FAQ({ section }: { section: SectionType }) {
 
   return (
     <section id={section.name} className="py-16">
-      <div className="container">
+        <div className="container">
         <div className="text-center">
           {section.label && (
             <Badge className="text-xs font-medium">{section.label}</Badge>

@@ -32,6 +32,8 @@ import { Menu } from "lucide-react";
 import SignToggle from "@/components/sign/toggle";
 import ThemeToggle from "@/components/theme/toggle";
 import { cn } from "@/lib/utils";
+import ClockNavItems from "./ClockNavItems";
+import ClockNavItemsMobile from "./ClockNavItemsMobile";
 
 export default function Header({ header }: { header: HeaderType }) {
   if (header.disabled) {
@@ -64,6 +66,7 @@ export default function Header({ header }: { header: HeaderType }) {
             <div className="flex items-center">
               <NavigationMenu>
                 <NavigationMenuList>
+                  <ClockNavItems />
                   {header.nav?.items?.map((item, i) => {
                     if (item.children && item.children.length > 0) {
                       return (
@@ -217,6 +220,7 @@ export default function Header({ header }: { header: HeaderType }) {
                   </SheetTitle>
                 </SheetHeader>
                 <div className="mb-8 mt-8 flex flex-col gap-4">
+                  <ClockNavItemsMobile />
                   <Accordion type="single" collapsible className="w-full">
                     {header.nav?.items?.map((item, i) => {
                       if (item.children && item.children.length > 0) {

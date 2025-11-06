@@ -346,6 +346,8 @@
       "sound_preview": "试听",
       "most_popular": "最受欢迎",
       "usage_count": "使用{count}次",
+      "show_more": "更多",
+      "show_less": "收起",
       "show_progress": "显示进度条",
       "show_weather_icon": "显示天气图标",
       "show_temperature": "显示气温",

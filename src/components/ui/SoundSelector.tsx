@@ -82,7 +82,11 @@ export const SoundSelector: FC = () => {
         audio.pause();
         audio.currentTime = 0;
       }
-      const a = new Audio(`/${sound.path}`);
+      // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
+      const audioPath = sound.path.startsWith('http://') || sound.path.startsWith('https://') 
+        ? sound.path 
+        : `/${sound.path}`;
+      const a = new Audio(audioPath);
       setAudio(a);
       a.play();
       return;

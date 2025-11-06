@@ -12,6 +12,7 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import NProgress from 'nprogress';
 import { SOUND_OPTIONS } from '@/lib/clock-constants';
+import { notifySoundMetaList } from '@/lib/notify-sound';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -147,7 +148,8 @@ export default function HomePage() {
   const { theme, setTheme } = useTheme();
   
   // 固定模式为 timer
-  const mode = 'timer' as const;
+  type Mode = 'timer' | 'stopwatch' | 'alarm' | 'worldclock';
+  const mode = 'timer' as Mode;
   
   // 从URL路径或参数读取预设时间
   const getInitialTime = () => {
@@ -572,8 +574,8 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
       
-      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
-      if (isFullscreen && mode !== 'alarm') {
+      // 只在全屏时，1.5秒后隐藏控制按钮（timer模式）
+      if (isFullscreen) {
         hideControlsTimeoutRef.current = setTimeout(() => {
           if (!isHoveringControls.current) {
             setShowControls(false);
@@ -601,9 +603,9 @@ export default function HomePage() {
     };
   }, [isFullscreen, mode]);
 
-  // 非全屏模式或闹钟模式下始终显示控制按钮
+  // 非全屏模式下始终显示控制按钮
   useEffect(() => {
-    if (!isFullscreen || mode === 'alarm') {
+    if (!isFullscreen) {
       setShowControls(true);
       if (hideControlsTimeoutRef.current) {
         clearTimeout(hideControlsTimeoutRef.current);
@@ -611,12 +613,10 @@ export default function HomePage() {
     }
   }, [isFullscreen, mode]);
 
-  // 当切换离开世界时间模式时，重置选中的城市
+  // Timer模式不支持世界时间，不需要重置城市选择
   useEffect(() => {
-    if (mode !== 'worldclock') {
-      setSelectedCity(null);
-    }
-  }, [mode]);
+    // Timer mode doesn't use world clock, so no city selection to reset
+  }, []);
 
   // 更新日期时间
   useEffect(() => {
@@ -1131,8 +1131,8 @@ export default function HomePage() {
       }, 1500);
     };
     
-    // 只在世界时钟模式且全屏模式下启用
-    if (mode === 'worldclock' && isFullscreen) {
+    // Timer模式不支持世界时钟，不需要启用
+    if (false && isFullscreen) {
       window.addEventListener('mousemove', handleMouseMove);
       
       // 初始化：1.5秒后隐藏
@@ -1223,9 +1223,9 @@ export default function HomePage() {
     };
   }, [ringingAlarmId]);
 
-  // 自动滚动到最后添加的闹钟
+  // 自动滚动到最后添加的闹钟（timer模式不支持闹钟）
   useEffect(() => {
-    if (lastAddedAlarmId && mode === 'alarm') {
+    if (lastAddedAlarmId && false) {
       // 延迟一下，确保DOM已经渲染
       setTimeout(() => {
         const element = document.getElementById(`alarm-${lastAddedAlarmId}`);
@@ -1283,6 +1283,33 @@ export default function HomePage() {
    */
   const playNotificationSound = (soundId?: string) => {
     try {
+      const soundType = soundId || selectedSound;
+      
+      // 先尝试播放实际文件
+      const sound = notifySoundMetaList.find(s => s.id === soundType);
+      if (sound && sound.path) {
+        // 停止当前播放的音频（如果有）
+        const existingAudio = document.querySelector(`audio[data-sound-id="${soundType}"]`) as HTMLAudioElement;
+        if (existingAudio) {
+          existingAudio.pause();
+          existingAudio.currentTime = 0;
+        }
+        
+        // 创建新的音频元素并播放
+        // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
+        const audioPath = sound.path.startsWith('http://') || sound.path.startsWith('https://') 
+          ? sound.path 
+          : `/${sound.path}`;
+        const audio = new Audio(audioPath);
+        audio.setAttribute('data-sound-id', soundType);
+        audio.volume = 0.8;
+        audio.play().catch((error) => {
+          console.warn('Failed to play sound file:', error);
+        });
+        return; // 成功播放文件，直接返回
+      }
+      
+      // 如果没有文件路径，使用 WebAudio 合成（保留原有逻辑作为后备）
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
@@ -1574,14 +1601,11 @@ export default function HomePage() {
 
   const applyCustomTime = () => {
     const totalSeconds = customMinutes * 60 + customSeconds;
-    if (totalSeconds > 0 || mode === 'stopwatch') {
+    if (totalSeconds > 0) {
       setIsRunning(false);
       if (mode === 'timer') {
         setInitialTime(totalSeconds);
         setTimeLeft(totalSeconds);
-      } else if (mode === 'stopwatch') {
-        // 秒表模式：设置起始时间
-        setStopwatchTime(totalSeconds);
       }
       setShowEditModal(false);
     }
@@ -1592,8 +1616,8 @@ export default function HomePage() {
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     
-    // 秒表模式始终显示小时:分钟:秒
-    if (mode === 'stopwatch' || hours > 0) {
+    // 始终显示小时:分钟:秒（如果小时>0）
+    if (hours > 0) {
   return {
         hours: String(hours).padStart(2, '0'),
         mins: String(mins).padStart(2, '0'),
@@ -1775,7 +1799,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('alarm')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'alarm' 
+                false // Always false in timer mode
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -1790,7 +1814,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('world-clock')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'worldclock' 
+                false // Always false in timer mode
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -2003,7 +2027,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'alarm' 
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -2018,7 +2042,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'worldclock' 
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -2205,7 +2229,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'alarm' 
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -2218,7 +2242,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'worldclock' 
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -2285,20 +2309,28 @@ export default function HomePage() {
               >
                 {/* 左侧：天气图标和温度 */}
                 <div className="flex items-center gap-1 sm:gap-1.5">
-                  {(showWeatherIcon || showTemperature) && weather ? (
-                    <>
-                      {showWeatherIcon && (
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                          {getWeatherIcon(weather.icon)}
-                        </div>
-                      )}
-                      {showTemperature && (
-                        <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                          {weather.temp}°C
-                        </span>
-                      )}
-                    </>
-                  ) : (
+                  {(showWeatherIcon || showTemperature) && weather ? (() => {
+                    const currentWeather = weather;
+                    if (!currentWeather) return null;
+                    
+                    // Type assertion: currentWeather is guaranteed to be non-null after the check
+                    const safeWeather = currentWeather as NonNullable<typeof currentWeather>;
+                    
+                    return (
+                      <>
+                        {showWeatherIcon && safeWeather.icon && (
+                          <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
+                            {getWeatherIcon(safeWeather.icon)}
+                          </div>
+                        )}
+                        {showTemperature && safeWeather.temp != null && (
+                          <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                            {safeWeather.temp}°C
+                          </span>
+                        )}
+                      </>
+                    );
+                  })() : (
                     <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
                   )}
                 </div>
@@ -2423,7 +2455,7 @@ export default function HomePage() {
                 </motion.div>
               )}
             </div>
-          ) : mode === 'alarm' ? (
+          ) : false ? (
             /* 闹钟模式 */
             <>
               {/* 日期和天气显示 - 非全屏时显示 */}
@@ -2441,20 +2473,28 @@ export default function HomePage() {
                   >
                     {/* 左侧：天气图标和温度 */}
                     <div className="flex items-center gap-1 sm:gap-1.5">
-                      {weather && (showWeatherIcon || showTemperature) ? (
-                        <>
-                          {showWeatherIcon && (
-                            <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                              {getWeatherIcon(weather.icon)}
-                            </div>
-                          )}
-                          {showTemperature && (
-                            <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                              {weather.temp}°C
-                            </span>
-                          )}
-                        </>
-                      ) : (
+                      {weather && (showWeatherIcon || showTemperature) ? (() => {
+                        const currentWeather = weather;
+                        if (!currentWeather) return null;
+                        
+                        // Type assertion: currentWeather is guaranteed to be non-null after the check
+                        const safeWeather = currentWeather as NonNullable<typeof currentWeather>;
+                        
+                        return (
+                          <>
+                            {showWeatherIcon && safeWeather.icon && (
+                              <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
+                                {getWeatherIcon(safeWeather.icon)}
+                              </div>
+                            )}
+                            {showTemperature && safeWeather.temp != null && (
+                              <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                                {safeWeather.temp}°C
+                              </span>
+                            )}
+                          </>
+                        );
+                      })() : (
                         <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
                       )}
                     </div>
@@ -2747,7 +2787,7 @@ export default function HomePage() {
               </div>
             </div>
             </>
-          ) : mode === 'worldclock' ? (
+          ) : false ? (
             /* 世界时间 */
             <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
               <div className="w-full flex flex-col items-center">
@@ -2756,6 +2796,9 @@ export default function HomePage() {
                   // 优先显示选中的城市，否则显示IP定位的城市
                   const displayCity = selectedCity || userLocation;
                   if (!displayCity) return null;
+                  
+                  // Type assertion: displayCity is guaranteed to be non-null after the check
+                  const city = displayCity as NonNullable<typeof displayCity>;
                   
                   return (
                     <motion.div
@@ -2784,12 +2827,12 @@ export default function HomePage() {
                           <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
-                            {displayCity.city} | {displayCity.country}
+                            {city.city} | {city.country}
                           </h2>
                           <div className="flex items-center gap-3 sm:gap-4">
                             {(() => {
                               const now = new Date();
-                              const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                              const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                               const hours = userTime.getHours();
                               const isNight = hours < 6 || hours >= 18;
                               
@@ -2919,7 +2962,7 @@ export default function HomePage() {
                         {/* 大时间显示 */}
                         {(() => {
                           const now = new Date();
-                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                          const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                           const hours = String(userTime.getHours()).padStart(2, '0');
                           const minutes = String(userTime.getMinutes()).padStart(2, '0');
                           const seconds = String(userTime.getSeconds()).padStart(2, '0');
@@ -2987,7 +3030,7 @@ export default function HomePage() {
                         }`}>
                           {(() => {
                             const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                             const year = userTime.getFullYear();
                             const month = userTime.getMonth() + 1;
                             const day = userTime.getDate();
@@ -3019,22 +3062,39 @@ export default function HomePage() {
                         <div className="flex items-center justify-between">
                           {(() => {
                             // 优先使用 selectedCity 的天气，否则使用 weather 状态
-                            const displayWeather = selectedCity 
-                              ? { temp: selectedCity.temp, icon: selectedCity.weatherCode }
-                              : weather;
+                            let displayWeather: { temp: number; icon: string } | null = null;
                             
-                            return displayWeather ? (
+                            if (selectedCity) {
+                              // Type assertion: selectedCity is guaranteed to be non-null in this block
+                              const city = selectedCity as NonNullable<typeof selectedCity>;
+                              displayWeather = { temp: city.temp, icon: city.weatherCode };
+                            } else if (weather) {
+                              displayWeather = weather;
+                            }
+                            
+                            if (!displayWeather?.icon || displayWeather?.temp == null) {
+                              return null;
+                            }
+                            
+                            if (!displayWeather) {
+                              return null;
+                            }
+                            
+                            // Type assertion: displayWeather is guaranteed to be non-null after the check
+                            const safeWeather = displayWeather as NonNullable<typeof displayWeather>;
+                            
+                            return (
                               <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
-                                  {getWeatherIcon(displayWeather.icon)}
+                                  {getWeatherIcon(safeWeather.icon)}
                                 </div>
                                 <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                                 }`}>
-                                  {displayWeather.temp}°C
+                                  {safeWeather.temp}°C
                                 </span>
                               </div>
-                            ) : null;
+                            );
                           })()}
                           <div className="flex items-center gap-1.5 sm:gap-2">
                             <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
@@ -3043,7 +3103,7 @@ export default function HomePage() {
                             <span className={`text-sm sm:text-base md:text-lg font-normal ${
                               theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                             }`}>
-                              {displayCity.city}
+                              {city.city}
                             </span>
                           </div>
                         </div>
@@ -3978,7 +4038,7 @@ export default function HomePage() {
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
-                  {mode === 'worldclock' && worldClockColor !== worldClockSmallCardColor && (
+                  {false && worldClockColor !== worldClockSmallCardColor && (
                     <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                       {t('settings_panel.large_small_card_different')}
                     </span>
@@ -4002,9 +4062,9 @@ export default function HomePage() {
                           const defaultColorToSet = theme === 'dark' ? 'white' : 'black';
                           if (mode === 'timer') {
                             setTimerColor(defaultColorToSet);
-                          } else if (mode === 'stopwatch') {
+                          } else if (false) {
                             setStopwatchColor(defaultColorToSet);
-                          } else if (mode === 'worldclock') {
+                          } else if (false) {
                             // 世界时间模式下，弹出确认对话框
                             setPendingWorldClockColor(defaultColorToSet);
                             setShowWorldClockColorConfirm(true);
@@ -4055,9 +4115,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
-                    // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedPrimary = timerColor === color.id;
+                    // Timer模式不支持世界时间
+                    const isSelectedSecondary = false;
                     
                     return (
                     <button
@@ -4069,9 +4129,9 @@ export default function HomePage() {
                             // 根据当前模式设置对应的颜色
                             if (mode === 'timer') {
                               setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
+                            } else if (false) {
                               setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
+                            } else if (false) {
                               // 世界时间模式下，弹出确认对话框
                               setPendingWorldClockColor(color.id);
                               setShowWorldClockColorConfirm(true);
@@ -4111,9 +4171,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
-                    // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedPrimary = timerColor === color.id;
+                    // Timer模式不支持世界时间
+                    const isSelectedSecondary = false;
                     
                     return (
                       <button
@@ -4125,9 +4185,9 @@ export default function HomePage() {
                             // 根据当前模式设置对应的颜色
                             if (mode === 'timer') {
                               setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
+                            } else if (false) {
                               setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
+                            } else if (false) {
                               // 世界时间模式下，弹出确认对话框
                               setPendingWorldClockColor(color.id);
                               setShowWorldClockColorConfirm(true);
@@ -4167,9 +4227,9 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
-                    // 世界时间模式下，检查小卡片是否使用此颜色
-                    const isSelectedSecondary = mode === 'worldclock' && worldClockSmallCardColor === color.id && worldClockColor !== worldClockSmallCardColor;
+                    const isSelectedPrimary = timerColor === color.id;
+                    // Timer模式不支持世界时间
+                    const isSelectedSecondary = false;
                     
                     return (
                       <button
@@ -4181,9 +4241,9 @@ export default function HomePage() {
                             // 根据当前模式设置对应的颜色
                             if (mode === 'timer') {
                               setTimerColor(color.id);
-                            } else if (mode === 'stopwatch') {
+                            } else if (false) {
                               setStopwatchColor(color.id);
-                            } else if (mode === 'worldclock') {
+                            } else if (false) {
                               // 世界时间模式下，弹出确认对话框
                               setPendingWorldClockColor(color.id);
                               setShowWorldClockColorConfirm(true);
@@ -4298,7 +4358,7 @@ export default function HomePage() {
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyColorToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                          {applyColorToAllPages ? '已应用到所有功能页面' : '仅应用到计时器页面'}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4361,7 +4421,7 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                              const pageName = '计时器';
                               const themeText = isLightBackground ? '白天模式' : '夜间模式';
                               toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
                             }}
@@ -4477,7 +4537,7 @@ export default function HomePage() {
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyToAllPages ? '已应用到所有功能页面' : `仅应用到${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面`}
+                          {applyToAllPages ? '已应用到所有功能页面' : '仅应用到计时器页面'}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4553,7 +4613,7 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
+                              const pageName = '计时器';
                               const themeText = isLightImage ? '白天模式' : '夜间模式';
                               toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
                             }}
@@ -4711,7 +4771,7 @@ export default function HomePage() {
                                         }
                                       }
                                       
-                                      const pageName = mode === 'timer' ? t('modes.timer') : mode === 'stopwatch' ? t('modes.stopwatch') : mode === 'alarm' ? t('modes.alarm') : t('modes.worldclock');
+                                      const pageName = t('modes.timer');
                                       const themeText = isLightImage ? (locale === 'zh' ? '白天模式' : 'Light mode') : (locale === 'zh' ? '夜间模式' : 'Dark mode');
                                       toast.success(t('settings_panel.history_image_applied_current', { pageName, themeText }));
                                     }}
@@ -5859,7 +5919,7 @@ export default function HomePage() {
                       仅当前页面
                     </p>
                     <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                      只在计时器页面使用此背景
                     </p>
                   </div>
                 </div>
@@ -6038,7 +6098,7 @@ export default function HomePage() {
                       仅当前功能页面
                     </p>
                     <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                      只在计时器页面使用此背景
                     </p>
                   </div>
                 </div>

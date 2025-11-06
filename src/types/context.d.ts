@@ -7,7 +7,7 @@ import { ReactNode } from "react";
  */
 export interface ContextValue {
   [propName: string]: any;
-  /** 当前全局选中的通知音唯一ID，默认可为 'pop-cc0' 等 */
+  /** 当前全局选中的通知音唯一ID，默认可为 'bell' 等 */
   notifySoundId?: string;
   /** 设置当前通知音的方法 */
   setNotifySoundId?: (id: string) => void;

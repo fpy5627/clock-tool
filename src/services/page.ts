@@ -4,6 +4,22 @@ export async function getLandingPage(locale: string): Promise<LandingPage> {
   return (await getPage("landing", locale)) as LandingPage;
 }
 
+export async function getShowcasePage(locale: string): Promise<LandingPage> {
+  const landingPage = await getLandingPage(locale);
+  // Return only the showcase section from landing page
+  return {
+    showcase: landingPage.showcase,
+  } as LandingPage;
+}
+
+export async function getPricingPage(locale: string): Promise<LandingPage> {
+  const landingPage = await getLandingPage(locale);
+  // Return only the pricing section from landing page
+  return {
+    pricing: landingPage.pricing,
+  } as LandingPage;
+}
+
 export async function getPage(
   name: string,
   locale: string

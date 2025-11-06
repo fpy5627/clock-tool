@@ -68,7 +68,7 @@ async function getBlogPosts(): Promise<Array<{ slug: string; locale: string; upd
             posts.push({
               slug: post.slug,
               locale: post.locale || locale,
-              updated_at: post.updated_at || post.created_at,
+              updated_at: (post.updated_at ?? post.created_at) ?? undefined,
             });
           }
         }
