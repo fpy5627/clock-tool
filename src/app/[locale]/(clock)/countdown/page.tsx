@@ -334,13 +334,13 @@ export default function HomePage() {
       // 先尝试播放实际文件
       const sound = notifySoundMetaList.find(s => s.id === soundType);
       if (sound && sound.path) {
-        // 停止当前播放的音频（如果有）
+        // 停止所有当前播放的音频（包括所有带有 data-sound-id 的音频元素）
         stopNotificationSound();
-        const existingAudio = document.querySelector(`audio[data-sound-id="${soundType}"]`) as HTMLAudioElement;
-        if (existingAudio) {
-          existingAudio.pause();
-          existingAudio.currentTime = 0;
-        }
+        const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
+        allAudioElements.forEach((audio) => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
         
         // 创建新的音频元素并播放
         // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
