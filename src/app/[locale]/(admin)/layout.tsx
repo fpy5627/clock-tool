@@ -15,8 +15,7 @@ export default async function AdminLayout({
   const { locale } = await params;
   const userInfo = await getUserInfo();
   if (!userInfo || !userInfo.email) {
-    // Redirect to signin with callbackUrl to return to admin page after login
-    redirect(`/${locale}/auth/signin?callbackUrl=/${locale}/admin`);
+    redirect("/auth/signin");
   }
 
   const adminEmails = process.env.ADMIN_EMAILS?.split(",");
