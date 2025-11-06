@@ -413,7 +413,14 @@
       "background_applied_to_page": "背景已应用到{pageName}功能页面",
       "background_applied_to_current_page": "当前背景仅应用到{pageName}页面，其他页面已恢复默认背景（{themeText}）",
       "light_mode": "白天模式",
-      "dark_mode": "夜间模式"
+      "dark_mode": "夜间模式",
+      "theme_color_confirm_title": "设置主题颜色",
+      "theme_color_confirm_message": "请选择应用范围：",
+      "color_preview": "预览新颜色：",
+      "modify_large_card": "修改大卡片颜色",
+      "modify_small_card": "修改小卡片颜色",
+      "modify_both_cards": "大卡片小卡片一起修改",
+      "worldclock_color_confirm_message": "请选择要修改的卡片："
     },
     "modals": {
       "custom_timer": "自定义倒计时",

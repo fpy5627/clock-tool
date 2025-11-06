@@ -413,7 +413,14 @@
       "background_applied_to_page": "Background has been applied to {pageName} page",
       "background_applied_to_current_page": "Background has been applied to {pageName} page only, other pages restored to default background ({themeText})",
       "light_mode": "Light mode",
-      "dark_mode": "Dark mode"
+      "dark_mode": "Dark mode",
+      "theme_color_confirm_title": "Set Theme Color",
+      "theme_color_confirm_message": "Please select application scope:",
+      "color_preview": "Preview new color:",
+      "modify_large_card": "Modify large card color",
+      "modify_small_card": "Modify small card color",
+      "modify_both_cards": "Modify both cards together",
+      "worldclock_color_confirm_message": "Please select which card to modify:"
     },
     "modals": {
       "custom_timer": "Custom Timer",

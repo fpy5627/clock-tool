@@ -266,6 +266,7 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
+  const userInitiatedThemeChangeRef = useRef(false); // 跟踪用户是否刚刚手动切换了主题
 
   // 添加上传图片到历史记录
   const addToImageHistory = (imageDataUrl: string) => {
@@ -834,9 +835,24 @@ export default function HomePage() {
     if (typeof window !== 'undefined') {
       // 检查用户是否手动设置了当前模式的主题
       const userManualTheme = localStorage.getItem(`timer-manual-theme-${mode}`);
-      if (userManualTheme) {
-        console.log(`Mode switched to ${mode}, applying user manually set theme:`, userManualTheme);
-        setTheme(userManualTheme);
+      
+      // 如果用户刚刚手动切换了主题，跳过应用 localStorage 中的主题
+      // 这避免了 useEffect 与 onClick 之间的竞争条件
+      if (userInitiatedThemeChangeRef.current) {
+        // 如果 localStorage 中的主题与当前主题一致，说明用户刚刚切换成功
+        // 延迟重置标记，确保主题更新完成后再允许 useEffect 应用主题
+        if (userManualTheme === theme) {
+          setTimeout(() => {
+            userInitiatedThemeChangeRef.current = false;
+          }, 200);
+        }
+        // 继续执行后续的背景颜色和图片加载逻辑，但不应用主题
+      } else {
+        // 只有在当前主题与手动设置的主题不一致时才应用
+        if (userManualTheme && userManualTheme !== theme) {
+          console.log(`Mode switched to ${mode}, applying user manually set theme:`, userManualTheme);
+          setTheme(userManualTheme);
+        }
       }
       
       // 重新加载背景颜色
@@ -2816,7 +2832,36 @@ export default function HomePage() {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    onClick={() => {
+                      const newTheme = theme === 'dark' ? 'light' : 'dark';
+                      // 标记这是用户手动切换的主题（在 setTheme 之前设置）
+                      userInitiatedThemeChangeRef.current = true;
+                      
+                      // 保存手动主题设置（在 setTheme 之前保存）
+                      if (typeof window !== 'undefined') {
+                        localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
+                      }
+                      
+                      // 如果当前页面有专用背景颜色，清除它，让主题生效
+                      if (typeof window !== 'undefined') {
+                        const currentModeBackgroundColor = localStorage.getItem(`timer-background-color-${mode}`);
+                        if (currentModeBackgroundColor) {
+                          // 清除当前页面的背景颜色设置，让主题生效
+                          localStorage.removeItem(`timer-background-color-${mode}`);
+                        }
+                      }
+                      
+                      // 更新背景颜色以匹配新主题（在 setTheme 之前）
+                      setBackgroundColor(newTheme === 'dark' ? '#1e293b' : '#f8fafc');
+                      
+                      // 调用 setTheme
+                      setTheme(newTheme);
+                      
+                      // 延迟重置标记，确保主题更新完成后再允许 useEffect 应用主题
+                      setTimeout(() => {
+                        userInitiatedThemeChangeRef.current = false;
+                      }, 300);
+                    }}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       theme === 'dark'
                         ? 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/30'
@@ -6854,6 +6899,11 @@ export default function HomePage() {
                     
                     // 清除通用背景设置
                     localStorage.removeItem('timer-background-color');
+                    
+                    // 清除手动主题设置，让主题跟随背景颜色
+                    if (typeof window !== 'undefined') {
+                      localStorage.removeItem(`timer-manual-theme-${mode}`);
+                    }
                     
                     // 分析颜色亮度并自动设置主题和其他页面的默认背景
                     const isLight = isLightColor(pendingBackgroundColor);

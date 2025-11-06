@@ -160,6 +160,10 @@ export default function HomePage() {
   const [showWorldClockColorConfirm, setShowWorldClockColorConfirm] = useState(false);
   const [pendingWorldClockColor, setPendingWorldClockColor] = useState<string | null>(null);
   
+  // 主题颜色设置确认对话框
+  const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
+  const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
+  
   // 背景自定义
   const [backgroundType, setBackgroundType] = useState<'default' | 'color' | 'image'>('default');
   const [backgroundColor, setBackgroundColor] = useState('#1e293b'); // 默认深色背景
@@ -4721,11 +4725,9 @@ export default function HomePage() {
                           e.stopPropagation();
                           // 根据当前主题设置对应的默认颜色：白天模式为黑色，夜晚模式为白色
                           const defaultColorToSet = theme === 'dark' ? 'white' : 'black';
-                          if (mode === 'worldclock') {
-                            // 世界时间模式下，弹出确认对话框
-                            setPendingWorldClockColor(defaultColorToSet);
-                            setShowWorldClockColorConfirm(true);
-                          }
+                          // 弹出确认对话框
+                          setPendingThemeColor(defaultColorToSet);
+                          setShowThemeColorConfirm(true);
                         }}
                         className={`w-full py-2 px-4 rounded-lg transition-all relative border-2 flex items-center justify-center gap-2 ${
                           theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
@@ -4783,12 +4785,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // 根据当前模式设置对应的颜色
-                            if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -4835,12 +4834,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // 根据当前模式设置对应的颜色
-                            if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -4887,12 +4883,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // 根据当前模式设置对应的颜色
-                            if (mode === 'worldclock') {
-                              // 世界时间模式下，弹出确认对话框
-                              setPendingWorldClockColor(color.id);
-                              setShowWorldClockColorConfirm(true);
-                            }
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -6724,6 +6717,170 @@ export default function HomePage() {
                   onClick={() => {
                     setShowColorBackgroundConfirm(false);
                     setPendingBackgroundColor('');
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  {t('settings_panel.cancel')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 主题颜色设置确认对话框 */}
+      <AnimatePresence>
+        {showThemeColorConfirm && pendingThemeColor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+            onClick={() => {
+              setShowThemeColorConfirm(false);
+              setPendingThemeColor(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {t('settings_panel.theme_color_confirm_title', { default: '设置主题颜色' })}
+              </h3>
+              
+              {/* 颜色预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  {t('settings_panel.color_preview', { default: '预览新颜色：' })}
+                </p>
+                <div 
+                  className="text-5xl font-bold text-center mb-2"
+                  style={{
+                    fontFamily: '"Rajdhani", sans-serif',
+                    color: (() => {
+                      const previewColor = THEME_COLORS.find(c => c.id === pendingThemeColor);
+                      if (!previewColor) {
+                        const defaultColor = theme === 'dark' ? 'white' : 'black';
+                        return defaultColor === 'white' ? '#ffffff' : '#000000';
+                      }
+                      return previewColor.gradient ? previewColor.color : previewColor.color;
+                    })(),
+                  }}
+                >
+                  {new Date().getHours().toString().padStart(2, '0')}:{new Date().getMinutes().toString().padStart(2, '0')}:{new Date().getSeconds().toString().padStart(2, '0')}
+                </div>
+                <p className={`text-xs text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
+                  {(() => {
+                    if (pendingThemeColor === 'white' || pendingThemeColor === 'black') {
+                      return t('settings_panel.default');
+                    }
+                    const color = THEME_COLORS.find(c => c.id === pendingThemeColor);
+                    return color?.key ? t(`colors.${color.key}`) : '';
+                  })()}
+                </p>
+              </div>
+              
+              <p className={`text-base mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                {t('settings_panel.worldclock_color_confirm_message', { default: '请选择要修改的卡片：' })}
+              </p>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 应用到所有页面
+                      if (pendingThemeColor) {
+                        // 应用到所有功能页面
+                        setTimerColor(pendingThemeColor);
+                        setStopwatchColor(pendingThemeColor);
+                        setWorldClockColor(pendingThemeColor);
+                        setWorldClockSmallCardColor(pendingThemeColor);
+                      }
+                      setShowThemeColorConfirm(false);
+                      setPendingThemeColor(null);
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                    }`}
+                  >
+                    {t('settings_panel.apply_to_all_pages', { default: '应用到所有页面' })}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 修改大卡片颜色
+                      if (pendingThemeColor) {
+                        setWorldClockColor(pendingThemeColor);
+                      }
+                      setShowThemeColorConfirm(false);
+                      setPendingThemeColor(null);
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                        : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    }`}
+                  >
+                    {t('settings_panel.modify_large_card', { default: '修改大卡片颜色' })}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 修改小卡片颜色
+                      if (pendingThemeColor) {
+                        setWorldClockSmallCardColor(pendingThemeColor);
+                      }
+                      setShowThemeColorConfirm(false);
+                      setPendingThemeColor(null);
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                        : 'bg-purple-500 hover:bg-purple-600 text-white'
+                    }`}
+                  >
+                    {t('settings_panel.modify_small_card', { default: '修改小卡片颜色' })}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // 应用到当前页面（世界时间页面的大卡片和小卡片）
+                      if (pendingThemeColor) {
+                        setWorldClockColor(pendingThemeColor);
+                        setWorldClockSmallCardColor(pendingThemeColor);
+                      }
+                      setShowThemeColorConfirm(false);
+                      setPendingThemeColor(null);
+                    }}
+                    className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                      theme === 'dark'
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                  >
+                    {t('settings_panel.apply_to_current_page', { default: '应用到当前页面' })}
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowThemeColorConfirm(false);
+                    setPendingThemeColor(null);
                   }}
                   className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'

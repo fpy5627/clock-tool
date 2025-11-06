@@ -368,7 +368,7 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
             }`}
           >
             <span className="text-sm font-medium">
-              {isExpanded ? t("settings_panel.show_less", { default: "收起" }) : t("settings_panel.show_more", { default: "更多" })}
+              {isExpanded ? t("settings_panel.show_less") : t("settings_panel.show_more")}
             </span>
             {isExpanded ? (
               <ChevronUp className="w-4 h-4" />
