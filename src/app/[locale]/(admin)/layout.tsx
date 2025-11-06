@@ -7,12 +7,16 @@ import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
   children,
+  params,
 }: {
   children: ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const userInfo = await getUserInfo();
   if (!userInfo || !userInfo.email) {
-    redirect("/auth/signin");
+    // Redirect to signin with callbackUrl to return to admin page after login
+    redirect(`/${locale}/auth/signin?callbackUrl=/${locale}/admin`);
   }
 
   const adminEmails = process.env.ADMIN_EMAILS?.split(",");

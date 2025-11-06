@@ -11,7 +11,7 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  
+
   return {
     alternates: {
       canonical: getCanonicalUrl('/auth/signin', locale),
@@ -20,18 +20,33 @@ export async function generateMetadata({
 }
 
 export default async function SignInPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ callbackUrl: string | undefined }>;
 }) {
-  if (!isAuthEnabled()) {
-    return redirect("/");
-  }
+  const { locale } = await params;
+  
+  // Don't redirect if auth is disabled, allow access to signin page
+  // if (!isAuthEnabled()) {
+  //   return redirect(`/${locale}`);
+  // }
 
   const { callbackUrl } = await searchParams;
   const session = await auth();
-  if (session) {
-    return redirect(callbackUrl || "/");
+  
+  // Only redirect if user is already logged in and has a callbackUrl
+  // Allow access to signin page even if already logged in (for switching accounts, etc.)
+  if (session && callbackUrl) {
+    // Check if callbackUrl already has locale prefix
+    const hasLocale = callbackUrl.startsWith('/en/') || callbackUrl.startsWith('/zh/') || callbackUrl === '/en' || callbackUrl === '/zh';
+    if (hasLocale) {
+      return redirect(callbackUrl);
+    } else {
+      // Add locale prefix if missing
+      return redirect(`/${locale}${callbackUrl.startsWith('/') ? callbackUrl : '/' + callbackUrl}`);
+    }
   }
 
   return (
