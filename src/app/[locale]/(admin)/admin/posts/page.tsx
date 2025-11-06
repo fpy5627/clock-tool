@@ -40,7 +40,7 @@ export default async function () {
       {
         name: "status",
         title: "Status",
-      },image.png
+      },
       {
         name: "created_at",
         title: "Created At",

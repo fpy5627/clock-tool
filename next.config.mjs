@@ -12,7 +12,9 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // Only use standalone output when explicitly set (e.g., for Docker builds)
+  // This avoids symlink permission issues on Windows
+  ...(process.env.NEXT_OUTPUT_STANDALONE === "true" && { output: "standalone" }),
   reactStrictMode: false,
   pageExtensions: ["ts", "tsx", "js", "jsx", "md", "mdx"],
   images: {
