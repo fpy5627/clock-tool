@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { motion } from 'framer-motion';
-import { Timer, Clock, AlarmClock, Globe, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 
 interface NavigationBarProps {
   currentPage?: string;
@@ -25,10 +25,10 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
   };
 
   const navItems = [
-    { id: 'countdown', icon: Timer, path: 'countdown', labelKey: 'modes.timer' },
-    { id: 'stopwatch', icon: Clock, path: 'stopwatch', labelKey: 'modes.stopwatch' },
-    { id: 'alarm', icon: AlarmClock, path: 'alarm', labelKey: 'modes.alarm' },
-    { id: 'world-clock', icon: Globe, path: 'world-clock', labelKey: 'modes.worldclock' },
+    { id: 'countdown', path: 'countdown', labelKey: 'modes.timer' },
+    { id: 'stopwatch', path: 'stopwatch', labelKey: 'modes.stopwatch' },
+    { id: 'alarm', path: 'alarm', labelKey: 'modes.alarm' },
+    { id: 'world-clock', path: 'world-clock', labelKey: 'modes.worldclock' },
     { id: 'faq', icon: HelpCircle, path: 'faq', labelKey: 'faq' },
   ];
 
@@ -61,9 +61,11 @@ export default function NavigationBar({ currentPage }: NavigationBarProps) {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
                 }`}
               >
-                <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${
-                  isActive ? 'scale-110' : ''
-                }`} />
+                {Icon && (
+                  <Icon className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform ${
+                    isActive ? 'scale-110' : ''
+                  }`} />
+                )}
                 <span className={`text-[10px] sm:text-xs font-medium whitespace-nowrap ${
                   isActive ? 'font-semibold' : 'font-medium'
                 }`}>

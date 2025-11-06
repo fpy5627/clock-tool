@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { Timer, Clock, AlarmClock, Globe } from 'lucide-react';
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
@@ -12,16 +11,15 @@ export default function ClockNavItemsMobile() {
   const t = useTranslations('clock');
 
   const navItems = [
-    { id: 'countdown', icon: Timer, path: 'countdown', labelKey: 'modes.timer' },
-    { id: 'stopwatch', icon: Clock, path: 'stopwatch', labelKey: 'modes.stopwatch' },
-    { id: 'alarm', icon: AlarmClock, path: 'alarm', labelKey: 'modes.alarm' },
-    { id: 'world-clock', icon: Globe, path: 'world-clock', labelKey: 'modes.worldclock' },
+    { id: 'countdown', path: 'countdown', labelKey: 'modes.timer' },
+    { id: 'stopwatch', path: 'stopwatch', labelKey: 'modes.stopwatch' },
+    { id: 'alarm', path: 'alarm', labelKey: 'modes.alarm' },
+    { id: 'world-clock', path: 'world-clock', labelKey: 'modes.worldclock' },
   ];
 
   return (
     <>
       {navItems.map((item) => {
-        const Icon = item.icon;
         const isActive = pathname.includes(item.path);
         
         return (
@@ -33,7 +31,6 @@ export default function ClockNavItemsMobile() {
               isActive && "text-foreground"
             )}
           >
-            <Icon className="size-4 shrink-0" />
             {t(item.labelKey as any)}
           </Link>
         );
