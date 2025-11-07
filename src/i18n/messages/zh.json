@@ -336,7 +336,21 @@
       "snooze_button": "5分钟后提醒",
       "ringing": "已响铃 {duration}",
       "click_expand": "点击展开查看完整内容",
-      "click_collapse": "点击收起"
+      "click_collapse": "点击收起",
+      "minute_unit": "分钟",
+      "minutes_unit": "分钟",
+      "second_unit": "秒",
+      "seconds_unit": "秒",
+      "hour_unit": "小时",
+      "hours_unit": "小时",
+      "presets": {
+        "1min": "1分钟闹钟",
+        "3min": "3分钟闹钟",
+        "5min": "5分钟闹钟",
+        "15min": "15分钟闹钟",
+        "30min": "30分钟闹钟",
+        "1hour": "1小时闹钟"
+      }
     },
     "worldclock": {
       "local_time": "本地时间",

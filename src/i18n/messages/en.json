@@ -336,7 +336,21 @@
       "snooze_button": "Remind in 5 minutes",
       "ringing": "Ringing for {duration}",
       "click_expand": "Click to expand",
-      "click_collapse": "Click to collapse"
+      "click_collapse": "Click to collapse",
+      "minute_unit": "minute",
+      "minutes_unit": "minutes",
+      "second_unit": "second",
+      "seconds_unit": "seconds",
+      "hour_unit": "hour",
+      "hours_unit": "hours",
+      "presets": {
+        "1min": "1 Minute Alarm",
+        "3min": "3 Minute Alarm",
+        "5min": "5 Minute Alarm",
+        "15min": "15 Minute Alarm",
+        "30min": "30 Minute Alarm",
+        "1hour": "1 Hour Alarm"
+      }
     },
     "worldclock": {
       "local_time": "Local time",

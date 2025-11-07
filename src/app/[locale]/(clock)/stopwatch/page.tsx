@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages, Menu } from 'lucide-react';
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
@@ -2682,11 +2682,36 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
-      {/* 移动端顶部导航栏 - 只在移动端显示 */}
+      {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden sticky top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
-          {/* 主要功能按钮 */}
-          <div className="flex items-center justify-around py-3 px-2">
+        <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>
+          {/* 顶部菜单栏 - 应用名称和汉堡菜单按钮 */}
+          <div className={`flex items-center justify-between px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center gap-2">
+              <Clock className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+              <span className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Timero</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className={`p-2 rounded-full transition-all ${
+                showMobileMenu
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Menu className="w-5 h-5" />
+            </motion.button>
+          </div>
+          
+          {/* 导航栏 - 主要功能按钮 */}
+          <div className={`border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-around py-3 px-2">
             <button
               onClick={() => navigateToPage('countdown')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
@@ -2747,24 +2772,7 @@ export default function HomePage() {
               <Globe className="w-5 h-5" />
               <span className="text-xs font-medium">{t('modes.worldclock')}</span>
             </button>
-            {/* 移动端菜单按钮 */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                showMobileMenu
-                  ? theme === 'dark'
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-400 text-white'
-                  : theme === 'dark'
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="text-xs font-medium">{t('buttons.menu')}</span>
-            </motion.button>
+            </div>
           </div>
           
           {/* 移动端折叠菜单 */}
@@ -2898,7 +2906,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative w-full">
+      <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (

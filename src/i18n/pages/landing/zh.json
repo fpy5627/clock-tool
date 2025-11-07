@@ -378,18 +378,8 @@
           "title": "友情链接",
           "children": [
             {
-              "title": "ThinkAny",
-              "url": "https://thinkany.ai",
-              "target": "_blank"
-            },
-            {
-              "title": "HeyBeauty",
-              "url": "https://heybeauty.ai",
-              "target": "_blank"
-            },
-            {
-              "title": "Pagen",
-              "url": "https://pagen.so",
+              "title": "MergePDF",
+              "url": "https://mergepdf.toolina.com/",
               "target": "_blank"
             }
           ]

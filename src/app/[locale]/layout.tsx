@@ -10,6 +10,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/providers/theme";
 import { Toaster } from "sonner";
 import { StructuredData } from "@/components/structured-data";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 export async function generateMetadata({
   params,
@@ -49,6 +50,7 @@ export default async function LocaleLayout({
       <NextAuthSessionProvider>
         <AppContextProvider>
           <ThemeProvider>
+            <ProgressBar />
             <StructuredData locale={locale} webUrl={webUrl} />
             {children}
             <Toaster 

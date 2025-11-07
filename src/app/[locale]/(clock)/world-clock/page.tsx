@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages, Menu } from 'lucide-react';
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
@@ -2727,11 +2727,36 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
-      {/* 移动端顶部导航栏 - 只在移动端显示 */}
+      {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden sticky top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
-          {/* 主要功能按钮 */}
-          <div className="flex items-center justify-around py-3 px-2">
+        <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>
+          {/* 顶部菜单栏 - 应用名称和汉堡菜单按钮 */}
+          <div className={`flex items-center justify-between px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center gap-2">
+              <Clock className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+              <span className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Timero</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className={`p-2 rounded-full transition-all ${
+                showMobileMenu
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Menu className="w-5 h-5" />
+            </motion.button>
+          </div>
+          
+          {/* 导航栏 - 主要功能按钮 */}
+          <div className={`border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-around py-3 px-2">
             <button
               onClick={() => navigateToPage('countdown')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
@@ -2792,24 +2817,7 @@ export default function HomePage() {
               <Globe className="w-5 h-5" />
               <span className="text-xs font-medium">{t('modes.worldclock')}</span>
             </button>
-            {/* 移动端菜单按钮 */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                showMobileMenu
-                  ? theme === 'dark'
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-400 text-white'
-                  : theme === 'dark'
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="text-xs font-medium">{t('buttons.menu')}</span>
-            </motion.button>
+            </div>
           </div>
           
           {/* 移动端折叠菜单 */}
@@ -2943,7 +2951,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative sm:pt-0 pt-[120px]">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (
@@ -3734,7 +3742,7 @@ export default function HomePage() {
             </>
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
-            <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+            <div className="w-full overflow-x-hidden mt-4 sm:mt-6 md:mt-8 lg:mt-12" style={{ paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
                 {(selectedCity || userLocation) && (() => {
@@ -3748,7 +3756,7 @@ export default function HomePage() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`py-14 sm:py-16 md:py-18 lg:py-20 xl:py-22 px-12 sm:px-16 md:px-20 lg:px-24 xl:px-28 rounded-3xl ${
+                      className={`py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 rounded-2xl sm:rounded-3xl ${
                         showCardBorder 
                           ? (theme === 'dark' 
                               ? 'bg-slate-800/50 border border-slate-700 shadow-2xl' 
@@ -3757,16 +3765,20 @@ export default function HomePage() {
                       }`}
                 style={{
                   width: '100%',
-                  minWidth: '300px',
+                  minWidth: '280px',
                         maxWidth: 'min(1400px, 95vw)',
-                        marginBottom: '48px',
-                        transition: 'all 0.3s ease-in-out'
+                        marginBottom: 'clamp(16px, 3vw, 48px)',
+                        transition: 'all 0.3s ease-in-out',
+                        maxHeight: 'calc(100vh - clamp(80px, 15vh, 200px))',
+                        overflow: 'visible',
+                        display: 'flex',
+                        flexDirection: 'column'
                       }}
                     >
-                      <div className="w-full">
+                      <div className="w-full flex-1 flex flex-col justify-between min-h-0 overflow-visible">
                         {/* 顶部：城市和白天/黑夜图标 */}
-                        <div className="flex items-center justify-between mb-7">
-                          <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
+                        <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 overflow-visible">
+                          <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold flex-1 mr-2 leading-normal ${
                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
                             {displayCity.city} | {displayCity.country}
@@ -3778,15 +3790,15 @@ export default function HomePage() {
                             const isNight = hours < 6 || hours >= 18;
                             
                             return isNight ? (
-                              <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                              <Moon className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                             ) : (
-                              <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                              <Sun className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
                             );
                           })()}
                         </div>
                         
                         {/* 分隔线 */}
-                        <div className={`border-t mb-8 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        <div className={`border-t mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                         
                         {/* 大时间显示 */}
                         {(() => {
@@ -3800,12 +3812,14 @@ export default function HomePage() {
                           
                           return (
                         <div 
-                          className="text-7xl sm:text-8xl md:text-9xl lg:text-[10rem] xl:text-[11rem] font-bold text-center mb-8"
+                          className="font-bold text-center mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0"
                           style={{
                             fontFamily: '"Rajdhani", sans-serif',
                             fontWeight: '700',
                             letterSpacing: '0.02em',
-                                color: worldClockThemeColor.gradient ? undefined : worldClockThemeColor.color,
+                            color: worldClockThemeColor.gradient ? undefined : worldClockThemeColor.color,
+                            fontSize: 'clamp(2.5rem, 8vw, 11rem)',
+                            lineHeight: '1.1'
                           }}
                         >
                           {(() => {
@@ -3854,9 +3868,12 @@ export default function HomePage() {
                         })()}
                         
                         {/* 日期显示 */}
-                        <div className={`flex items-center justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 text-xl sm:text-2xl md:text-3xl font-medium mb-8 ${
+                        <div className={`flex items-center justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-6 font-medium mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 ${
                           theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
-                        }`}>
+                        }`}
+                        style={{
+                          fontSize: 'clamp(0.875rem, 2vw, 1.875rem)'
+                        }}>
                           {(() => {
                             const now = new Date();
                             const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity.timezone }));
@@ -3888,7 +3905,7 @@ export default function HomePage() {
                         </div>
                         
                         {/* 底部：温度和定位信息 */}
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between flex-shrink-0">
                           {(() => {
                             // 优先使用 selectedCity 的天气，否则使用 weather 状态
                             const displayWeather = selectedCity 
@@ -3896,25 +3913,35 @@ export default function HomePage() {
                               : weather;
                             
                             return displayWeather ? (
-                              <div className="flex items-center gap-2 sm:gap-3">
-                                <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
+                              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+                                <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 flex-shrink-0">
                                   {getWeatherIcon(displayWeather.icon)}
                                 </div>
-                                <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
+                                <span className={`font-semibold ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
-                                }`}>
+                                }`}
+                                style={{
+                                  fontSize: 'clamp(0.875rem, 2vw, 1.875rem)'
+                                }}>
                                   {displayWeather.temp}°C
                                 </span>
                               </div>
                             ) : null;
                           })()}
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+                            <MapPin className={`flex-shrink-0 ${
                               theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                            }`} />
-                            <span className={`text-sm sm:text-base md:text-lg font-normal ${
+                            }`}
+                            style={{
+                              width: 'clamp(0.875rem, 1.5vw, 1.25rem)',
+                              height: 'clamp(0.875rem, 1.5vw, 1.25rem)'
+                            }} />
+                            <span className={`font-normal ${
                               theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
-                            }`}>
+                            }`}
+                            style={{
+                              fontSize: 'clamp(0.75rem, 1.5vw, 1.125rem)'
+                            }}>
                               {displayCity.city}
                             </span>
                           </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages } from 'lucide-react';
+import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages, Menu } from 'lucide-react';
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
@@ -294,12 +294,32 @@ export default function HomePage() {
   // —— 提示音播放控制：可在用户点击时提前停止 ——
   const notificationAudioCtxRef = useRef<AudioContext | null>(null);
   const notificationStopTimeoutRef = useRef<number | null>(null);
+  const notificationAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const notificationAudioLoopIntervalRef = useRef<number | null>(null);
 
   const stopNotificationSound = () => {
     if (notificationStopTimeoutRef.current) {
       window.clearTimeout(notificationStopTimeoutRef.current);
       notificationStopTimeoutRef.current = null;
     }
+    if (notificationAudioLoopIntervalRef.current) {
+      window.clearInterval(notificationAudioLoopIntervalRef.current);
+      notificationAudioLoopIntervalRef.current = null;
+    }
+    if (notificationAudioElementRef.current) {
+      try {
+        notificationAudioElementRef.current.pause();
+        notificationAudioElementRef.current.currentTime = 0;
+        notificationAudioElementRef.current = null;
+      } catch {}
+    }
+    // 停止所有带有 data-sound-id 的音频元素
+    const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
+    allAudioElements.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+      audio.remove();
+    });
     if (notificationAudioCtxRef.current) {
       try { notificationAudioCtxRef.current.close(); } catch {}
       notificationAudioCtxRef.current = null;
@@ -1371,6 +1391,10 @@ export default function HomePage() {
         const audio = new Audio(audioPath);
         audio.setAttribute('data-sound-id', soundType);
         audio.volume = 0.8;
+        // 设置循环播放（闹钟音效应循环播放直到用户关闭弹窗）
+        audio.loop = true;
+        // 保存音频元素引用，以便后续停止
+        notificationAudioElementRef.current = audio;
         audio.play().catch((error) => {
           console.warn('Failed to play sound file:', error);
         });
@@ -2275,9 +2299,77 @@ export default function HomePage() {
         }
       }
 
-      notificationStopTimeoutRef.current = window.setTimeout(() => {
-        stopNotificationSound();
-      }, (total + 0.5) * 1000);
+      // 闹钟音效应循环播放直到用户关闭弹窗，所以不设置自动停止定时器
+      // 而是使用循环播放机制
+      const playSoundLoop = () => {
+        // 检查是否还在响铃状态（使用ref避免闭包问题）
+        if (!currentRingingAlarmRef.current || !notificationAudioCtxRef.current) {
+          return;
+        }
+        
+        // 重新播放音效
+        const currentCtx = notificationAudioCtxRef.current;
+        if (currentCtx.state === 'closed') {
+          // AudioContext已关闭，停止循环
+          return;
+        }
+        
+        // 重新创建音效（简化版本，只播放基础音调）
+        const loopStart = currentCtx.currentTime;
+        const loopMaster = currentCtx.createGain();
+        loopMaster.gain.value = 0.8;
+        loopMaster.connect(currentCtx.destination);
+        
+        // 播放一个简单的持续音调
+        const sustain = (freq: number, type: OscillatorType = 'sine', volume: number = 0.25) => {
+          const o = currentCtx.createOscillator();
+          const g = currentCtx.createGain();
+          o.type = type;
+          o.frequency.setValueAtTime(freq, loopStart);
+          g.gain.setValueAtTime(0.001, loopStart);
+          g.gain.linearRampToValueAtTime(volume, loopStart + 0.1);
+          g.gain.setValueAtTime(volume, loopStart + total - 0.2);
+          g.gain.exponentialRampToValueAtTime(0.0001, loopStart + total);
+          o.connect(g).connect(loopMaster);
+          o.start(loopStart);
+          o.stop(loopStart + total + 0.05);
+        };
+        
+        // 根据音效类型播放对应的基础音调
+        switch (soundType) {
+          case 'night_sky':
+            sustain(165, 'sine', 0.1);
+            break;
+          case 'shining_stars':
+            sustain(440, 'sine', 0.08);
+            break;
+          case 'sunrise':
+            sustain(220, 'sine', 0.12);
+            break;
+          case 'sunset':
+            sustain(330, 'sine', 0.1);
+            break;
+          case 'meditation':
+            sustain(196, 'sine', 0.09);
+            break;
+          default:
+            sustain(440, 'sine', 0.1);
+        }
+        
+        // 在音效播放结束后，如果还在响铃状态，继续循环播放
+        notificationAudioLoopIntervalRef.current = window.setTimeout(() => {
+          if (currentRingingAlarmRef.current && notificationAudioCtxRef.current) {
+            playSoundLoop();
+          }
+        }, (total + 0.5) * 1000) as unknown as number;
+      };
+      
+      // 开始循环播放
+      notificationAudioLoopIntervalRef.current = window.setTimeout(() => {
+        if (currentRingingAlarmRef.current && notificationAudioCtxRef.current) {
+          playSoundLoop();
+        }
+      }, (total + 0.5) * 1000) as unknown as number;
     } catch (error) {
       console.error('Error playing sound:', error);
     }
@@ -2425,14 +2517,12 @@ export default function HomePage() {
 
   const stopAlarmRinging = () => {
     // 停止提示音
+    stopNotificationSound();
     try { (window as any).__alarmNotifyStop?.(); } catch {}
     // 计算响铃时长
     if (alarmRingStartTimeRef.current) {
       const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);
-      const minutes = Math.floor(duration / 60);
-      const seconds = duration % 60;
-      
-      const durationText = minutes > 0 ? `${minutes}分${seconds}秒` : `${seconds}秒`;
+      const durationText = formatDuration(duration);
       
       showToast(
         'info',
@@ -2452,13 +2542,14 @@ export default function HomePage() {
   const snoozeAlarm = () => {
     if (!ringingAlarmId) return;
     
+    // 停止提示音
+    stopNotificationSound();
+    try { (window as any).__alarmNotifyStop?.(); } catch {}
+    
     // 计算响铃时长
     if (alarmRingStartTimeRef.current) {
       const duration = Math.floor((Date.now() - alarmRingStartTimeRef.current) / 1000);
-      const minutes = Math.floor(duration / 60);
-      const seconds = duration % 60;
-      
-      const durationText = minutes > 0 ? `${minutes}分${seconds}秒` : `${seconds}秒`;
+      const durationText = formatDuration(duration);
       
       showToast(
         'success',
@@ -2631,12 +2722,50 @@ export default function HomePage() {
     };
   };
 
-  // 格式化响铃时长
-  const formatRingingDuration = (seconds: number) => {
+  // 格式化时长（仅返回时长字符串，不包含前缀）
+  const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
     
-    const duration = minutes > 0 ? `${minutes}分${secs}秒` : `${secs}秒`;
+    if (minutes > 0) {
+      const minuteText = minutes === 1 ? t('alarm.minute_unit') : t('alarm.minutes_unit');
+      const secondText = secs === 1 ? t('alarm.second_unit') : t('alarm.seconds_unit');
+      return `${minutes} ${minuteText} ${secs} ${secondText}`;
+    } else {
+      const secondText = secs === 1 ? t('alarm.second_unit') : t('alarm.seconds_unit');
+      return `${secs} ${secondText}`;
+    }
+  };
+
+  // 格式化时长（包含小时、分钟、秒）
+  const formatDurationWithHours = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    
+    if (hours > 0) {
+      const hourText = hours === 1 ? t('alarm.hour_unit') : t('alarm.hours_unit');
+      if (mins > 0) {
+        const minuteText = mins === 1 ? t('alarm.minute_unit') : t('alarm.minutes_unit');
+        return `${hours} ${hourText} ${mins} ${minuteText}`;
+      }
+      return `${hours} ${hourText}`;
+    } else if (mins > 0) {
+      const minuteText = mins === 1 ? t('alarm.minute_unit') : t('alarm.minutes_unit');
+      if (secs > 0) {
+        const secondText = secs === 1 ? t('alarm.second_unit') : t('alarm.seconds_unit');
+        return `${mins} ${minuteText} ${secs} ${secondText}`;
+      }
+      return `${mins} ${minuteText}`;
+    } else {
+      const secondText = secs === 1 ? t('alarm.second_unit') : t('alarm.seconds_unit');
+      return `${secs} ${secondText}`;
+    }
+  };
+
+  // 格式化响铃时长
+  const formatRingingDuration = (seconds: number) => {
+    const duration = formatDuration(seconds);
     return t('alarm.ringing', { duration });
   };
 
@@ -2735,11 +2864,36 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
-      {/* 移动端顶部导航栏 - 只在移动端显示 */}
+      {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
-        <div className={`sm:hidden sticky top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
-          {/* 主要功能按钮 */}
-          <div className="flex items-center justify-around py-3 px-2">
+        <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>
+          {/* 顶部菜单栏 - 应用名称和汉堡菜单按钮 */}
+          <div className={`flex items-center justify-between px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center gap-2">
+              <Clock className={`w-5 h-5 ${theme === 'dark' ? 'text-blue-400' : 'text-blue-500'}`} />
+              <span className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Timero</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className={`p-2 rounded-full transition-all ${
+                showMobileMenu
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Menu className="w-5 h-5" />
+            </motion.button>
+          </div>
+          
+          {/* 导航栏 - 主要功能按钮 */}
+          <div className={`border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className="flex items-center justify-around py-3 px-2">
             <button
               onClick={() => navigateToPage('countdown')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
@@ -2803,24 +2957,7 @@ export default function HomePage() {
               <Globe className="w-5 h-5" />
               <span className="text-xs font-medium">{t('modes.worldclock')}</span>
             </button>
-            {/* 移动端菜单按钮 */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                showMobileMenu
-                  ? theme === 'dark'
-                    ? 'bg-slate-600 text-white'
-                    : 'bg-slate-400 text-white'
-                  : theme === 'dark'
-                  ? 'text-slate-400 hover:bg-slate-800'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="text-xs font-medium">{t('buttons.menu')}</span>
-            </motion.button>
+            </div>
           </div>
           
           {/* 移动端折叠菜单 */}
@@ -2983,7 +3120,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative sm:pt-0 pt-[120px]">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (
@@ -3696,7 +3833,7 @@ export default function HomePage() {
                           minute: minute,
                           enabled: true,
                           repeat: 'once',
-                          label: t(`presets.${preset.key}`),
+                          label: t(`alarm.presets.${preset.key}`),
                         };
                         
                         const updatedAlarms = [...alarms, newAlarm];
@@ -3712,7 +3849,7 @@ export default function HomePage() {
                         const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
                         showToast(
                           'success',
-                          t('notifications.alarm_success', { preset: t(`presets.${preset.key}`) }),
+                          t('notifications.alarm_success', { preset: t(`alarm.presets.${preset.key}`) }),
                           t('notifications.alarm_success_desc', { time: timeStr }),
                           `alarm-success-${hour}-${minute}`
                         );
@@ -3723,7 +3860,7 @@ export default function HomePage() {
                           : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
                       }`}
                     >
-                      {t(`presets.${preset.key}`)}
+                      {t(`alarm.presets.${preset.key}`)}
                     </motion.button>
                   ))}
                 </div>
@@ -4544,33 +4681,6 @@ export default function HomePage() {
                       <span>{t('buttons.settings')}</span>
                     </motion.button>
                   </>
-                )}
-                {mode === 'alarm' && (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => {
-                      const now = new Date();
-                      setNewAlarmHour(now.getHours());
-                      setNewAlarmMinute(now.getMinutes());
-                      setNewAlarmRepeat('daily');
-                      setNewAlarmLabel('');
-                      setEditingAlarmId(null);
-                      setShowAddAlarm(true);
-                    }}
-                    className={`flex items-center gap-1 sm:gap-2 ${
-                      isFullscreen 
-                        ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                        : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                    } ${theme === 'dark' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600'} text-white rounded-[8px] font-semibold shadow-lg transition-all`}
-                  >
-                    <Plus className={
-                      isFullscreen 
-                        ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                        : 'w-4 h-4 sm:w-5 sm:h-5'
-                    } />
-                    <span>{t('buttons.add_alarm')}</span>
-                  </motion.button>
                 )}
               </motion.div>
             )}
@@ -6447,30 +6557,12 @@ export default function HomePage() {
                     <h2 className={`text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-2 xs:mb-3 sm:mb-4 px-2 ${
                       theme === 'dark' ? 'text-white' : 'text-gray-900'
                     }`}>
-                      {(() => {
-                        const hours = Math.floor(initialTime / 3600);
-                        const mins = Math.floor((initialTime % 3600) / 60);
-                        const secs = initialTime % 60;
-                        
-                        if (hours > 0) {
-                          if (mins > 0) {
-                            return `${hours}小时${mins}分钟`;
-                          }
-                          return `${hours}小时`;
-                        } else if (mins > 0) {
-                          if (secs > 0) {
-                            return `${mins}分${secs}秒`;
-                          }
-                          return `${mins}分钟`;
-                        } else {
-                          return `${secs}秒`;
-                        }
-                      })()}
+                      {formatDurationWithHours(initialTime)}
                     </h2>
                     <p className={`text-sm xs:text-base sm:text-lg md:text-xl ${
                       theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                     }`}>
-                      倒计时已完成
+                      {t('modals.timer_completed')}
                     </p>
                   </motion.div>
                 </div>
