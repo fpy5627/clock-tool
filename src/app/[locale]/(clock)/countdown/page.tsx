@@ -14,6 +14,7 @@ import NProgress from 'nprogress';
 import LocaleToggle from '@/components/locale/toggle';
 import { SOUND_OPTIONS } from '@/lib/clock-constants';
 import { notifySoundMetaList } from '@/lib/notify-sound';
+import { getIpInfo } from '@/services/ip-info';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -2081,7 +2082,42 @@ export default function HomePage() {
         ]);
       };
 
+      // 天气信息缓存键
+      const WEATHER_CACHE_KEY = 'weather-cache';
+
+      // 从sessionStorage获取缓存的天气信息
+      const getCachedWeather = (): { temp: number; condition: string; icon: string } | null => {
+        if (typeof window === 'undefined') return null;
+        try {
+          const cached = sessionStorage.getItem(WEATHER_CACHE_KEY);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (error) {
+          console.warn('Failed to read cached weather:', error);
+        }
+        return null;
+      };
+
+      // 将天气信息保存到sessionStorage
+      const setCachedWeather = (weatherInfo: { temp: number; condition: string; icon: string }) => {
+        if (typeof window === 'undefined') return;
+        try {
+          sessionStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherInfo));
+          console.log('Weather info cached to sessionStorage');
+        } catch (error) {
+          console.warn('Failed to cache weather:', error);
+        }
+      };
+
       try {
+        // 先尝试从缓存读取天气信息
+        const cachedWeather = getCachedWeather();
+        if (cachedWeather) {
+          console.log('Using cached weather:', cachedWeather);
+          setWeather(cachedWeather);
+        }
+
         // 根据当前语言设置API语言参数
         const langMap: Record<string, string> = {
           'zh': 'zh-CN',
@@ -2089,11 +2125,13 @@ export default function HomePage() {
         };
         const apiLang = langMap[locale] || 'en';
         
-        // 获取IP定位 (使用支持多语言的ip-api.com) - 添加超时
-        const locationRes = await fetchWithTimeout(`https://ip-api.com/json/?lang=${apiLang}`, 3000);
-        const locationData = await locationRes.json();
+        // 获取IP定位 (使用封装的IP信息服务，自动尝试多个接口，支持缓存)
+        const locationData = await getIpInfo({
+          lang: apiLang,
+          timeout: 3000,
+        });
         
-        if (locationData.status === 'success') {
+        if (locationData) {
           const city = locationData.city || locationData.regionName || '北京';
           const timezone = locationData.timezone || 'Asia/Shanghai';
           let country = locationData.country || '中国';
@@ -2124,17 +2162,38 @@ export default function HomePage() {
             country
           });
         
+          // 如果已经有缓存的天气信息，就不需要再请求了
+          if (cachedWeather) {
+            console.log('Using cached weather, skipping API request');
+            return;
+          }
+
           // 获取天气数据 (使用wttr.in API) - 添加超时，如果失败使用默认值
           try {
-            const weatherRes = await fetchWithTimeout(`https://wttr.in/${city || 'Beijing'}?format=j1`, 3000);
+            // 优先使用经纬度查询天气
+            let weatherUrl: string;
+            if (locationData.latitude && locationData.longitude) {
+              weatherUrl = `https://wttr.in/${locationData.latitude},${locationData.longitude}?format=j1`;
+            } else {
+              const encodedCity = encodeURIComponent(city || 'Beijing');
+              weatherUrl = `https://wttr.in/${encodedCity}?format=j1`;
+            }
+            
+            const weatherRes = await fetchWithTimeout(weatherUrl, 30000);
             const weatherData = await weatherRes.json();
             
             if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
               const current = weatherData.current_condition[0];
-              setWeather({
+              const weatherCode = String(current.weatherCode || '116');
+              const weatherInfo = {
                 temp: parseInt(current.temp_C) || 21,
                 condition: current.weatherDesc[0]?.value || 'Partly cloudy',
-                icon: current.weatherCode || '116'
+                icon: weatherCode
+              };
+              setWeather((prev) => {
+                const newState = { ...weatherInfo };
+                setCachedWeather(newState);
+                return newState;
               });
             }
           } catch (weatherError) {

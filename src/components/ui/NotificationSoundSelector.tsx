@@ -110,6 +110,31 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
     };
   }, [playingSoundId]);
 
+  // 组件卸载时停止所有音频
+  useEffect(() => {
+    return () => {
+      // 停止所有 DOM 中的音频元素
+      const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
+      allAudioElements.forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      
+      // 停止所有跟踪的音频元素
+      audioElementsRef.current.forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+      });
+      audioElementsRef.current.clear();
+      
+      // 清理定时器
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+        checkIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   /**
    * 处理声音选择
    * 更新选中的声音并记录使用统计
@@ -298,7 +323,14 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
                             : "text-gray-800"
                         }`}
                       >
-                        {locale === "zh" ? sound.name : sound.nameEn}
+                        {(() => {
+                          const translationKey = `sounds.${sound.id.replace(/-/g, "_")}`;
+                          const translated = t(translationKey);
+                          // 如果翻译返回的是 key 本身（说明翻译不存在），则使用 fallback
+                          return translated === translationKey 
+                            ? (locale === "zh" ? sound.name : sound.nameEn)
+                            : translated;
+                        })()}
                       </span>
                       {isMostPopular && (
                         <span
@@ -317,9 +349,14 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
                         theme === "dark" ? "text-slate-400" : "text-gray-500"
                       }`}
                     >
-                      {locale === "zh"
-                        ? sound.description
-                        : sound.descriptionEn}
+                      {(() => {
+                        const descriptionKey = `sound_descriptions.${sound.id.replace(/-/g, "_")}`;
+                        const translated = t(descriptionKey);
+                        // 如果翻译返回的是 key 本身（说明翻译不存在），则使用 fallback
+                        return translated === descriptionKey 
+                          ? (locale === "zh" ? sound.description : sound.descriptionEn)
+                          : translated;
+                      })()}
                       {usageCount > 0 && (
                         <span className="ml-2">
                           · {t("settings_panel.usage_count", { count: usageCount })}

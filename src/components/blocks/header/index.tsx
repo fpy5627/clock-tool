@@ -46,7 +46,7 @@ export default function Header({ header }: { header: HeaderType }) {
         <nav className="hidden justify-between lg:flex">
           <div className="flex items-center gap-6">
             <Link
-              href={(header.brand?.url as any) || "/"}
+              href="/"
               className="flex items-center gap-2"
             >
               {header.brand?.logo?.src && (
@@ -166,14 +166,13 @@ export default function Header({ header }: { header: HeaderType }) {
                 </Button>
               );
             })}
-            {header.show_sign && <SignToggle />}
           </div>
         </nav>
 
         <div className="block lg:hidden">
           <div className="flex items-center justify-between">
             <Link
-              href={(header.brand?.url || "/") as any}
+              href="/"
               className="flex items-center gap-2"
             >
               {header.brand?.logo?.src && (
@@ -200,7 +199,7 @@ export default function Header({ header }: { header: HeaderType }) {
                 <SheetHeader>
                   <SheetTitle>
                     <Link
-                      href={(header.brand?.url || "/") as any}
+                      href="/"
                       className="flex items-center gap-2"
                     >
                       {header.brand?.logo?.src && (
@@ -304,8 +303,6 @@ export default function Header({ header }: { header: HeaderType }) {
                         </Button>
                       );
                     })}
-
-                    {header.show_sign && <SignToggle />}
                   </div>
 
                   <div className="mt-4 flex items-center gap-2">

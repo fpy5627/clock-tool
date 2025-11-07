@@ -11,6 +11,7 @@ import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import { SOUND_OPTIONS } from '@/lib/clock-constants';
 import { notifySoundMetaList } from '@/lib/notify-sound';
+import { getIpInfo } from '@/services/ip-info';
 
 // 预设时间选项
 const PRESET_TIMES = [
@@ -1031,7 +1032,42 @@ export default function HomePage() {
         ]);
       };
 
+      // 天气信息缓存键
+      const WEATHER_CACHE_KEY = 'weather-cache';
+
+      // 从sessionStorage获取缓存的天气信息
+      const getCachedWeather = (): { temp: number; condition: string; icon: string } | null => {
+        if (typeof window === 'undefined') return null;
+        try {
+          const cached = sessionStorage.getItem(WEATHER_CACHE_KEY);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (error) {
+          console.warn('Failed to read cached weather:', error);
+        }
+        return null;
+      };
+
+      // 将天气信息保存到sessionStorage
+      const setCachedWeather = (weatherInfo: { temp: number; condition: string; icon: string }) => {
+        if (typeof window === 'undefined') return;
+        try {
+          sessionStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherInfo));
+          console.log('Weather info cached to sessionStorage');
+        } catch (error) {
+          console.warn('Failed to cache weather:', error);
+        }
+      };
+
       try {
+        // 先尝试从缓存读取天气信息
+        const cachedWeather = getCachedWeather();
+        if (cachedWeather) {
+          console.log('Using cached weather:', cachedWeather);
+          setWeather(cachedWeather);
+        }
+
         // 根据当前语言设置API语言参数
         const langMap: Record<string, string> = {
           'zh': 'zh-CN',
@@ -1039,14 +1075,20 @@ export default function HomePage() {
         };
         const apiLang = langMap[locale] || 'en';
         
-        // 获取IP定位 (使用支持多语言的ip-api.com) - 添加超时
-        const locationRes = await fetchWithTimeout(`https://ip-api.com/json/?lang=${apiLang}`, 3000);
-        const locationData = await locationRes.json();
+        // 获取IP定位 (使用封装的IP信息服务，自动尝试多个接口，支持缓存)
+        const locationData = await getIpInfo({
+          lang: apiLang,
+          timeout: 3000,
+        });
         
-        if (locationData.status === 'success') {
+        console.log('IP info result:', locationData);
+        
+        if (locationData) {
           const city = locationData.city || locationData.regionName || '北京';
           const timezone = locationData.timezone || 'Asia/Shanghai';
           let country = locationData.country || '中国';
+          
+          console.log('Using location:', { city, timezone, country, latitude: locationData.latitude, longitude: locationData.longitude });
           
           // 特殊地区映射到国家（根据语言）
           const regionToCountryMap: Record<string, Record<string, string>> = {
@@ -1074,22 +1116,55 @@ export default function HomePage() {
             country
           });
         
+          // 如果已经有缓存的天气信息，就不需要再请求了
+          if (cachedWeather) {
+            console.log('Using cached weather, skipping API request');
+            return;
+          }
+
           // 获取天气数据 (使用wttr.in API) - 添加超时，如果失败使用默认值
           try {
-            const weatherRes = await fetchWithTimeout(`https://wttr.in/${city || 'Beijing'}?format=j1`, 3000);
+            // 优先使用经纬度查询天气，如果城市名称是中文也使用经纬度
+            let weatherUrl: string;
+            if (locationData.latitude && locationData.longitude) {
+              // 使用经纬度查询，更准确
+              weatherUrl = `https://wttr.in/${locationData.latitude},${locationData.longitude}?format=j1`;
+              console.log('Fetching weather by coordinates:', weatherUrl);
+            } else {
+              // 使用城市名称，需要URL编码
+              const encodedCity = encodeURIComponent(city || 'Beijing');
+              weatherUrl = `https://wttr.in/${encodedCity}?format=j1`;
+              console.log('Fetching weather by city name:', weatherUrl);
+            }
+            
+            const weatherRes = await fetchWithTimeout(weatherUrl, 30000);
             const weatherData = await weatherRes.json();
+            
+            console.log('Weather data received:', weatherData);
             
             if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
               const current = weatherData.current_condition[0];
-              setWeather({
+              // 确保weatherCode是字符串类型
+              const weatherCode = String(current.weatherCode || '116');
+              const weatherInfo = {
                 temp: parseInt(current.temp_C) || 21,
                 condition: current.weatherDesc[0]?.value || 'Partly cloudy',
-                icon: current.weatherCode || '116'
+                icon: weatherCode
+              };
+              console.log('Setting weather:', weatherInfo);
+              // 使用函数式更新确保状态正确更新
+              setWeather((prev) => {
+                const newState = { ...weatherInfo };
+                // 保存到缓存
+                setCachedWeather(newState);
+                return newState;
               });
+            } else {
+              console.warn('Weather data format invalid:', weatherData);
             }
           } catch (weatherError) {
             // 天气API失败时使用默认值，但保留位置信息
-            console.warn('Weather API failed, using default:', weatherError);
+            console.error('Weather API failed:', weatherError);
           }
         } else {
           throw new Error('Location API failed');
@@ -1121,6 +1196,11 @@ export default function HomePage() {
     
     return () => clearInterval(weatherInterval);
   }, [locale]);
+
+  // 监听weather状态变化，用于调试
+  useEffect(() => {
+    console.log('Weather state changed:', weather);
+  }, [weather]);
 
   // 全屏模式下鼠标移动检测 - 1.5秒后自动隐藏边框和小卡片
   // Removed - not needed for stopwatch mode
@@ -3152,12 +3232,12 @@ export default function HomePage() {
                 <div className="flex items-center gap-1 sm:gap-1.5">
                   {weather && (showWeatherIcon || showTemperature) ? (
                     <>
-                      {showWeatherIcon && (
+                      {showWeatherIcon && weather.icon && (
                         <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
                           {getWeatherIcon(weather.icon)}
                         </div>
                       )}
-                      {showTemperature && (
+                      {showTemperature && weather.temp !== undefined && (
                         <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                           {weather.temp}°C
                         </span>

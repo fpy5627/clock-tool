@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "author": "Timero Team",
-  "homepage": "https://timero.app",
+  "homepage": "https://clock.toolina.com",
   "scripts": {
     "dev": "cross-env NODE_NO_WARNINGS=1 next dev --turbopack",
     "build": "next build",

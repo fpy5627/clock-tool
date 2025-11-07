@@ -28,6 +28,12 @@ const nextConfig = {
   async redirects() {
     return [];
   },
+  // Remove console logs in production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'], // Keep error and warn logs even in production
+    } : false,
+  },
 };
 
 // Make sure experimental mdx flag is enabled

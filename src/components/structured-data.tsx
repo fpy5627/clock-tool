@@ -88,7 +88,7 @@ export async function StructuredData({ locale, webUrl }: StructuredDataProps) {
     "contactPoint": {
       "@type": "ContactPoint",
       "contactType": "Customer Service",
-      "email": "support@timero.app"
+      "email": "service@toolina.com"
     }
   };
 

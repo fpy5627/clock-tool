@@ -7,12 +7,14 @@ import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSele
 import { toast } from 'sonner';
 import { useTranslations, useLocale } from 'next-intl';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
-import Link from 'next/link';
 import NProgress from 'nprogress';
+import LocaleToggle from '@/components/locale/toggle';
 import { SOUND_OPTIONS } from '@/lib/clock-constants';
 import { notifySoundMetaList } from '@/lib/notify-sound';
+import { getIpInfo } from '@/services/ip-info';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -205,6 +207,10 @@ export default function HomePage() {
   const [showWorldClockColorConfirm, setShowWorldClockColorConfirm] = useState(false);
   const [pendingWorldClockColor, setPendingWorldClockColor] = useState<string | null>(null);
   
+  // 主题颜色设置确认对话框
+  const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
+  const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
+  
   // 背景自定义
   const [backgroundType, setBackgroundType] = useState<'default' | 'color' | 'image'>('default');
   const [backgroundColor, setBackgroundColor] = useState('#1e293b'); // 默认深色背景
@@ -223,11 +229,6 @@ export default function HomePage() {
   const [pendingBackgroundColor, setPendingBackgroundColor] = useState<string>('');
   const [applyColorToAllPages, setApplyColorToAllPages] = useState(true); // 是否应用到所有功能页面
   
-  // 主题颜色设置确认对话框
-  const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
-  const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
-  const [applyThemeColorToAllPages, setApplyThemeColorToAllPages] = useState(true); // 是否应用到所有功能页面
-  
   // 上传图片历史记录
   const [uploadedImageHistory, setUploadedImageHistory] = useState<string[]>([]);
   
@@ -243,12 +244,16 @@ export default function HomePage() {
   const [showDate, setShowDate] = useState(true);
   const [showWeekday, setShowWeekday] = useState(true);
   
-  // 天气相关状态
+  // 天气相关状态 - 初始化为默认值，确保始终有数据显示
   const [weather, setWeather] = useState<{
     temp: number;
     condition: string;
     icon: string;
-  } | null>(null);
+  } | null>({
+    temp: 21,
+    condition: 'Partly cloudy',
+    icon: '116'
+  });
   
   // 用户位置相关状态
   const [userLocation, setUserLocation] = useState<{
@@ -312,7 +317,7 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
-  
+
   // —— 提示音播放控制：可在用户点击时提前停止 ——
   const notificationAudioCtxRef = useRef<AudioContext | null>(null);
   const notificationStopTimeoutRef = useRef<number | null>(null);
@@ -325,6 +330,932 @@ export default function HomePage() {
     if (notificationAudioCtxRef.current) {
       try { notificationAudioCtxRef.current.close(); } catch {}
       notificationAudioCtxRef.current = null;
+    }
+  };
+
+  // 声音播放函数 - 优先播放实际文件，如果没有则使用Web Audio API生成
+  const playNotificationSound = (soundType: string) => {
+    try {
+      // 先尝试播放实际文件
+      const sound = notifySoundMetaList.find(s => s.id === soundType);
+      if (sound && sound.path) {
+        // 停止所有当前播放的音频（包括所有带有 data-sound-id 的音频元素）
+        stopNotificationSound();
+        const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
+        allAudioElements.forEach((audio) => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
+        
+        // 创建新的音频元素并播放
+        // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
+        const audioPath = sound.path.startsWith('http://') || sound.path.startsWith('https://') 
+          ? sound.path 
+          : `/${sound.path}`;
+        const audio = new Audio(audioPath);
+        audio.setAttribute('data-sound-id', soundType);
+        audio.volume = 0.8;
+        audio.play().catch((error) => {
+          console.warn('Failed to play sound file:', error);
+        });
+        return; // 成功播放文件，直接返回
+      }
+      
+      // 如果没有文件路径，使用 WebAudio 合成（保留原有逻辑作为后备）
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      // 若已有在响，先停
+      stopNotificationSound();
+      const ctx = new AudioContext();
+      notificationAudioCtxRef.current = ctx;
+      const master = ctx.createGain();
+      master.gain.value = 0.8;
+      master.connect(ctx.destination);
+
+      const mkBeep = (t: number, freq: number, type: OscillatorType = 'sine', dur = 0.15, gain = 0.7) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(gain, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.25);
+        o.connect(g).connect(master);
+        o.start(t);
+        o.stop(t + dur + 0.3);
+      };
+
+      const total = 10; // 持续播放10秒
+      const start = ctx.currentTime;
+      
+      // 连续响铃（不间断）函数
+      const sustain = (freq: number, type: OscillatorType = 'sine', volume: number = 0.25) => {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, start);
+        g.gain.setValueAtTime(0.001, start);
+        g.gain.linearRampToValueAtTime(volume, start + 0.1);
+        g.gain.setValueAtTime(volume, start + total - 0.2);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + total);
+        o.connect(g).connect(master);
+        o.start(start);
+        o.stop(start + total + 0.05);
+      };
+
+      // 多频率合成铃声函数（用于更丰富的声音）
+      const playMultiTone = (frequencies: number[], type: OscillatorType = 'sine', volume: number = 0.2) => {
+        frequencies.forEach((freq, index) => {
+          const delay = index * 0.1;
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = type;
+          o.frequency.setValueAtTime(freq, start + delay);
+          g.gain.setValueAtTime(0.001, start + delay);
+          g.gain.linearRampToValueAtTime(volume, start + delay + 0.1);
+          g.gain.setValueAtTime(volume, start + total - 0.2 - delay);
+          g.gain.exponentialRampToValueAtTime(0.0001, start + total - delay);
+          o.connect(g).connect(master);
+          o.start(start + delay);
+          o.stop(start + total + 0.05 - delay);
+        });
+      };
+
+      // 根据自然铃声生成对应的合成音乐
+      switch (soundType) {
+        // 平和之声 (Sounds of Peace)
+        case 'night_sky': {
+          // 夜空：深邃宁静的夜空氛围
+          const deep1 = ctx.createOscillator();
+          const deep1Gain = ctx.createGain();
+          deep1.type = 'sine';
+          deep1.frequency.setValueAtTime(165, start); // E3，深邃低音
+          deep1Gain.gain.setValueAtTime(0.001, start);
+          deep1Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          deep1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          deep1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          deep1.connect(deep1Gain).connect(master);
+          deep1.start(start);
+          deep1.stop(start + total + 0.05);
+          
+          // 轻柔的高音层（模拟星光）
+          for (let i = 0; i < 15; i++) {
+            const starTime = start + i * 0.6;
+            const star = ctx.createOscillator();
+            const starGain = ctx.createGain();
+            star.type = 'sine';
+            star.frequency.setValueAtTime(440 + Math.sin(i) * 100, starTime);
+            starGain.gain.setValueAtTime(0.001, starTime);
+            starGain.gain.exponentialRampToValueAtTime(0.06, starTime + 0.2);
+            starGain.gain.exponentialRampToValueAtTime(0.001, starTime + 0.8);
+            star.connect(starGain).connect(master);
+            star.start(starTime);
+            star.stop(starTime + 1);
+          }
+          break;
+        }
+        case 'shining_stars': {
+          // 闪耀的星：闪烁星光的温柔音调
+          const star1 = ctx.createOscillator();
+          const star1Gain = ctx.createGain();
+          star1.type = 'sine';
+          star1.frequency.setValueAtTime(440, start); // A4，星光音调
+          star1Gain.gain.setValueAtTime(0.001, start);
+          star1Gain.gain.linearRampToValueAtTime(0.08, start + 0.8);
+          star1Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          star1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          star1.connect(star1Gain).connect(master);
+          star1.start(start);
+          star1.stop(start + total + 0.05);
+          
+          // 闪烁的星光（高频闪烁）
+          for (let i = 0; i < 12; i++) {
+            const twinkleTime = start + i * 0.8;
+            const twinkle = ctx.createOscillator();
+            const twinkleGain = ctx.createGain();
+            twinkle.type = 'triangle';
+            twinkle.frequency.setValueAtTime(523 + Math.sin(i) * 55, twinkleTime); // C5附近，闪烁
+            twinkleGain.gain.setValueAtTime(0.001, twinkleTime);
+            twinkleGain.gain.exponentialRampToValueAtTime(0.1, twinkleTime + 0.15);
+            twinkleGain.gain.exponentialRampToValueAtTime(0.001, twinkleTime + 0.6);
+            twinkle.connect(twinkleGain).connect(master);
+            twinkle.start(twinkleTime);
+            twinkle.stop(twinkleTime + 0.7);
+          }
+          break;
+        }
+        case 'sunrise': {
+          // 日出：温暖渐升的日出之光
+          const rise1 = ctx.createOscillator();
+          const rise1Gain = ctx.createGain();
+          rise1.type = 'sine';
+          rise1.frequency.setValueAtTime(220, start); // A3，逐渐升起的音调
+          rise1Gain.gain.setValueAtTime(0.001, start);
+          rise1Gain.gain.linearRampToValueAtTime(0.12, start + 1);
+          rise1Gain.gain.setValueAtTime(0.12, start + total - 0.2);
+          rise1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          rise1.connect(rise1Gain).connect(master);
+          rise1.start(start);
+          rise1.stop(start + total + 0.05);
+          
+          // 频率逐渐上升（模拟日出）
+          const rise2 = ctx.createOscillator();
+          const rise2Gain = ctx.createGain();
+          rise2.type = 'triangle';
+          rise2.frequency.setValueAtTime(330, start);
+          rise2.frequency.linearRampToValueAtTime(440, start + total); // 逐渐升调
+          rise2Gain.gain.setValueAtTime(0.001, start);
+          rise2Gain.gain.linearRampToValueAtTime(0.1, start + 1.5);
+          rise2Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          rise2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          rise2.connect(rise2Gain).connect(master);
+          rise2.start(start);
+          rise2.stop(start + total + 0.05);
+          
+          // 温暖的音符（每2秒一个）
+          const warmNotes = [392, 440, 494];
+          for (let i = 0; i < 5; i++) {
+            const warmTime = start + i * 2;
+            const note = warmNotes[i % warmNotes.length];
+            const warm = ctx.createOscillator();
+            const warmGain = ctx.createGain();
+            warm.type = 'sine';
+            warm.frequency.setValueAtTime(note, warmTime);
+            warmGain.gain.setValueAtTime(0.001, warmTime);
+            warmGain.gain.exponentialRampToValueAtTime(0.15, warmTime + 0.2);
+            warmGain.gain.exponentialRampToValueAtTime(0.001, warmTime + 1.2);
+            warm.connect(warmGain).connect(master);
+            warm.start(warmTime);
+            warm.stop(warmTime + 1.3);
+          }
+          break;
+        }
+        case 'sunset': {
+          // 日落：柔和温暖的日落余晖
+          const set1 = ctx.createOscillator();
+          const set1Gain = ctx.createGain();
+          set1.type = 'sine';
+          set1.frequency.setValueAtTime(330, start); // E4，温暖的低音
+          set1Gain.gain.setValueAtTime(0.001, start);
+          set1Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          set1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          set1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          set1.connect(set1Gain).connect(master);
+          set1.start(start);
+          set1.stop(start + total + 0.05);
+          
+          // 频率逐渐下降（模拟日落）
+          const set2 = ctx.createOscillator();
+          const set2Gain = ctx.createGain();
+          set2.type = 'triangle';
+          set2.frequency.setValueAtTime(440, start);
+          set2.frequency.linearRampToValueAtTime(330, start + total); // 逐渐降调
+          set2Gain.gain.setValueAtTime(0.001, start);
+          set2Gain.gain.linearRampToValueAtTime(0.08, start + 1.5);
+          set2Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          set2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          set2.connect(set2Gain).connect(master);
+          set2.start(start);
+          set2.stop(start + total + 0.05);
+          
+          // 柔和的音符（每2.5秒一个）
+          const softNotes = [494, 440, 392];
+          for (let i = 0; i < 4; i++) {
+            const softTime = start + i * 2.5;
+            const note = softNotes[i % softNotes.length];
+            const soft = ctx.createOscillator();
+            const softGain = ctx.createGain();
+            soft.type = 'sine';
+            soft.frequency.setValueAtTime(note, softTime);
+            softGain.gain.setValueAtTime(0.001, softTime);
+            softGain.gain.exponentialRampToValueAtTime(0.12, softTime + 0.3);
+            softGain.gain.exponentialRampToValueAtTime(0.001, softTime + 1.5);
+            soft.connect(softGain).connect(master);
+            soft.start(softTime);
+            soft.stop(softTime + 1.6);
+          }
+          break;
+        }
+        case 'meditation': {
+          // 冥思：深度冥想的宁静之音
+          const med1 = ctx.createOscillator();
+          const med1Gain = ctx.createGain();
+          med1.type = 'sine';
+          med1.frequency.setValueAtTime(196, start); // G3
+          med1Gain.gain.setValueAtTime(0.001, start);
+          med1Gain.gain.linearRampToValueAtTime(0.09, start + 0.8);
+          med1Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          med1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          med1.connect(med1Gain).connect(master);
+          med1.start(start);
+          med1.stop(start + total + 0.05);
+          
+          const med2 = ctx.createOscillator();
+          const med2Gain = ctx.createGain();
+          med2.type = 'sine';
+          med2.frequency.setValueAtTime(294, start); // D4，五度音程
+          med2Gain.gain.setValueAtTime(0.001, start);
+          med2Gain.gain.linearRampToValueAtTime(0.06, start + 1.2);
+          med2Gain.gain.setValueAtTime(0.06, start + total - 0.2);
+          med2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          med2.connect(med2Gain).connect(master);
+          med2.start(start);
+          med2.stop(start + total + 0.05);
+          
+          // 和谐的冥想钟声（每4秒一次）
+          const meditationChimes = [392, 440, 494, 523];
+          for (let i = 0; i < 2; i++) {
+            const chimeTime = start + i * 4;
+            const chimeFreq = meditationChimes[i % meditationChimes.length];
+            const chime = ctx.createOscillator();
+            const chimeGain = ctx.createGain();
+            chime.type = 'triangle';
+            chime.frequency.setValueAtTime(chimeFreq, chimeTime);
+            chimeGain.gain.setValueAtTime(0.001, chimeTime);
+            chimeGain.gain.exponentialRampToValueAtTime(0.15, chimeTime + 0.5);
+            chimeGain.gain.exponentialRampToValueAtTime(0.001, chimeTime + 3);
+            chime.connect(chimeGain).connect(master);
+            chime.start(chimeTime);
+            chime.stop(chimeTime + 3.1);
+          }
+          break;
+        }
+        case 'distant_serene': {
+          // 悠远：悠远深邃的宁静空间
+          const distant1 = ctx.createOscillator();
+          const distant1Gain = ctx.createGain();
+          distant1.type = 'sine';
+          distant1.frequency.setValueAtTime(165, start); // E3，深远的低音
+          distant1Gain.gain.setValueAtTime(0.001, start);
+          distant1Gain.gain.linearRampToValueAtTime(0.08, start + 1.5);
+          distant1Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          distant1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          distant1.connect(distant1Gain).connect(master);
+          distant1.start(start);
+          distant1.stop(start + total + 0.05);
+          
+          // 悠远的回声效果（延迟的音符）
+          const echoNotes = [330, 392, 440];
+          for (let i = 0; i < 8; i++) {
+            const echoTime = start + i * 1.2;
+            const note = echoNotes[i % echoNotes.length];
+            const echo = ctx.createOscillator();
+            const echoGain = ctx.createGain();
+            echo.type = 'sine';
+            echo.frequency.setValueAtTime(note, echoTime);
+            echoGain.gain.setValueAtTime(0.001, echoTime);
+            echoGain.gain.exponentialRampToValueAtTime(0.1, echoTime + 0.3);
+            echoGain.gain.exponentialRampToValueAtTime(0.001, echoTime + 1);
+            echo.connect(echoGain).connect(master);
+            echo.start(echoTime);
+            echo.stop(echoTime + 1.1);
+          }
+          break;
+        }
+        case 'emerald_lotus_pond': {
+          // 翠绿荷塘：翠绿荷塘的清新音韵
+          const pond1 = ctx.createOscillator();
+          const pond1Gain = ctx.createGain();
+          pond1.type = 'sine';
+          pond1.frequency.setValueAtTime(220, start); // A3
+          pond1Gain.gain.setValueAtTime(0.001, start);
+          pond1Gain.gain.linearRampToValueAtTime(0.1, start + 0.8);
+          pond1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          pond1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          pond1.connect(pond1Gain).connect(master);
+          pond1.start(start);
+          pond1.stop(start + total + 0.05);
+          
+          // 清新的高音层（模拟水波）
+          const pond2 = ctx.createOscillator();
+          const pond2Gain = ctx.createGain();
+          pond2.type = 'triangle';
+          pond2.frequency.setValueAtTime(523, start); // C5，清新高音
+          pond2Gain.gain.setValueAtTime(0.001, start);
+          pond2Gain.gain.linearRampToValueAtTime(0.08, start + 1);
+          pond2Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          pond2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          pond2.connect(pond2Gain).connect(master);
+          pond2.start(start);
+          pond2.stop(start + total + 0.05);
+          
+          // 水波般的音符（每1.5秒一个）
+          const rippleNotes = [440, 494, 523, 587];
+          for (let i = 0; i < 6; i++) {
+            const rippleTime = start + i * 1.5;
+            const note = rippleNotes[i % rippleNotes.length];
+            const ripple = ctx.createOscillator();
+            const rippleGain = ctx.createGain();
+            ripple.type = 'sine';
+            ripple.frequency.setValueAtTime(note, rippleTime);
+            rippleGain.gain.setValueAtTime(0.001, rippleTime);
+            rippleGain.gain.exponentialRampToValueAtTime(0.12, rippleTime + 0.2);
+            rippleGain.gain.exponentialRampToValueAtTime(0.001, rippleTime + 0.8);
+            ripple.connect(rippleGain).connect(master);
+            ripple.start(rippleTime);
+            ripple.stop(rippleTime + 0.9);
+          }
+          break;
+        }
+        case 'moonlit_lotus': {
+          // 月下荷花：月光下荷花的优雅音色
+          const lotus1 = ctx.createOscillator();
+          const lotus1Gain = ctx.createGain();
+          lotus1.type = 'sine';
+          lotus1.frequency.setValueAtTime(294, start); // D4，优雅的低音
+          lotus1Gain.gain.setValueAtTime(0.001, start);
+          lotus1Gain.gain.linearRampToValueAtTime(0.09, start + 1);
+          lotus1Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          lotus1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          lotus1.connect(lotus1Gain).connect(master);
+          lotus1.start(start);
+          lotus1.stop(start + total + 0.05);
+          
+          // 月光般的高音层
+          const lotus2 = ctx.createOscillator();
+          const lotus2Gain = ctx.createGain();
+          lotus2.type = 'triangle';
+          lotus2.frequency.setValueAtTime(659, start); // E5，月光高音
+          lotus2Gain.gain.setValueAtTime(0.001, start);
+          lotus2Gain.gain.linearRampToValueAtTime(0.07, start + 1.2);
+          lotus2Gain.gain.setValueAtTime(0.07, start + total - 0.2);
+          lotus2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          lotus2.connect(lotus2Gain).connect(master);
+          lotus2.start(start);
+          lotus2.stop(start + total + 0.05);
+          
+          // 优雅的音符（每2秒一个）
+          const elegantNotes = [392, 440, 494, 523];
+          for (let i = 0; i < 5; i++) {
+            const elegantTime = start + i * 2;
+            const note = elegantNotes[i % elegantNotes.length];
+            const elegant = ctx.createOscillator();
+            const elegantGain = ctx.createGain();
+            elegant.type = 'sine';
+            elegant.frequency.setValueAtTime(note, elegantTime);
+            elegantGain.gain.setValueAtTime(0.001, elegantTime);
+            elegantGain.gain.exponentialRampToValueAtTime(0.14, elegantTime + 0.25);
+            elegantGain.gain.exponentialRampToValueAtTime(0.001, elegantTime + 1.2);
+            elegant.connect(elegantGain).connect(master);
+            elegant.start(elegantTime);
+            elegant.stop(elegantTime + 1.3);
+          }
+          break;
+        }
+        // 自然的生命力 (Natural Vitality) - 12个
+        case 'rippling_water': {
+          // 水波荡漾：水波轻柔荡漾的自然韵律
+          const water1 = ctx.createOscillator();
+          const water1Gain = ctx.createGain();
+          water1.type = 'sine';
+          water1.frequency.setValueAtTime(220, start); // A3
+          water1Gain.gain.setValueAtTime(0.001, start);
+          water1Gain.gain.linearRampToValueAtTime(0.1, start + 0.5);
+          // 波浪式的音量变化（每2秒一个周期）
+          for (let i = 0; i < 5; i++) {
+            const waveStart = start + i * 2;
+            water1Gain.gain.linearRampToValueAtTime(0.12, waveStart + 1);
+            water1Gain.gain.linearRampToValueAtTime(0.08, waveStart + 2);
+          }
+          water1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          water1.connect(water1Gain).connect(master);
+          water1.start(start);
+          water1.stop(start + total + 0.05);
+          
+          // 高音层（慢速琶音，模拟水波）
+          const waterNotes = [440, 494, 523, 587];
+          for (let i = 0; i < 5; i++) {
+            waterNotes.forEach((freq, index) => {
+              const waterTime = start + i * 2 + index * 0.4;
+              const water = ctx.createOscillator();
+              const waterGain = ctx.createGain();
+              water.type = 'sine';
+              water.frequency.setValueAtTime(freq, waterTime);
+              waterGain.gain.setValueAtTime(0.001, waterTime);
+              waterGain.gain.exponentialRampToValueAtTime(0.1, waterTime + 0.2);
+              waterGain.gain.exponentialRampToValueAtTime(0.001, waterTime + 0.8);
+              water.connect(waterGain).connect(master);
+              water.start(waterTime);
+              water.stop(waterTime + 1);
+            });
+          }
+          break;
+        }
+        case 'faint_light': {
+          // 微光：微弱光线的细腻音色
+          const light1 = ctx.createOscillator();
+          const light1Gain = ctx.createGain();
+          light1.type = 'sine';
+          light1.frequency.setValueAtTime(440, start); // A4
+          light1Gain.gain.setValueAtTime(0.001, start);
+          light1Gain.gain.linearRampToValueAtTime(0.06, start + 1);
+          light1Gain.gain.setValueAtTime(0.06, start + total - 0.2);
+          light1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          light1.connect(light1Gain).connect(master);
+          light1.start(start);
+          light1.stop(start + total + 0.05);
+          
+          // 微弱的闪烁（偶尔的高音）
+          for (let i = 0; i < 10; i++) {
+            const glimmerTime = start + i * 1;
+            const glimmer = ctx.createOscillator();
+            const glimmerGain = ctx.createGain();
+            glimmer.type = 'sine';
+            glimmer.frequency.setValueAtTime(523 + Math.sin(i) * 30, glimmerTime); // 微弱变化
+            glimmerGain.gain.setValueAtTime(0.001, glimmerTime);
+            glimmerGain.gain.exponentialRampToValueAtTime(0.08, glimmerTime + 0.1);
+            glimmerGain.gain.exponentialRampToValueAtTime(0.001, glimmerTime + 0.4);
+            glimmer.connect(glimmerGain).connect(master);
+            glimmer.start(glimmerTime);
+            glimmer.stop(glimmerTime + 0.5);
+          }
+          break;
+        }
+        case 'bathing_earth': {
+          // 沐浴大地：阳光沐浴大地的温暖之声
+          const earth1 = ctx.createOscillator();
+          const earth1Gain = ctx.createGain();
+          earth1.type = 'sine';
+          earth1.frequency.setValueAtTime(262, start); // C4，大地的基础音
+          earth1Gain.gain.setValueAtTime(0.001, start);
+          earth1Gain.gain.linearRampToValueAtTime(0.11, start + 1);
+          earth1Gain.gain.setValueAtTime(0.11, start + total - 0.2);
+          earth1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          earth1.connect(earth1Gain).connect(master);
+          earth1.start(start);
+          earth1.stop(start + total + 0.05);
+          
+          // 温暖的阳光层
+          const earth2 = ctx.createOscillator();
+          const earth2Gain = ctx.createGain();
+          earth2.type = 'triangle';
+          earth2.frequency.setValueAtTime(392, start); // G4，温暖音调
+          earth2Gain.gain.setValueAtTime(0.001, start);
+          earth2Gain.gain.linearRampToValueAtTime(0.09, start + 1.2);
+          earth2Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          earth2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          earth2.connect(earth2Gain).connect(master);
+          earth2.start(start);
+          earth2.stop(start + total + 0.05);
+          
+          // 温暖的音符（每2秒一个）
+          const warmNotes = [330, 392, 440];
+          for (let i = 0; i < 5; i++) {
+            const warmTime = start + i * 2;
+            const note = warmNotes[i % warmNotes.length];
+            const warm = ctx.createOscillator();
+            const warmGain = ctx.createGain();
+            warm.type = 'sine';
+            warm.frequency.setValueAtTime(note, warmTime);
+            warmGain.gain.setValueAtTime(0.001, warmTime);
+            warmGain.gain.exponentialRampToValueAtTime(0.13, warmTime + 0.3);
+            warmGain.gain.exponentialRampToValueAtTime(0.001, warmTime + 1.3);
+            warm.connect(warmGain).connect(master);
+            warm.start(warmTime);
+            warm.stop(warmTime + 1.4);
+          }
+          break;
+        }
+        case 'jungle_morning': {
+          // 丛林晨景：丛林清晨的生机勃勃
+          const jungle1 = ctx.createOscillator();
+          const jungle1Gain = ctx.createGain();
+          jungle1.type = 'sine';
+          jungle1.frequency.setValueAtTime(165, start); // E3，丛林低音
+          jungle1Gain.gain.setValueAtTime(0.001, start);
+          jungle1Gain.gain.linearRampToValueAtTime(0.1, start + 0.8);
+          jungle1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          jungle1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          jungle1.connect(jungle1Gain).connect(master);
+          jungle1.start(start);
+          jungle1.stop(start + total + 0.05);
+          
+          // 生机勃勃的高音层
+          const jungle2 = ctx.createOscillator();
+          const jungle2Gain = ctx.createGain();
+          jungle2.type = 'triangle';
+          jungle2.frequency.setValueAtTime(494, start); // B4，生机高音
+          jungle2Gain.gain.setValueAtTime(0.001, start);
+          jungle2Gain.gain.linearRampToValueAtTime(0.09, start + 1);
+          jungle2Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          jungle2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          jungle2.connect(jungle2Gain).connect(master);
+          jungle2.start(start);
+          jungle2.stop(start + total + 0.05);
+          
+          // 充满生机的音符（每1.5秒一个）
+          const vibrantNotes = [330, 392, 440, 494];
+          for (let i = 0; i < 6; i++) {
+            const vibrantTime = start + i * 1.5;
+            const note = vibrantNotes[i % vibrantNotes.length];
+            const vibrant = ctx.createOscillator();
+            const vibrantGain = ctx.createGain();
+            vibrant.type = 'sine';
+            vibrant.frequency.setValueAtTime(note, vibrantTime);
+            vibrantGain.gain.setValueAtTime(0.001, vibrantTime);
+            vibrantGain.gain.exponentialRampToValueAtTime(0.14, vibrantTime + 0.2);
+            vibrantGain.gain.exponentialRampToValueAtTime(0.001, vibrantTime + 0.9);
+            vibrant.connect(vibrantGain).connect(master);
+            vibrant.start(vibrantTime);
+            vibrant.stop(vibrantTime + 1);
+          }
+          break;
+        }
+        case 'silver_clad': {
+          // 银装素裹：银装素裹的纯净音色
+          const silver1 = ctx.createOscillator();
+          const silver1Gain = ctx.createGain();
+          silver1.type = 'sine';
+          silver1.frequency.setValueAtTime(220, start); // A3，纯净低音
+          silver1Gain.gain.setValueAtTime(0.001, start);
+          silver1Gain.gain.linearRampToValueAtTime(0.09, start + 1);
+          silver1Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          silver1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          silver1.connect(silver1Gain).connect(master);
+          silver1.start(start);
+          silver1.stop(start + total + 0.05);
+          
+          // 纯净的高音层
+          const silver2 = ctx.createOscillator();
+          const silver2Gain = ctx.createGain();
+          silver2.type = 'triangle';
+          silver2.frequency.setValueAtTime(523, start); // C5，纯净高音
+          silver2Gain.gain.setValueAtTime(0.001, start);
+          silver2Gain.gain.linearRampToValueAtTime(0.08, start + 1.2);
+          silver2Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          silver2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          silver2.connect(silver2Gain).connect(master);
+          silver2.start(start);
+          silver2.stop(start + total + 0.05);
+          
+          // 纯净的音符（每2秒一个）
+          const pureNotes = [440, 494, 523];
+          for (let i = 0; i < 5; i++) {
+            const pureTime = start + i * 2;
+            const note = pureNotes[i % pureNotes.length];
+            const pure = ctx.createOscillator();
+            const pureGain = ctx.createGain();
+            pure.type = 'sine';
+            pure.frequency.setValueAtTime(note, pureTime);
+            pureGain.gain.setValueAtTime(0.001, pureTime);
+            pureGain.gain.exponentialRampToValueAtTime(0.12, pureTime + 0.25);
+            pureGain.gain.exponentialRampToValueAtTime(0.001, pureTime + 1.2);
+            pure.connect(pureGain).connect(master);
+            pure.start(pureTime);
+            pure.stop(pureTime + 1.3);
+          }
+          break;
+        }
+        case 'elegant_tranquil': {
+          // 优雅恬静：优雅恬静的自然和谐
+          const elegant1 = ctx.createOscillator();
+          const elegant1Gain = ctx.createGain();
+          elegant1.type = 'sine';
+          elegant1.frequency.setValueAtTime(294, start); // D4，优雅低音
+          elegant1Gain.gain.setValueAtTime(0.001, start);
+          elegant1Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          elegant1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          elegant1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          elegant1.connect(elegant1Gain).connect(master);
+          elegant1.start(start);
+          elegant1.stop(start + total + 0.05);
+          
+          // 恬静的高音层
+          const elegant2 = ctx.createOscillator();
+          const elegant2Gain = ctx.createGain();
+          elegant2.type = 'triangle';
+          elegant2.frequency.setValueAtTime(440, start); // A4
+          elegant2Gain.gain.setValueAtTime(0.001, start);
+          elegant2Gain.gain.linearRampToValueAtTime(0.07, start + 1.5);
+          elegant2Gain.gain.setValueAtTime(0.07, start + total - 0.2);
+          elegant2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          elegant2.connect(elegant2Gain).connect(master);
+          elegant2.start(start);
+          elegant2.stop(start + total + 0.05);
+          
+          // 和谐的音符（每2.5秒一个）
+          const harmonyNotes = [392, 440, 494, 523];
+          for (let i = 0; i < 4; i++) {
+            const harmonyTime = start + i * 2.5;
+            const note = harmonyNotes[i % harmonyNotes.length];
+            const harmony = ctx.createOscillator();
+            const harmonyGain = ctx.createGain();
+            harmony.type = 'sine';
+            harmony.frequency.setValueAtTime(note, harmonyTime);
+            harmonyGain.gain.setValueAtTime(0.001, harmonyTime);
+            harmonyGain.gain.exponentialRampToValueAtTime(0.13, harmonyTime + 0.3);
+            harmonyGain.gain.exponentialRampToValueAtTime(0.001, harmonyTime + 1.5);
+            harmony.connect(harmonyGain).connect(master);
+            harmony.start(harmonyTime);
+            harmony.stop(harmonyTime + 1.6);
+          }
+          break;
+        }
+        case 'midsummer_beach': {
+          // 盛夏海边：盛夏海边的清新活力
+          const beach1 = ctx.createOscillator();
+          const beach1Gain = ctx.createGain();
+          beach1.type = 'sine';
+          beach1.frequency.setValueAtTime(330, start); // E4，清新低音
+          beach1Gain.gain.setValueAtTime(0.001, start);
+          beach1Gain.gain.linearRampToValueAtTime(0.11, start + 0.8);
+          beach1Gain.gain.setValueAtTime(0.11, start + total - 0.2);
+          beach1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          beach1.connect(beach1Gain).connect(master);
+          beach1.start(start);
+          beach1.stop(start + total + 0.05);
+          
+          // 活力的高音层
+          const beach2 = ctx.createOscillator();
+          const beach2Gain = ctx.createGain();
+          beach2.type = 'triangle';
+          beach2.frequency.setValueAtTime(494, start); // B4，活力高音
+          beach2Gain.gain.setValueAtTime(0.001, start);
+          beach2Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          beach2Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          beach2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          beach2.connect(beach2Gain).connect(master);
+          beach2.start(start);
+          beach2.stop(start + total + 0.05);
+          
+          // 充满活力的音符（每1.2秒一个）
+          const energeticNotes = [392, 440, 494, 523];
+          for (let i = 0; i < 8; i++) {
+            const energeticTime = start + i * 1.2;
+            const note = energeticNotes[i % energeticNotes.length];
+            const energetic = ctx.createOscillator();
+            const energeticGain = ctx.createGain();
+            energetic.type = 'sine';
+            energetic.frequency.setValueAtTime(note, energeticTime);
+            energeticGain.gain.setValueAtTime(0.001, energeticTime);
+            energeticGain.gain.exponentialRampToValueAtTime(0.15, energeticTime + 0.15);
+            energeticGain.gain.exponentialRampToValueAtTime(0.001, energeticTime + 0.8);
+            energetic.connect(energeticGain).connect(master);
+            energetic.start(energeticTime);
+            energetic.stop(energeticTime + 0.9);
+          }
+          break;
+        }
+        case 'midsummer_night': {
+          // 仲夏的夜：仲夏夜晚的宁静凉爽
+          const night1 = ctx.createOscillator();
+          const night1Gain = ctx.createGain();
+          night1.type = 'sine';
+          night1.frequency.setValueAtTime(196, start); // G3，宁静低音
+          night1Gain.gain.setValueAtTime(0.001, start);
+          night1Gain.gain.linearRampToValueAtTime(0.08, start + 1);
+          night1Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          night1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          night1.connect(night1Gain).connect(master);
+          night1.start(start);
+          night1.stop(start + total + 0.05);
+          
+          // 凉爽的高音层
+          const night2 = ctx.createOscillator();
+          const night2Gain = ctx.createGain();
+          night2.type = 'triangle';
+          night2.frequency.setValueAtTime(440, start); // A4
+          night2Gain.gain.setValueAtTime(0.001, start);
+          night2Gain.gain.linearRampToValueAtTime(0.06, start + 1.5);
+          night2Gain.gain.setValueAtTime(0.06, start + total - 0.2);
+          night2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          night2.connect(night2Gain).connect(master);
+          night2.start(start);
+          night2.stop(start + total + 0.05);
+          
+          // 宁静凉爽的音符（每2秒一个）
+          const coolNotes = [330, 392, 440];
+          for (let i = 0; i < 5; i++) {
+            const coolTime = start + i * 2;
+            const note = coolNotes[i % coolNotes.length];
+            const cool = ctx.createOscillator();
+            const coolGain = ctx.createGain();
+            cool.type = 'sine';
+            cool.frequency.setValueAtTime(note, coolTime);
+            coolGain.gain.setValueAtTime(0.001, coolTime);
+            coolGain.gain.exponentialRampToValueAtTime(0.11, coolTime + 0.3);
+            coolGain.gain.exponentialRampToValueAtTime(0.001, coolTime + 1.2);
+            cool.connect(coolGain).connect(master);
+            cool.start(coolTime);
+            cool.stop(coolTime + 1.3);
+          }
+          break;
+        }
+        case 'ice_snow_day': {
+          // 冰雪天：冰雪世界的纯净清冷
+          const ice1 = ctx.createOscillator();
+          const ice1Gain = ctx.createGain();
+          ice1.type = 'sine';
+          ice1.frequency.setValueAtTime(165, start); // E3，清冷低音
+          ice1Gain.gain.setValueAtTime(0.001, start);
+          ice1Gain.gain.linearRampToValueAtTime(0.07, start + 1.2);
+          ice1Gain.gain.setValueAtTime(0.07, start + total - 0.2);
+          ice1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          ice1.connect(ice1Gain).connect(master);
+          ice1.start(start);
+          ice1.stop(start + total + 0.05);
+          
+          // 清冷的高音层
+          const ice2 = ctx.createOscillator();
+          const ice2Gain = ctx.createGain();
+          ice2.type = 'triangle';
+          ice2.frequency.setValueAtTime(523, start); // C5，清冷高音
+          ice2Gain.gain.setValueAtTime(0.001, start);
+          ice2Gain.gain.linearRampToValueAtTime(0.06, start + 1.5);
+          ice2Gain.gain.setValueAtTime(0.06, start + total - 0.2);
+          ice2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          ice2.connect(ice2Gain).connect(master);
+          ice2.start(start);
+          ice2.stop(start + total + 0.05);
+          
+          // 清冷的音符（每2.5秒一个）
+          const coldNotes = [440, 494, 523];
+          for (let i = 0; i < 4; i++) {
+            const coldTime = start + i * 2.5;
+            const note = coldNotes[i % coldNotes.length];
+            const cold = ctx.createOscillator();
+            const coldGain = ctx.createGain();
+            cold.type = 'sine';
+            cold.frequency.setValueAtTime(note, coldTime);
+            coldGain.gain.setValueAtTime(0.001, coldTime);
+            coldGain.gain.exponentialRampToValueAtTime(0.1, coldTime + 0.4);
+            coldGain.gain.exponentialRampToValueAtTime(0.001, coldTime + 1.5);
+            cold.connect(coldGain).connect(master);
+            cold.start(coldTime);
+            cold.stop(coldTime + 1.6);
+          }
+          break;
+        }
+        case 'winter_snow_falling': {
+          // 冬雪飘落：冬雪飘落的轻柔韵律
+          const snow1 = ctx.createOscillator();
+          const snow1Gain = ctx.createGain();
+          snow1.type = 'sine';
+          snow1.frequency.setValueAtTime(220, start); // A3
+          snow1Gain.gain.setValueAtTime(0.001, start);
+          snow1Gain.gain.linearRampToValueAtTime(0.08, start + 1);
+          snow1Gain.gain.setValueAtTime(0.08, start + total - 0.2);
+          snow1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          snow1.connect(snow1Gain).connect(master);
+          snow1.start(start);
+          snow1.stop(start + total + 0.05);
+          
+          // 雪花般的轻柔音符（缓慢飘落）
+          const snowNotes = [392, 440, 494];
+          for (let i = 0; i < 8; i++) {
+            const snowTime = start + i * 1.2;
+            const note = snowNotes[i % snowNotes.length];
+            const snow = ctx.createOscillator();
+            const snowGain = ctx.createGain();
+            snow.type = 'triangle';
+            snow.frequency.setValueAtTime(note, snowTime);
+            snowGain.gain.setValueAtTime(0.001, snowTime);
+            snowGain.gain.exponentialRampToValueAtTime(0.12, snowTime + 0.4);
+            snowGain.gain.exponentialRampToValueAtTime(0.001, snowTime + 1.2);
+            snow.connect(snowGain).connect(master);
+            snow.start(snowTime);
+            snow.stop(snowTime + 1.3);
+          }
+          break;
+        }
+        case 'primeval_rainforest': {
+          // 原始雨林：原始雨林的神秘生机
+          const forest1 = ctx.createOscillator();
+          const forest1Gain = ctx.createGain();
+          forest1.type = 'sine';
+          forest1.frequency.setValueAtTime(147, start); // D3，神秘低音
+          forest1Gain.gain.setValueAtTime(0.001, start);
+          forest1Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          forest1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          forest1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          forest1.connect(forest1Gain).connect(master);
+          forest1.start(start);
+          forest1.stop(start + total + 0.05);
+          
+          // 神秘生机的高音层
+          const forest2 = ctx.createOscillator();
+          const forest2Gain = ctx.createGain();
+          forest2.type = 'sawtooth';
+          forest2.frequency.setValueAtTime(440, start); // A4，生机音调
+          forest2Gain.gain.setValueAtTime(0.001, start);
+          forest2Gain.gain.linearRampToValueAtTime(0.09, start + 1.2);
+          forest2Gain.gain.setValueAtTime(0.09, start + total - 0.2);
+          forest2Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          forest2.connect(forest2Gain).connect(master);
+          forest2.start(start);
+          forest2.stop(start + total + 0.05);
+          
+          // 神秘生机的音符（每1.5秒一个）
+          const mysteryNotes = [330, 392, 440, 494];
+          for (let i = 0; i < 6; i++) {
+            const mysteryTime = start + i * 1.5;
+            const note = mysteryNotes[i % mysteryNotes.length];
+            const mystery = ctx.createOscillator();
+            const mysteryGain = ctx.createGain();
+            mystery.type = 'sine';
+            mystery.frequency.setValueAtTime(note, mysteryTime);
+            mysteryGain.gain.setValueAtTime(0.001, mysteryTime);
+            mysteryGain.gain.exponentialRampToValueAtTime(0.13, mysteryTime + 0.25);
+            mysteryGain.gain.exponentialRampToValueAtTime(0.001, mysteryTime + 1);
+            mystery.connect(mysteryGain).connect(master);
+            mystery.start(mysteryTime);
+            mystery.stop(mysteryTime + 1.1);
+          }
+          break;
+        }
+        case 'rain_nourishes_all': {
+          // 雨润万物：春雨滋润万物的生机之声
+          const rain1 = ctx.createOscillator();
+          const rain1Gain = ctx.createGain();
+          rain1.type = 'sine';
+          rain1.frequency.setValueAtTime(262, start); // C4，雨水的基础音
+          rain1Gain.gain.setValueAtTime(0.001, start);
+          rain1Gain.gain.linearRampToValueAtTime(0.1, start + 0.8);
+          rain1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          rain1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          rain1.connect(rain1Gain).connect(master);
+          rain1.start(start);
+          rain1.stop(start + total + 0.05);
+          
+          // 雨滴般的音符（模拟雨滴）
+          const rainNotes = [392, 440, 494, 523];
+          for (let i = 0; i < 10; i++) {
+            const rainTime = start + i * 1;
+            const note = rainNotes[i % rainNotes.length];
+            const rain = ctx.createOscillator();
+            const rainGain = ctx.createGain();
+            rain.type = 'sine';
+            rain.frequency.setValueAtTime(note, rainTime);
+            rainGain.gain.setValueAtTime(0.001, rainTime);
+            rainGain.gain.exponentialRampToValueAtTime(0.12, rainTime + 0.1);
+            rainGain.gain.exponentialRampToValueAtTime(0.001, rainTime + 0.5);
+            rain.connect(rainGain).connect(master);
+            rain.start(rainTime);
+            rain.stop(rainTime + 0.6);
+          }
+          break;
+        }
+        default: {
+          // 默认使用夜空的音效
+          const deep1 = ctx.createOscillator();
+          const deep1Gain = ctx.createGain();
+          deep1.type = 'sine';
+          deep1.frequency.setValueAtTime(165, start);
+          deep1Gain.gain.setValueAtTime(0.001, start);
+          deep1Gain.gain.linearRampToValueAtTime(0.1, start + 1);
+          deep1Gain.gain.setValueAtTime(0.1, start + total - 0.2);
+          deep1Gain.gain.exponentialRampToValueAtTime(0.0001, start + total);
+          deep1.connect(deep1Gain).connect(master);
+          deep1.start(start);
+          deep1.stop(start + total + 0.05);
+          break;
+        }
+      }
+
+      notificationStopTimeoutRef.current = window.setTimeout(() => {
+        stopNotificationSound();
+      }, (total + 0.5) * 1000);
+    } catch (error) {
+      console.error('Error playing sound:', error);
     }
   };
 
@@ -463,6 +1394,33 @@ export default function HomePage() {
     });
   };
 
+  // 监听路径变化，更新计时器初始时间
+  useEffect(() => {
+    // 计算新的预设时间
+    let newTime = 300; // 默认5分钟
+    
+    // 先检查URL参数
+    const presetFromUrl = searchParams.get('preset');
+    if (presetFromUrl) {
+      newTime = parseInt(presetFromUrl);
+    } else {
+      // 检查URL路径来确定预设时间（使用endsWith确保精确匹配，加上斜杠避免部分匹配）
+      const pathMatch = PRESET_TIMES.find(preset => pathname.endsWith(`/${preset.path}`));
+      if (pathMatch) {
+        newTime = pathMatch.seconds;
+      }
+    }
+    
+    // 只在路径实际改变时更新（不检查 initialTime，避免覆盖用户手动设置的值）
+    if (!isRunning) {
+      setInitialTime(newTime);
+      setTimeLeft(newTime);
+    }
+    
+    // 完成进度条加载
+    NProgress.done();
+  }, [pathname, searchParams]);
+
   // 监听背景颜色变化，自动切换主题
   useEffect(() => {
     // 只有在背景颜色真正改变且是颜色模式时才处理
@@ -492,41 +1450,38 @@ export default function HomePage() {
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = setInterval(() => {
-        if (mode === 'timer') {
-          // 倒计时模式
-          setTimeLeft((prev) => {
-            if (prev <= 1) {
-              // 立即清除定时器，防止重复执行
-              if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-              }
-              setIsRunning(false);
-              if (soundEnabled) {
-                playNotificationSound();
-              }
-              // 桌面通知
-              showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
-              
-              // 显示倒计时结束弹窗，并开始超时计时
-              setShowTimerEndModal(true);
-              setTimerOvertime(0);
-              
-              // 开始超时计时器
-              if (!overtimeIntervalRef.current) {
-                overtimeIntervalRef.current = setInterval(() => {
-                  setTimerOvertime((prev) => prev + 1);
-                }, 1000);
-              }
-              
-              return 0;
+        // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
+        // 倒计时模式
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            // 立即清除定时器，防止重复执行
+            if (intervalRef.current) {
+              clearInterval(intervalRef.current);
+              intervalRef.current = null;
             }
-            return prev - 1;
-          });
-        } else {
-          // 秒表模式
-          setStopwatchTime((prev) => prev + 1);
-        }
+            setIsRunning(false);
+            if (soundEnabled) {
+              playTimerNotificationSound();
+            }
+            // 桌面通知
+            showDesktopNotification(t('notifications.timer_end'), t('notifications.timer_end_desc'));
+            
+            // 显示倒计时结束弹窗，并开始超时计时
+            setShowTimerEndModal(true);
+            setTimerOvertime(0);
+            
+            // 开始超时计时器
+            if (!overtimeIntervalRef.current) {
+              overtimeIntervalRef.current = setInterval(() => {
+                setTimerOvertime((prev) => prev + 1);
+              }, 1000);
+            }
+            
+            return 0;
+          }
+          return prev - 1;
+        });
+        // Note: In timer mode, mode is fixed to 'timer', so stopwatch else branch is never executed
       }, 1000);
     } else {
       if (intervalRef.current) {
@@ -545,6 +1500,9 @@ export default function HomePage() {
 
   // 全屏功能
   useEffect(() => {
+    /**
+     * 处理全屏状态变化
+     */
     const handleFullscreenChange = () => {
       const isFullscreenActive = !!(
         document.fullscreenElement || 
@@ -553,6 +1511,11 @@ export default function HomePage() {
         (document as any).msFullscreenElement
       );
       setIsFullscreen(isFullscreenActive);
+      
+      // 如果退出全屏，清除sessionStorage中的标记
+      if (!isFullscreenActive && typeof window !== 'undefined') {
+        sessionStorage.removeItem('shouldEnterFullscreen');
+      }
     };
 
     // 监听各种全屏事件
@@ -561,6 +1524,52 @@ export default function HomePage() {
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     
+    // 初始检查全屏状态
+    handleFullscreenChange();
+    
+    // 检查是否需要自动进入全屏（从其他页面跳转过来时）
+    if (typeof window !== 'undefined') {
+      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
+      if (shouldEnterFullscreen) {
+        // 清除标记，避免重复进入
+        sessionStorage.removeItem('shouldEnterFullscreen');
+        
+        // 延迟执行以确保页面完全加载
+        const timer = setTimeout(async () => {
+          // 检查全屏API是否支持
+          if (document.fullscreenEnabled || (document as any).webkitFullscreenEnabled) {
+            try {
+              // 尝试进入全屏
+              if (document.documentElement.requestFullscreen) {
+                await document.documentElement.requestFullscreen();
+              } else if ((document.documentElement as any).webkitRequestFullscreen) {
+                await (document.documentElement as any).webkitRequestFullscreen();
+              } else if ((document.documentElement as any).mozRequestFullScreen) {
+                await (document.documentElement as any).mozRequestFullScreen();
+              } else if ((document.documentElement as any).msRequestFullscreen) {
+                await (document.documentElement as any).msRequestFullscreen();
+              }
+            } catch (error) {
+              console.log('Auto fullscreen failed, using simulated fullscreen:', error);
+              // 如果API不可用，使用模拟全屏
+              setIsFullscreen(true);
+            }
+          } else {
+            // 如果不支持全屏API，使用模拟全屏
+            setIsFullscreen(true);
+          }
+        }, 100);
+        
+        return () => {
+          clearTimeout(timer);
+          document.removeEventListener('fullscreenchange', handleFullscreenChange);
+          document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+          document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+          document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+        };
+      }
+    }
+    
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -568,6 +1577,15 @@ export default function HomePage() {
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
     };
   }, []);
+
+  // 同步 isFullscreen 状态到 body 类名（用于隐藏 Header 和 Footer）
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.classList.add('fullscreen-mode');
+    } else {
+      document.body.classList.remove('fullscreen-mode');
+    }
+  }, [isFullscreen]);
 
   // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
   useEffect(() => {
@@ -579,7 +1597,8 @@ export default function HomePage() {
         clearTimeout(hideControlsTimeoutRef.current);
       }
       
-      // 只在全屏时，1.5秒后隐藏控制按钮（timer模式）
+      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
+      // Note: In timer mode, mode is fixed to 'timer', so alarm check is always true
       if (isFullscreen) {
         hideControlsTimeoutRef.current = setTimeout(() => {
           if (!isHoveringControls.current) {
@@ -608,7 +1627,8 @@ export default function HomePage() {
     };
   }, [isFullscreen, mode]);
 
-  // 非全屏模式下始终显示控制按钮
+  // 非全屏模式或闹钟模式下始终显示控制按钮
+  // Note: In timer mode, mode is fixed to 'timer', so alarm check is always false
   useEffect(() => {
     if (!isFullscreen) {
       setShowControls(true);
@@ -618,10 +1638,12 @@ export default function HomePage() {
     }
   }, [isFullscreen, mode]);
 
-  // Timer模式不支持世界时间，不需要重置城市选择
+  // 当切换离开世界时间模式时，重置选中的城市
+  // Note: In timer mode, mode is fixed to 'timer', so worldclock check is always true
   useEffect(() => {
-    // Timer mode doesn't use world clock, so no city selection to reset
-  }, []);
+    // Timer mode doesn't need to handle world clock city selection
+    // setSelectedCity(null);
+  }, [mode]);
 
   // 更新日期时间
   useEffect(() => {
@@ -649,6 +1671,17 @@ export default function HomePage() {
       
       // theme 由 next-themes 自动管理，无需手动加载
       if (savedSound) setSelectedSound(savedSound);
+      
+      // 加载声音使用统计
+      const savedSoundUsageStats = localStorage.getItem('timer-sound-usage-stats');
+      if (savedSoundUsageStats) {
+        try {
+          setSoundUsageStats(JSON.parse(savedSoundUsageStats));
+        } catch (e) {
+          console.error('Failed to parse saved sound usage stats');
+        }
+      }
+      
       // 加载独立的颜色设置
       const savedTimerColor = localStorage.getItem('timer-timer-color');
       const savedStopwatchColor = localStorage.getItem('timer-stopwatch-color');
@@ -767,6 +1800,7 @@ export default function HomePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('timer-sound', selectedSound);
+      localStorage.setItem('timer-sound-usage-stats', JSON.stringify(soundUsageStats));
       localStorage.setItem('timer-timer-color', timerColor);
       localStorage.setItem('timer-stopwatch-color', stopwatchColor);
       localStorage.setItem('timer-worldclock-color', worldClockColor);
@@ -1035,10 +2069,55 @@ export default function HomePage() {
     };
   }, [timeLeft, stopwatchTime, mode, isFullscreen]);
 
-  // 获取天气和位置数据
+  // 获取天气和位置数据 - 优化加载速度，添加超时处理
   useEffect(() => {
     const fetchWeatherAndLocation = async () => {
+      // 创建带超时的fetch函数
+      const fetchWithTimeout = (url: string, timeout = 5000) => {
+        return Promise.race([
+          fetch(url),
+          new Promise<Response>((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+          )
+        ]);
+      };
+
+      // 天气信息缓存键
+      const WEATHER_CACHE_KEY = 'weather-cache';
+
+      // 从sessionStorage获取缓存的天气信息
+      const getCachedWeather = (): { temp: number; condition: string; icon: string } | null => {
+        if (typeof window === 'undefined') return null;
+        try {
+          const cached = sessionStorage.getItem(WEATHER_CACHE_KEY);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (error) {
+          console.warn('Failed to read cached weather:', error);
+        }
+        return null;
+      };
+
+      // 将天气信息保存到sessionStorage
+      const setCachedWeather = (weatherInfo: { temp: number; condition: string; icon: string }) => {
+        if (typeof window === 'undefined') return;
+        try {
+          sessionStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherInfo));
+          console.log('Weather info cached to sessionStorage');
+        } catch (error) {
+          console.warn('Failed to cache weather:', error);
+        }
+      };
+
       try {
+        // 先尝试从缓存读取天气信息
+        const cachedWeather = getCachedWeather();
+        if (cachedWeather) {
+          console.log('Using cached weather:', cachedWeather);
+          setWeather(cachedWeather);
+        }
+
         // 根据当前语言设置API语言参数
         const langMap: Record<string, string> = {
           'zh': 'zh-CN',
@@ -1046,11 +2125,13 @@ export default function HomePage() {
         };
         const apiLang = langMap[locale] || 'en';
         
-        // 获取IP定位 (使用支持多语言的ip-api.com)
-        const locationRes = await fetch(`http://ip-api.com/json/?lang=${apiLang}`);
-        const locationData = await locationRes.json();
+        // 获取IP定位 (使用封装的IP信息服务，自动尝试多个接口，支持缓存)
+        const locationData = await getIpInfo({
+          lang: apiLang,
+          timeout: 3000,
+        });
         
-        if (locationData.status === 'success') {
+        if (locationData) {
           const city = locationData.city || locationData.regionName || '北京';
           const timezone = locationData.timezone || 'Asia/Shanghai';
           let country = locationData.country || '中国';
@@ -1081,17 +2162,43 @@ export default function HomePage() {
             country
           });
         
-        // 获取天气数据 (使用wttr.in API)
-          const weatherRes = await fetch(`https://wttr.in/${locationData.city || 'Beijing'}?format=j1`);
-        const weatherData = await weatherRes.json();
-        
-        if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
-          const current = weatherData.current_condition[0];
-          setWeather({
-            temp: parseInt(current.temp_C),
-            condition: current.weatherDesc[0].value,
-            icon: current.weatherCode
-          });
+          // 如果已经有缓存的天气信息，就不需要再请求了
+          if (cachedWeather) {
+            console.log('Using cached weather, skipping API request');
+            return;
+          }
+
+          // 获取天气数据 (使用wttr.in API) - 添加超时，如果失败使用默认值
+          try {
+            // 优先使用经纬度查询天气
+            let weatherUrl: string;
+            if (locationData.latitude && locationData.longitude) {
+              weatherUrl = `https://wttr.in/${locationData.latitude},${locationData.longitude}?format=j1`;
+            } else {
+              const encodedCity = encodeURIComponent(city || 'Beijing');
+              weatherUrl = `https://wttr.in/${encodedCity}?format=j1`;
+            }
+            
+            const weatherRes = await fetchWithTimeout(weatherUrl, 30000);
+            const weatherData = await weatherRes.json();
+            
+            if (weatherData && weatherData.current_condition && weatherData.current_condition[0]) {
+              const current = weatherData.current_condition[0];
+              const weatherCode = String(current.weatherCode || '116');
+              const weatherInfo = {
+                temp: parseInt(current.temp_C) || 21,
+                condition: current.weatherDesc[0]?.value || 'Partly cloudy',
+                icon: weatherCode
+              };
+              setWeather((prev) => {
+                const newState = { ...weatherInfo };
+                setCachedWeather(newState);
+                return newState;
+              });
+            }
+          } catch (weatherError) {
+            // 天气API失败时使用默认值，但保留位置信息
+            console.warn('Weather API failed, using default:', weatherError);
           }
         } else {
           throw new Error('Location API failed');
@@ -1103,7 +2210,8 @@ export default function HomePage() {
           ? { city: '北京', country: '中国' }
           : { city: 'Beijing', country: 'China' };
         
-        setWeather({
+        // 确保使用默认天气（如果还没有设置）
+        setWeather(prev => prev || {
           temp: 21,
           condition: 'Partly cloudy',
           icon: '116'
@@ -1115,6 +2223,7 @@ export default function HomePage() {
       }
     };
 
+    // 立即显示默认天气，然后异步加载真实数据
     fetchWeatherAndLocation();
     // 每30分钟更新一次天气和位置
     const weatherInterval = setInterval(fetchWeatherAndLocation, 30 * 60 * 1000);
@@ -1136,8 +2245,9 @@ export default function HomePage() {
       }, 1500);
     };
     
-    // Timer模式不支持世界时钟，不需要启用
-    if (false && isFullscreen) {
+    // 只在世界时钟模式且全屏模式下启用
+    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
+    if (false && isFullscreen) { // Always false in timer mode
       window.addEventListener('mousemove', handleMouseMove);
       
       // 初始化：1.5秒后隐藏
@@ -1172,7 +2282,7 @@ export default function HomePage() {
             alarmRingStartTimeRef.current = startTime; // 使用ref记录开始响铃的时间
             setRingingAlarmId(alarm.id);
             setRingingAlarm(alarm); // 保存完整的闹钟对象
-            playNotificationSound();
+            playTimerNotificationSound();
             showDesktopNotification(t('notifications.alarm_title'), alarm.label || `${String(alarm.hour).padStart(2, '0')}:${String(alarm.minute).padStart(2, '0')}`);
             
             // 如果是单次闹钟，响铃后删除
@@ -1182,16 +2292,20 @@ export default function HomePage() {
               }, 1000);
             }
           }
-        } else if (alarm.repeat === 'once' && alarm.enabled) {
-          // 自动关闭过期的单次闹钟
-          const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
-          const currentTimeInMinutes = currentHour * 60 + currentMinute;
-          
-          // 如果当前时间已经超过闹钟时间，自动关闭闹钟
-          if (currentTimeInMinutes > alarmTimeInMinutes) {
-            toggleAlarm(alarm.id);
-          }
         }
+        // 注释掉自动关闭过期单次闹钟的逻辑
+        // 因为用户设置已过时间的闹钟时，应该理解为次日响铃
+        // 单次闹钟会在响铃后自动删除
+        // else if (alarm.repeat === 'once' && alarm.enabled) {
+        //   // 自动关闭过期的单次闹钟
+        //   const alarmTimeInMinutes = alarm.hour * 60 + alarm.minute;
+        //   const currentTimeInMinutes = currentHour * 60 + currentMinute;
+        //   
+        //   // 如果当前时间已经超过闹钟时间，自动关闭闹钟
+        //   if (currentTimeInMinutes > alarmTimeInMinutes) {
+        //     toggleAlarm(alarm.id);
+        //   }
+        // }
       });
     }, 1000);
 
@@ -1228,9 +2342,10 @@ export default function HomePage() {
     };
   }, [ringingAlarmId]);
 
-  // 自动滚动到最后添加的闹钟（timer模式不支持闹钟）
+  // 自动滚动到最后添加的闹钟
+  // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
   useEffect(() => {
-    if (lastAddedAlarmId && false) {
+    if (false) { // Always false in timer mode
       // 延迟一下，确保DOM已经渲染
       setTimeout(() => {
         const element = document.getElementById(`alarm-${lastAddedAlarmId}`);
@@ -1281,58 +2396,10 @@ export default function HomePage() {
     }, 10);
   };
 
-  /**
-   * 播放通知声音
-   * 
-   * @param soundId - 可选的声音 ID，如果未提供则使用当前选中的声音
-   */
-  const playNotificationSound = (soundId?: string) => {
-    try {
-      const soundType = soundId || selectedSound;
-      
-      // 先尝试播放实际文件
-      const sound = notifySoundMetaList.find(s => s.id === soundType);
-      if (sound && sound.path) {
-        // 停止所有当前播放的音频（包括所有带有 data-sound-id 的音频元素）
-        const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
-        allAudioElements.forEach((audio) => {
-          audio.pause();
-          audio.currentTime = 0;
-        });
-        
-        // 创建新的音频元素并播放
-        // 支持外部URL：如果path以http://或https://开头，直接使用；否则添加/前缀
-        const audioPath = sound.path.startsWith('http://') || sound.path.startsWith('https://') 
-          ? sound.path 
-          : `/${sound.path}`;
-        const audio = new Audio(audioPath);
-        audio.setAttribute('data-sound-id', soundType);
-        audio.volume = 0.8;
-        audio.play().catch((error) => {
-          console.warn('Failed to play sound file:', error);
-        });
-        return; // 成功播放文件，直接返回
-      }
-      
-      // 如果没有文件路径，使用 WebAudio 合成（保留原有逻辑作为后备）
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      // 使用默认频率 440Hz (A4)
-      oscillator.frequency.value = 440;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 1);
-    } catch (error) {
-      console.log('Audio notification not available');
+  // 播放提示音
+  const playTimerNotificationSound = () => {
+    if (soundEnabled) {
+      playNotificationSound(selectedSound);
     }
   };
 
@@ -1351,20 +2418,43 @@ export default function HomePage() {
   const toggleTimer = () => {
     if (mode === 'timer' && timeLeft === 0) return;
     setIsRunning(!isRunning);
+    // 停止提示音
+    stopNotificationSound();
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
+    }
   };
 
   const resetTimer = () => {
     setIsRunning(false);
-    if (mode === 'timer') {
-      setTimeLeft(initialTime);
-    } else {
-      setStopwatchTime(0);
+    // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
+    setTimeLeft(initialTime);
+    // 停止提示音
+    stopNotificationSound();
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
     }
   };
 
   const closeTimerEndModal = () => {
     setShowTimerEndModal(false);
     setTimerOvertime(0);
+    // 停止正在响的提示音
+    stopNotificationSound();
     // 清除超时计时器
     if (overtimeIntervalRef.current) {
       clearInterval(overtimeIntervalRef.current);
@@ -1372,15 +2462,48 @@ export default function HomePage() {
     }
   };
 
+  /**
+   * 导航到指定页面
+   * 如果当前处于全屏模式，保存状态到sessionStorage以便在新页面自动进入全屏
+   * @param page - 目标页面路径（不包含locale前缀）
+   */
   const navigateToPage = (page: string) => {
     const currentLocale = locale || 'en';
-    router.push(`/${currentLocale}/${page}`);
+    const targetPath = `/${currentLocale}/${page}`;
+    if (pathname !== targetPath) {
+      // 检查当前是否处于全屏模式
+      const isCurrentlyFullscreen = !!(
+        document.fullscreenElement || 
+        (document as any).webkitFullscreenElement || 
+        (document as any).mozFullScreenElement || 
+        (document as any).msFullscreenElement
+      ) || isFullscreen; // 也检查本地状态（用于模拟全屏）
+      
+      // 如果处于全屏模式，保存状态到sessionStorage
+      if (isCurrentlyFullscreen && typeof window !== 'undefined') {
+        sessionStorage.setItem('shouldEnterFullscreen', 'true');
+      }
+      
+      router.push(targetPath);
+    }
   };
 
   const setPresetTime = (seconds: number) => {
     setIsRunning(false);
     setInitialTime(seconds);
     setTimeLeft(seconds);
+    // 关闭倒计时结束模态框（如果正在显示）
+    if (showTimerEndModal) {
+      setShowTimerEndModal(false);
+      setTimerOvertime(0);
+      // 清除超时计时器
+      if (overtimeIntervalRef.current) {
+        clearInterval(overtimeIntervalRef.current);
+        overtimeIntervalRef.current = null;
+      }
+    }
+    // 停止提示音
+    stopNotificationSound();
   };
 
   // 闹钟相关函数
@@ -1606,12 +2729,12 @@ export default function HomePage() {
 
   const applyCustomTime = () => {
     const totalSeconds = customMinutes * 60 + customSeconds;
+    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
     if (totalSeconds > 0) {
       setIsRunning(false);
-      if (mode === 'timer') {
-        setInitialTime(totalSeconds);
-        setTimeLeft(totalSeconds);
-      }
+      // In timer mode, always set timer time
+      setInitialTime(totalSeconds);
+      setTimeLeft(totalSeconds);
       setShowEditModal(false);
     }
   };
@@ -1621,16 +2744,17 @@ export default function HomePage() {
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     
-    // 始终显示小时:分钟:秒（如果小时>0）
+    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
+    // Always show hours:minutes:seconds if hours > 0
     if (hours > 0) {
-  return {
+      return {
         hours: String(hours).padStart(2, '0'),
         mins: String(mins).padStart(2, '0'),
         secs: String(secs).padStart(2, '0'),
         hasHours: true
       };
     }
-  return {
+    return {
       hours: null,
       mins: String(mins).padStart(2, '0'),
       secs: String(secs).padStart(2, '0'),
@@ -1714,7 +2838,7 @@ export default function HomePage() {
       case '293': // Patchy light rain
       case '296': // Light rain
       case '299': // Moderate rain at times
-      case '302': // Moderate rain
+      case '302': // Moderate rainw
       case '305': // Heavy rain at times
       case '308': // Heavy rain
       case '311': // Light freezing rain
@@ -1736,14 +2860,13 @@ export default function HomePage() {
   };
 
   // 根据当前模式选择对应的颜色
-  const currentColorId = mode === 'timer' ? timerColor : stopwatchColor;
+  // Note: In timer mode, mode is fixed to 'timer', so always use timerColor
+  const currentColorId = timerColor;
   const themeColor = THEME_COLORS.find(c => c.id === currentColorId) || THEME_COLORS[0];
 
   return (
     <div 
-      className={`${isFullscreen ? 'fixed inset-0 z-50' : 'min-h-screen'} ${
-        backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''
-      } flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
+      className={`${isFullscreen ? 'fixed inset-0 z-50 h-screen' : 'min-h-screen'} ${backgroundType === 'default' ? (theme === 'dark' ? 'bg-black' : 'bg-gray-100') : ''} flex flex-col ${isFullscreen ? 'p-0' : 'p-0 sm:p-4'} transition-colors duration-300 relative`}
       style={{ 
         cursor: !showControls ? 'none' : 'default',
         backgroundColor: backgroundType === 'color' ? backgroundColor : undefined,
@@ -1789,7 +2912,8 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('stopwatch')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                mode === 'stopwatch' 
+                // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
+                false // Always false in timer mode
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
                     : 'bg-slate-400 text-white'
@@ -1804,6 +2928,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('alarm')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
                 false // Always false in timer mode
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
@@ -1819,6 +2944,7 @@ export default function HomePage() {
             <button
               onClick={() => navigateToPage('world-clock')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
                 false // Always false in timer mode
                   ? theme === 'dark'
                     ? 'bg-slate-600 text-white'
@@ -1982,7 +3108,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative">
+      <div className="flex-1 flex items-center justify-center relative w-full">
         {/* 顶部工具栏 - 只在非全屏显示 */}
         <AnimatePresence>
           {!isFullscreen && showControls && (
@@ -2017,7 +3143,8 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('stopwatch')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'stopwatch' 
+                    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
                       ? 'bg-white/10 hover:bg-white/20 text-white/60'
@@ -2032,6 +3159,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
+                    // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
                     false // Always false in timer mode
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -2047,6 +3175,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
+                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
                     false // Always false in timer mode
                       ? 'bg-blue-500 text-white' 
                       : theme === 'dark'
@@ -2221,7 +3350,8 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('stopwatch')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'stopwatch' 
+                    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
+                    false // Always false in timer mode
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
@@ -2234,6 +3364,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('alarm')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                    // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
                     false // Always false in timer mode
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
@@ -2247,6 +3378,7 @@ export default function HomePage() {
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigateToPage('world-clock')}
                   className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
+                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
                     false // Always false in timer mode
                       ? 'bg-blue-500 text-white shadow-blue-500/50' 
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
@@ -2294,14 +3426,16 @@ export default function HomePage() {
           )}
         </AnimatePresence>
 
+        {/* Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true */}
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-20 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-between flex-1 h-full'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-2 sm:pt-0 sm:mt-16 md:mt-20 lg:mt-24' : 'justify-between flex-1 h-full'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
+          {/* Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true */}
           {!isFullscreen && (
-            <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8">
+            <div className={`w-full flex justify-center mt-2 mb-1 sm:mt-0 sm:mb-3 md:mb-4`}>
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -2314,28 +3448,20 @@ export default function HomePage() {
               >
                 {/* 左侧：天气图标和温度 */}
                 <div className="flex items-center gap-1 sm:gap-1.5">
-                  {(showWeatherIcon || showTemperature) && weather ? (() => {
-                    const currentWeather = weather;
-                    if (!currentWeather) return null;
-                    
-                    // Type assertion: currentWeather is guaranteed to be non-null after the check
-                    const safeWeather = currentWeather as NonNullable<typeof currentWeather>;
-                    
-                    return (
-                      <>
-                        {showWeatherIcon && safeWeather.icon && (
-                          <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                            {getWeatherIcon(safeWeather.icon)}
-                          </div>
-                        )}
-                        {showTemperature && safeWeather.temp != null && (
-                          <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                            {safeWeather.temp}°C
-                          </span>
-                        )}
-                      </>
-                    );
-                  })() : (
+                  {(showWeatherIcon || showTemperature) && weather ? (
+                    <>
+                      {showWeatherIcon && (
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
+                          {getWeatherIcon(weather.icon)}
+                        </div>
+                      )}
+                      {showTemperature && (
+                        <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                          {weather.temp}°C
+                        </span>
+                      )}
+                    </>
+                  ) : (
                     <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
                   )}
                 </div>
@@ -2362,15 +3488,21 @@ export default function HomePage() {
           )}
 
           {/* Time Display or Alarm List or World Clock */}
-          {(mode === 'timer' || mode === 'stopwatch') ? (
-            <div className={`text-center w-full flex items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[60vh] sm:min-h-[50vh]'
-            }`}>
+          {/* Note: In timer mode, mode is fixed to 'timer', so timer/stopwatch check is always true */}
+          {/* Note: In timer mode, mode is fixed to 'timer', so timer check is always true */}
+          {true ? (
+            <div 
+              className={`text-center w-full flex flex-col items-center justify-center px-2 sm:px-4 ${
+                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[20vh] sm:min-h-[35vh] md:min-h-[45vh] mt-2 sm:-mt-4 md:-mt-6 lg:-mt-8'
+              }`}
+              style={{}}
+            >
               <div 
                 id="timer-display"
                 className={`${
                   (() => {
-                    const time = mode === 'timer' ? formatTime(timeLeft) : formatTime(stopwatchTime);
+                    // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
+                    const time = formatTime(timeLeft);
                     // 根据是否有小时调整字体大小
                     if (isFullscreen) {
                       return time.hasHours 
@@ -2389,24 +3521,23 @@ export default function HomePage() {
                   letterSpacing: '0.05em',
                   WebkitFontSmoothing: 'antialiased',
                   MozOsxFontSmoothing: 'grayscale',
+                  order: 1
                 }}
               >
                 {(() => {
-                  const time = mode === 'timer' ? formatTime(timeLeft) : formatTime(stopwatchTime);
+                  // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
+                  const time = formatTime(timeLeft);
                   
                   // 检查是否使用渐变色
-                  const hasGradient = themeColor.gradient && (
-                    mode === 'stopwatch' || 
-                    (mode === 'timer' && timeLeft > 60)
-                  );
+                  // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
+                  const hasGradient = themeColor.gradient && (timeLeft > 60);
                   
                   // 计算当前应该使用的颜色
-                  const currentColor = mode === 'timer' 
-                    ? (timeLeft === 0 
-                        ? '#22c55e'
-                        : timeLeft < 60 
-                        ? '#ef4444'
-                        : themeColor.color)
+                  // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
+                  const currentColor = timeLeft === 0 
+                    ? '#22c55e'
+                    : timeLeft < 60 
+                    ? '#ef4444'
                     : themeColor.color;
                   
                   // 数字的样式
@@ -2450,19 +3581,20 @@ export default function HomePage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full ${
+                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full flex-shrink-0 ${
                     isFullscreen 
                       ? 'text-3xl sm:text-4xl md:text-5xl' 
                       : 'text-2xl sm:text-3xl'
                   }`}
+                  style={{ order: 2 }}
                 >
-                  时间到
+                  {t('timer.time_up')}
                 </motion.div>
               )}
             </div>
-          ) : false ? (
+          ) : false ? ( // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
             /* 闹钟模式 */
-            <>
+            <div className={`w-full flex flex-col ${!isFullscreen ? 'pt-24 sm:pt-28 md:pt-32 lg:pt-40' : 'flex-1 h-full'}`}>
               {/* 日期和天气显示 - 非全屏时显示 */}
               {!isFullscreen && (
                 <div className="w-full flex justify-center mb-4 sm:mb-6 md:mb-8 px-4">
@@ -2478,28 +3610,20 @@ export default function HomePage() {
                   >
                     {/* 左侧：天气图标和温度 */}
                     <div className="flex items-center gap-1 sm:gap-1.5">
-                      {weather && (showWeatherIcon || showTemperature) ? (() => {
-                        const currentWeather = weather;
-                        if (!currentWeather) return null;
-                        
-                        // Type assertion: currentWeather is guaranteed to be non-null after the check
-                        const safeWeather = currentWeather as NonNullable<typeof currentWeather>;
-                        
-                        return (
-                          <>
-                            {showWeatherIcon && safeWeather.icon && (
-                              <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                                {getWeatherIcon(safeWeather.icon)}
-                              </div>
-                            )}
-                            {showTemperature && safeWeather.temp != null && (
-                              <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                                {safeWeather.temp}°C
-                              </span>
-                            )}
-                          </>
-                        );
-                      })() : (
+                      {weather && (showWeatherIcon || showTemperature) ? (
+                        <>
+                          {showWeatherIcon && weather?.icon && (
+                            <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
+                              {getWeatherIcon(weather!.icon)}
+                            </div>
+                          )}
+                          {showTemperature && weather?.temp !== undefined && (
+                            <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                              {weather!.temp}°C
+                            </span>
+                          )}
+                        </>
+                      ) : (
                         <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
                       )}
                     </div>
@@ -2526,17 +3650,22 @@ export default function HomePage() {
               )}
               
               {/* 闹钟列表 */}
-            <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
-              <div 
-                className="w-full overflow-x-hidden no-horizontal-scroll"
-                style={{
-                  width: '100%',
-                  minWidth: '300px',
-                  maxWidth: 'min(var(--timer-width, 672px), 90vw)'
-                }}
-              >
-                {/* 闹钟列表 */}
-                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
+            <div className={`w-full flex flex-col ${isFullscreen ? 'flex-1 min-h-0' : ''}`}>
+              <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
+                <div 
+                  className="w-full overflow-x-hidden no-horizontal-scroll"
+                  style={{
+                    width: '100%',
+                    minWidth: '300px',
+                    maxWidth: 'min(var(--timer-width, 672px), 90vw)'
+                  }}
+                >
+                  {/* 闹钟列表 */}
+                  <div className={`space-y-3 mb-4 overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll ${
+                    isFullscreen 
+                      ? 'max-h-[calc(100vh-500px)] sm:max-h-[calc(100vh-550px)] md:max-h-[calc(100vh-600px)] min-h-[150px] sm:min-h-[200px]' 
+                      : 'max-h-[calc(100vh-500px)] min-h-[200px]'
+                  }`}>
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 rounded-lg ${
                     theme === 'dark' 
@@ -2672,9 +3801,20 @@ export default function HomePage() {
                     </motion.div>
                   ))
                 )}
+                  </div>
+                </div>
               </div>
 
               {/* 添加闹钟按钮 */}
+              <div className={`w-full flex justify-center px-4 ${isFullscreen ? 'pb-4 sm:pb-6 md:pb-8' : ''}`}>
+                <div 
+                  className="w-full"
+                  style={{
+                    width: '100%',
+                    minWidth: '300px',
+                    maxWidth: 'min(var(--timer-width, 672px), 90vw)'
+                  }}
+                >
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -2687,24 +3827,24 @@ export default function HomePage() {
                   setEditingAlarmId(null);
                   setShowAddAlarm(true);
                 }}
-                className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
+                className={`w-full ${isFullscreen ? 'p-3 sm:p-4 md:p-5' : 'p-4'} mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
                   theme === 'dark' 
                     ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
                     : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
                 }`}
               >
-                <Plus className="w-5 h-5" />
-                  <span className="font-medium">{t('buttons.add_alarm')}</span>
+                <Plus className={`${isFullscreen ? 'w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6' : 'w-5 h-5'}`} />
+                <span className={`${isFullscreen ? 'text-sm sm:text-base md:text-lg' : 'font-medium'}`}>{t('buttons.add_alarm')}</span>
               </motion.button>
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
-              <div className="mt-8">
-                <p className={`text-xs sm:text-sm mb-3 sm:mb-4 text-center font-medium ${
+              <div className={`${isFullscreen ? 'mt-4 sm:mt-6 md:mt-8 pb-4 sm:pb-6 md:pb-8' : 'mt-8'}`}>
+                <p className={`${isFullscreen ? 'text-xs sm:text-sm md:text-base' : 'text-xs sm:text-sm'} mb-3 sm:mb-4 text-center font-medium ${
                   theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                 }`}>
                   {t('alarm.quick_add')}
                 </p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className={`grid ${isFullscreen ? 'grid-cols-3 sm:grid-cols-3 md:grid-cols-3' : 'grid-cols-2'} gap-2`}>
                   {[
                     { key: '1min', seconds: 60 },
                     { key: '3min', seconds: 180 },
@@ -2778,7 +3918,7 @@ export default function HomePage() {
                           `alarm-success-${hour}-${minute}`
                         );
                       }}
-                      className={`px-4 py-3 rounded-[8px] text-sm font-medium transition-all backdrop-blur-sm ${
+                      className={`${isFullscreen ? 'px-2 py-2 sm:px-3 sm:py-2.5 md:px-4 md:py-3 text-xs sm:text-sm md:text-base' : 'px-4 py-3 text-sm'} font-medium rounded-[8px] transition-all backdrop-blur-sm ${
                         theme === 'dark'
                           ? 'bg-slate-700/80 text-slate-200 hover:bg-slate-600/80 border border-slate-600/50'
                           : 'bg-white/80 text-slate-700 hover:bg-gray-50/80 border border-slate-200/50 shadow-sm'
@@ -2789,21 +3929,24 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
+                </div>
               </div>
             </div>
-            </>
-          ) : false ? (
+            </div>
+          ) : false ? ( // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
             /* 世界时间 */
-            <div className="w-full overflow-x-hidden mt-8 sm:mt-12 md:mt-16" style={{ paddingLeft: '32px', paddingRight: '32px' }}>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className={`w-full overflow-x-hidden ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : ''}`} 
+              style={{ paddingLeft: '32px', paddingRight: '32px' }}
+            >
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
                 {(selectedCity || userLocation) && (() => {
                   // 优先显示选中的城市，否则显示IP定位的城市
                   const displayCity = selectedCity || userLocation;
                   if (!displayCity) return null;
-                  
-                  // Type assertion: displayCity is guaranteed to be non-null after the check
-                  const city = displayCity as NonNullable<typeof displayCity>;
                   
                   return (
                     <motion.div
@@ -2827,138 +3970,26 @@ export default function HomePage() {
                       }}
                     >
                       <div className="w-full">
-                        {/* 顶部：城市、白天/黑夜图标和恢复默认按钮 */}
+                        {/* 顶部：城市和白天/黑夜图标 */}
                         <div className="flex items-center justify-between mb-7">
                           <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${
                             theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
-                            {city.city} | {city.country}
+                            {displayCity?.city} | {displayCity?.country}
                           </h2>
-                          <div className="flex items-center gap-3 sm:gap-4">
-                            {(() => {
-                              const now = new Date();
-                              const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
-                              const hours = userTime.getHours();
-                              const isNight = hours < 6 || hours >= 18;
-                              
-                              return isNight ? (
-                                <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
-                              ) : (
-                                <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
-                              );
-                            })()}
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={async () => {
-                                toast.loading(t('settings_panel.restoring_defaults'), { id: 'restore-defaults-worldclock' });
-                                
-                                // 根据IP地址判断白天/夜晚
-                                const determineThemeByIP = async (): Promise<'light' | 'dark'> => {
-                                  try {
-                                    // 先设置默认白天模式
-                                    setTheme('light');
-                                    
-                                    // 获取IP地址和时区信息
-                                    const langMap: Record<string, string> = {
-                                      'zh': 'zh-CN',
-                                      'en': 'en',
-                                    };
-                                    const apiLang = langMap[locale] || 'en';
-                                    
-                                    const locationRes = await fetch(`https://ip-api.com/json/?lang=${apiLang}`);
-                                    const locationData = await locationRes.json();
-                                    
-                                    if (locationData.status === 'success') {
-                                      // 获取用户时区的当前时间
-                                      const timezone = locationData.timezone || 'Asia/Shanghai';
-                                      
-                                      // 使用Intl API获取该时区的当前时间
-                                      const now = new Date();
-                                      const formatter = new Intl.DateTimeFormat('en-US', {
-                                        timeZone: timezone,
-                                        hour: 'numeric',
-                                        hour12: false
-                                      });
-                                      const parts = formatter.formatToParts(now);
-                                      const hours = parseInt(parts.find(part => part.type === 'hour')?.value || '12');
-                                      
-                                      // 判断白天（6:00-18:00）或夜晚（18:00-6:00）
-                                      if (hours >= 6 && hours < 18) {
-                                        return 'light'; // 白天
-                                      } else {
-                                        return 'dark'; // 夜晚
-                                      }
-                                    }
-                                  } catch (error) {
-                                    console.error('Failed to determine theme by IP:', error);
-                                  }
-                                  // 默认返回白天模式
-                                  return 'light';
-                                };
-
-                                try {
-                                  // 根据IP判断主题
-                                  const detectedTheme = await determineThemeByIP();
-                                  setTheme(detectedTheme);
-                                  
-                                  // 清除所有自定义设置
-                                  const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                                  allModes.forEach(modeKey => {
-                                    localStorage.removeItem(`timer-background-image-${modeKey}`);
-                                    localStorage.removeItem(`timer-manual-theme-${modeKey}`);
-                                    localStorage.removeItem(`timer-background-color-${modeKey}`);
-                                  });
-                                  
-                                  // 清除通用设置
-                                  localStorage.removeItem('timer-background-image');
-                                  localStorage.removeItem('timer-background-color');
-                                  localStorage.removeItem('timer-manual-theme');
-                                  
-                                  // 恢复默认颜色
-                                  setTimerColor('blue');
-                                  setStopwatchColor('blue');
-                                  setWorldClockColor('blue');
-                                  setWorldClockSmallCardColor('blue');
-                                  
-                                  // 恢复默认背景
-                                  setBackgroundType('default');
-                                  setBackgroundColor('#1e293b');
-                                  setBackgroundImage('');
-                                  setImageOverlayOpacity(40);
-                                  setImagePositionX(50);
-                                  setImagePositionY(50);
-                                  setApplyColorToAllPages(false);
-                                  
-                                  // 恢复默认显示选项
-                                  setProgressVisible(true);
-                                  setShowWeatherIcon(true);
-                                  setShowTemperature(true);
-                                  setShowDate(true);
-                                  setShowWeekday(true);
-                                  
-                                  // 恢复默认声音
-                                  setSelectedSound('bell');
-                                  
-                                  toast.success(t('settings_panel.defaults_restored'), { id: 'restore-defaults-worldclock' });
-                                } catch (error) {
-                                  console.error('Failed to restore defaults:', error);
-                                  toast.error(t('settings_panel.defaults_restored'), { id: 'restore-defaults-worldclock' });
-                                }
-                              }}
-                              className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-all ${
-                                theme === 'dark'
-                                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-                              }`}
-                              title={t('settings_panel.restore_defaults')}
-                            >
-                              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
-                              <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-                                {t('settings_panel.restore_defaults')}
-                              </span>
-                            </motion.button>
-                          </div>
+                          {(() => {
+                            if (!displayCity) return null;
+                            const now = new Date();
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity!.timezone }));
+                            const hours = userTime.getHours();
+                            const isNight = hours < 6 || hours >= 18;
+                            
+                            return isNight ? (
+                              <Moon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                            ) : (
+                              <Sun className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                            );
+                          })()}
                         </div>
                         
                         {/* 分隔线 */}
@@ -2966,6 +3997,8 @@ export default function HomePage() {
                         
                         {/* 大时间显示 */}
                         {(() => {
+                          if (!displayCity) return null;
+                          const city = displayCity!;
                           const now = new Date();
                           const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
                           const hours = String(userTime.getHours()).padStart(2, '0');
@@ -3034,8 +4067,9 @@ export default function HomePage() {
                           theme === 'dark' ? 'text-slate-300' : 'text-gray-700'
                         }`}>
                           {(() => {
+                            if (!displayCity) return null;
                             const now = new Date();
-                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: city.timezone }));
+                            const userTime = new Date(now.toLocaleString('en-US', { timeZone: displayCity!.timezone }));
                             const year = userTime.getFullYear();
                             const month = userTime.getMonth() + 1;
                             const day = userTime.getDate();
@@ -3067,39 +4101,27 @@ export default function HomePage() {
                         <div className="flex items-center justify-between">
                           {(() => {
                             // 优先使用 selectedCity 的天气，否则使用 weather 状态
-                            let displayWeather: { temp: number; icon: string } | null = null;
-                            
-                            if (selectedCity) {
-                              // Type assertion: selectedCity is guaranteed to be non-null in this block
-                              const city = selectedCity as NonNullable<typeof selectedCity>;
-                              displayWeather = { temp: city.temp, icon: city.weatherCode };
-                            } else if (weather) {
+                            // Note: selectedCity may be null, but we check it
+                            let displayWeather;
+                            if (selectedCity?.temp !== undefined) {
+                              const city = selectedCity!;
+                              displayWeather = { temp: city.temp, icon: city.weatherCode || '113' };
+                            } else {
                               displayWeather = weather;
                             }
                             
-                            if (!displayWeather?.icon || displayWeather?.temp == null) {
-                              return null;
-                            }
-                            
-                            if (!displayWeather) {
-                              return null;
-                            }
-                            
-                            // Type assertion: displayWeather is guaranteed to be non-null after the check
-                            const safeWeather = displayWeather as NonNullable<typeof displayWeather>;
-                            
-                            return (
+                            return displayWeather ? (
                               <div className="flex items-center gap-2 sm:gap-3">
                                 <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8">
-                                  {getWeatherIcon(safeWeather.icon)}
+                                  {getWeatherIcon(displayWeather.icon)}
                                 </div>
                                 <span className={`text-xl sm:text-2xl md:text-3xl font-semibold ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
                                 }`}>
-                                  {safeWeather.temp}°C
+                                  {displayWeather.temp}°C
                                 </span>
                               </div>
-                            );
+                            ) : null;
                           })()}
                           <div className="flex items-center gap-1.5 sm:gap-2">
                             <MapPin className={`w-4 h-4 sm:w-5 sm:h-5 ${
@@ -3108,7 +4130,7 @@ export default function HomePage() {
                             <span className={`text-sm sm:text-base md:text-lg font-normal ${
                               theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                             }`}>
-                              {city.city}
+                              {displayCity?.city}
                             </span>
                           </div>
                         </div>
@@ -3382,12 +4404,12 @@ export default function HomePage() {
                   )}
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           ) : null}
 
           {/* 进度条 - 仅非全屏模式显示 */}
           {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
-            <div className="w-full flex justify-center mt-6 sm:mt-8 md:mt-10">
+            <div className="w-full flex justify-center mt-2 sm:-mt-2 md:-mt-3 lg:-mt-4">
               <motion.div 
                 initial={{ opacity: 0, scaleX: 0 }}
                 animate={{ opacity: 1, scaleX: 1 }}
@@ -3433,15 +4455,19 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 ${
+                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
                   isFullscreen 
-                    ? 'mt-4 sm:mt-12 md:mt-16 lg:mt-20 px-2' 
-                    : 'mt-6 sm:mt-8 md:mt-12'
+                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
+                    : (mode === 'timer' ? 'mt-4 sm:mt-6 md:mt-8' : 'mt-4 sm:mt-6 md:mt-8')
                 }`}
+                style={isFullscreen ? {
+                  marginTop: 'auto'
+                } : {}} // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
-                {(mode === 'timer' || mode === 'stopwatch') && (
+                {/* Note: In timer mode, mode is fixed to 'timer', so timer/stopwatch check is always true */}
+                {true && (
                   <>
                     <motion.button
                       whileHover={{ scale: 1.05 }}
@@ -3531,7 +4557,7 @@ export default function HomePage() {
           <AnimatePresence>
             {!isFullscreen && mode === 'timer' && showControls && (
               <div 
-                className="mt-6 sm:mt-8 md:mt-12 w-full flex justify-center"
+                className="mt-10 sm:mt-8 md:mt-12 w-full flex justify-center"
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               >
@@ -3555,7 +4581,9 @@ export default function HomePage() {
                       {t('timer.second_timers')}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
-                      {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => (
+                      {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => {
+                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        return (
                         <Link
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
@@ -3568,7 +4596,7 @@ export default function HomePage() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             className={`px-3 py-2 rounded-[8px] text-xs font-medium transition-all text-center cursor-pointer backdrop-blur-sm ${
-                              initialTime === preset.seconds
+                              isSelected
                                 ? theme === 'dark'
                                   ? 'bg-slate-600 text-white shadow-md'
                                   : 'bg-slate-400 text-white shadow-md'
@@ -3580,7 +4608,7 @@ export default function HomePage() {
                             {t(`presets.${preset.key}`)}
                           </motion.div>
                         </Link>
-                      ))}
+                      )})}
                     </div>
                   </div>
 
@@ -3591,7 +4619,10 @@ export default function HomePage() {
                     </p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                       {PRESET_TIMES.filter(preset => preset.seconds < 7200 && preset.key.endsWith('min')).map((preset) => {
-                        const isSelected = pathname.endsWith(`/${preset.path}`);
+                        // 检查是否有任何预设路径匹配当前路径
+                        const hasPathMatch = PRESET_TIMES.some(p => pathname.endsWith(`/${p.path}`));
+                        // 如果路径匹配，则选中匹配的按钮；否则，如果初始时间是5分钟（300秒），默认选中5分钟按钮
+                        const isSelected = pathname.endsWith(`/${preset.path}`) || (!hasPathMatch && preset.seconds === 300 && initialPresetTime === 300);
                         return (
                         <Link
                           key={preset.seconds}
@@ -4020,7 +5051,7 @@ export default function HomePage() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 300 }}
             transition={{ type: "spring", damping: 20 }}
-            className="fixed right-4 top-20 bottom-4 z-40 w-80 flex flex-col"
+            className="fixed right-4 top-20 bottom-4 z-[60] w-80 flex flex-col"
           >
             <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl flex flex-col max-h-full overflow-hidden`}>
               {/* 固定头部 */}
@@ -4043,7 +5074,8 @@ export default function HomePage() {
               <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
-                  {false && worldClockColor !== worldClockSmallCardColor && (
+                  {/* Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true */}
+                  {false && (
                     <span className={`ml-2 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}>
                       {t('settings_panel.large_small_card_different')}
                     </span>
@@ -4114,9 +5146,10 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = timerColor === color.id;
-                    // Timer模式不支持世界时间
-                    const isSelectedSecondary = false;
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
+                    const isSelectedSecondary = false; // Always false in timer mode
                     
                     return (
                     <button
@@ -4163,9 +5196,10 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = timerColor === color.id;
-                    // Timer模式不支持世界时间
-                    const isSelectedSecondary = false;
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
+                    const isSelectedSecondary = false; // Always false in timer mode
                     
                     return (
                       <button
@@ -4212,9 +5246,10 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    const isSelectedPrimary = timerColor === color.id;
-                    // Timer模式不支持世界时间
-                    const isSelectedSecondary = false;
+                    const isSelectedPrimary = (mode === 'timer' ? timerColor : mode === 'stopwatch' ? stopwatchColor : worldClockColor) === color.id;
+                    // 世界时间模式下，检查小卡片是否使用此颜色
+                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
+                    const isSelectedSecondary = false; // Always false in timer mode
                     
                     return (
                       <button
@@ -4332,11 +5367,11 @@ export default function HomePage() {
                             style={{ backgroundColor: backgroundColor }}
                           />
                           <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                            当前背景颜色
+                            {t('settings_panel.current_background_color')}
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyColorToAllPages ? '已应用到所有功能页面' : '仅应用到计时器页面'}
+                          {applyColorToAllPages ? t('settings_panel.color_applied_all') : t('settings_panel.color_applied_current', { pageName: t(`modes.${mode}`) })}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4399,9 +5434,9 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = '计时器';
-                              const themeText = isLightBackground ? '白天模式' : '夜间模式';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                              const pageName = t(`modes.${mode}`);
+                              const themeText = isLightBackground ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
+                              toast.success(t('settings_panel.background_applied_to_current_page', { pageName, themeText }));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyColorToAllPages 
@@ -4419,7 +5454,7 @@ export default function HomePage() {
                       </div>
                     )}
                     {/* 深色系背景 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>深色系</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.dark_colors')}</p>
                     <div className="grid grid-cols-6 gap-2 mb-4">
                       {[
                         '#1e293b', '#0f172a', '#1e1b4b', '#1f2937', '#18181b',
@@ -4444,7 +5479,7 @@ export default function HomePage() {
                     </div>
                     
                     {/* 浅色系背景 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>浅色系</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.light_colors')}</p>
                     <div className="grid grid-cols-6 gap-2 mb-4">
                       {[
                         '#f8fafc', '#f1f5f9', '#e0e7ff', '#dbeafe', '#e0f2fe',
@@ -4469,7 +5504,7 @@ export default function HomePage() {
                     </div>
                     
                     {/* 自定义颜色输入 */}
-                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>自定义颜色</p>
+                    <p className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>{t('settings_panel.custom_color')}</p>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -4515,7 +5550,7 @@ export default function HomePage() {
                           </span>
                         </div>
                         <p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                          {applyToAllPages ? '已应用到所有功能页面' : '仅应用到计时器页面'}
+                          {applyToAllPages ? t('settings_panel.color_applied_all') : t('settings_panel.color_applied_current', { pageName: t(`modes.${mode}`) })}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -4591,9 +5626,9 @@ export default function HomePage() {
                                 }
                               }, 0);
                               
-                              const pageName = '计时器';
-                              const themeText = isLightImage ? '白天模式' : '夜间模式';
-                              toast.success(`当前背景仅应用到${pageName}页面，其他页面已恢复默认背景（${themeText}）`);
+                              const pageName = t(`modes.${mode}`);
+                              const themeText = isLightImage ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
+                              toast.success(t('settings_panel.background_applied_to_current_page', { pageName, themeText }));
                             }}
                             className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                               !applyToAllPages 
@@ -4749,8 +5784,8 @@ export default function HomePage() {
                                         }
                                       }
                                       
-                                      const pageName = t('modes.timer');
-                                      const themeText = isLightImage ? (locale === 'zh' ? '白天模式' : 'Light mode') : (locale === 'zh' ? '夜间模式' : 'Dark mode');
+                                      const pageName = mode === 'timer' ? t('modes.timer') : mode === 'stopwatch' ? t('modes.stopwatch') : mode === 'alarm' ? t('modes.alarm') : t('modes.worldclock');
+                                      const themeText = isLightImage ? t('settings_panel.light_mode') : t('settings_panel.dark_mode');
                                       toast.success(t('settings_panel.history_image_applied_current', { pageName, themeText }));
                                     }}
                                     className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded transition-colors"
@@ -5084,121 +6119,6 @@ export default function HomePage() {
                   </button>
                 </div>
                 </div>
-              </div>
-
-              {/* 恢复默认按钮 */}
-              <div className="flex-shrink-0 border-t p-6" style={{ borderColor: theme === 'dark' ? '#334155' : '#e5e7eb' }}>
-                <button
-                  onClick={async () => {
-                    toast.loading(t('settings_panel.restoring_defaults'), { id: 'restore-defaults' });
-                    
-                    // 根据IP地址判断白天/夜晚
-                    const determineThemeByIP = async (): Promise<'light' | 'dark'> => {
-                      try {
-                        // 先设置默认白天模式
-                        setTheme('light');
-                        
-                        // 获取IP地址和时区信息
-                        const langMap: Record<string, string> = {
-                          'zh': 'zh-CN',
-                          'en': 'en',
-                        };
-                        const apiLang = langMap[locale] || 'en';
-                        
-                        const locationRes = await fetch(`https://ip-api.com/json/?lang=${apiLang}`);
-                        const locationData = await locationRes.json();
-                        
-                        if (locationData.status === 'success') {
-                          // 获取用户时区的当前时间
-                          const timezone = locationData.timezone || 'Asia/Shanghai';
-                          
-                          // 使用Intl API获取该时区的当前时间
-                          const now = new Date();
-                          const formatter = new Intl.DateTimeFormat('en-US', {
-                            timeZone: timezone,
-                            hour: 'numeric',
-                            hour12: false
-                          });
-                          const parts = formatter.formatToParts(now);
-                          const hours = parseInt(parts.find(part => part.type === 'hour')?.value || '12');
-                          
-                          // 判断白天（6:00-18:00）或夜晚（18:00-6:00）
-                          if (hours >= 6 && hours < 18) {
-                            return 'light'; // 白天
-                          } else {
-                            return 'dark'; // 夜晚
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Failed to determine theme by IP:', error);
-                      }
-                      // 默认返回白天模式
-                      return 'light';
-                    };
-
-                    try {
-                      // 根据IP判断主题
-                      const detectedTheme = await determineThemeByIP();
-                      setTheme(detectedTheme);
-                      
-                      // 清除所有自定义设置
-                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                      allModes.forEach(modeKey => {
-                        localStorage.removeItem(`timer-background-image-${modeKey}`);
-                        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
-                        localStorage.removeItem(`timer-background-color-${modeKey}`);
-                      });
-                      
-                      // 清除通用设置
-                      localStorage.removeItem('timer-background-image');
-                      localStorage.removeItem('timer-background-color');
-                      localStorage.removeItem('timer-manual-theme');
-                      
-                      // 恢复默认颜色
-                      setTimerColor('blue');
-                      setStopwatchColor('blue');
-                      setWorldClockColor('blue');
-                      setWorldClockSmallCardColor('blue');
-                      
-                      // 恢复默认背景
-                      setBackgroundType('default');
-                      setBackgroundColor('#1e293b');
-                      setBackgroundImage('');
-                      setImageOverlayOpacity(40);
-                      setImagePositionX(50);
-                      setImagePositionY(50);
-                      setApplyColorToAllPages(false);
-                      
-                      // 恢复默认显示选项
-                      setProgressVisible(true);
-                      setShowWeatherIcon(true);
-                      setShowTemperature(true);
-                      setShowDate(true);
-                      setShowWeekday(true);
-                      
-                      // 恢复默认声音
-                      setSelectedSound('bell');
-                      
-                      toast.success(t('settings_panel.defaults_restored'), { id: 'restore-defaults' });
-                    } catch (error) {
-                      console.error('Failed to restore defaults:', error);
-                      toast.error(t('settings_panel.defaults_restored'), { id: 'restore-defaults' });
-                    }
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <RotateCcw className="w-5 h-5" />
-                    <span>{t('settings_panel.restore_defaults')}</span>
-                  </div>
-                  <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-200' : 'text-blue-100'}`}>
-                    {t('settings_panel.restore_defaults_desc')}
-                  </p>
-                </button>
               </div>
             </div>
           </motion.div>
@@ -5608,23 +6528,23 @@ export default function HomePage() {
                         
                         if (hours > 0) {
                           if (mins > 0) {
-                            return `${hours}小时${mins}分钟`;
+                            return `${hours} ${t('modals.hours')} ${mins} ${t('modals.minutes')}`;
                           }
-                          return `${hours}小时`;
+                          return `${hours} ${t('modals.hours')}`;
                         } else if (mins > 0) {
                           if (secs > 0) {
-                            return `${mins}分${secs}秒`;
+                            return `${mins} ${t('modals.minutes')} ${secs} ${t('modals.seconds')}`;
                           }
-                          return `${mins}分钟`;
+                          return `${mins} ${t('modals.minutes')}`;
                         } else {
-                          return `${secs}秒`;
+                          return `${secs} ${t('modals.seconds')}`;
                         }
                       })()}
                     </h2>
                     <p className={`text-sm xs:text-base sm:text-lg md:text-xl ${
                       theme === 'dark' ? 'text-slate-400' : 'text-gray-600'
                     }`}>
-                      倒计时已完成
+                      {t('modals.timer_completed')}
                     </p>
                   </motion.div>
                 </div>
@@ -5659,7 +6579,7 @@ export default function HomePage() {
                     <p className={`text-xs xs:text-sm sm:text-base font-bold uppercase tracking-wider xs:tracking-widest mb-3 xs:mb-4 sm:mb-6 ${
                       theme === 'dark' ? 'text-red-400' : 'text-red-600'
                     }`}>
-                      已超时
+                      {t('modals.overtime')}
                     </p>
                     <motion.div 
                       className={`text-4xl xs:text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black ${
@@ -5711,7 +6631,7 @@ export default function HomePage() {
                       : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white'
                   }`}
                 >
-                  知道了
+                  {t('modals.got_it')}
                 </motion.button>
               </div>
             </motion.div>
@@ -5816,6 +6736,374 @@ export default function HomePage() {
                   onClick={() => {
                     setShowWorldClockColorConfirm(false);
                     setPendingWorldClockColor(null);
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  {t('settings_panel.cancel')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 背景应用确认对话框 */}
+      <AnimatePresence>
+        {showBackgroundConfirm && pendingBackgroundImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+            onClick={() => {
+              setShowBackgroundConfirm(false);
+              setPendingBackgroundImage('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                应用背景图片
+              </h3>
+              
+              {/* 图片预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <img
+                  src={pendingBackgroundImage}
+                  alt="Background preview"
+                  className="w-full h-32 object-cover rounded-lg mb-3"
+                />
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  选择应用范围：
+                </p>
+              </div>
+              
+              {/* 选项说明 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                <div className="flex items-start gap-2 mb-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                  }`}>
+                    <span className="text-white text-xs font-bold">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                      所有页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                      计时器、秒表、闹钟、世界时间都使用此背景
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
+                  }`}>
+                    <span className="text-white text-xs font-bold">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                      仅当前页面
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      只在{mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 按钮 */}
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    // 应用到所有页面
+                    console.log('User selected "Apply to all pages"');
+                    setApplyToAllPages(true);
+                    setBackgroundImage(pendingBackgroundImage);
+                    
+                    // 保存到localStorage
+                    localStorage.setItem('timer-background-image', pendingBackgroundImage);
+                    
+                    // 分析图片亮度并自动设置主题
+                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                    toast.success(t('settings_panel.background_applied_all'));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_all')}
+                </button>
+                <button
+                  onClick={async () => {
+                    // 仅应用到当前页面
+                    console.log('User selected "Apply to current page only"');
+                    setApplyToAllPages(false);
+                    setBackgroundImage(pendingBackgroundImage);
+                    
+                    // 清除其他功能页面的背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      if (modeKey !== mode) {
+                        localStorage.removeItem(`timer-background-image-${modeKey}`);
+                      }
+                    });
+                    
+                    // 清除通用背景设置
+                    localStorage.removeItem('timer-background-image');
+                    
+                    // 分析图片亮度并自动设置主题和其他页面的默认背景
+                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
+                    setTimeout(() => {
+                      if (isLight) {
+                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
+                        if (theme !== 'light') setTheme('light');
+                        // 为其他页面设置浅色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                          }
+                        });
+                      } else {
+                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
+                        if (theme !== 'dark') setTheme('dark');
+                        // 为其他页面设置深色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                          }
+                        });
+                      }
+                    }, 0);
+                    
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                    const pageName = t(`modes.${mode}`);
+                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_current')}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBackgroundConfirm(false);
+                    setPendingBackgroundImage('');
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  {t('settings_panel.cancel')}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 纯色背景应用确认对话框 */}
+      <AnimatePresence>
+        {showColorBackgroundConfirm && pendingBackgroundColor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+            onClick={() => {
+              setShowColorBackgroundConfirm(false);
+              setPendingBackgroundColor('');
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {t('settings_panel.apply_solid_color_background')}
+              </h3>
+              
+              {/* 颜色预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <div 
+                  className="w-full h-20 rounded-lg mb-3 border-2 border-gray-300"
+                  style={{ backgroundColor: pendingBackgroundColor }}
+                />
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  {t('settings_panel.select_application_scope')}
+                </p>
+              </div>
+              
+              {/* 选项说明 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+                <div className="flex items-start gap-2 mb-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                  }`}>
+                    <span className="text-white text-xs font-bold">1</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                      {t('settings_panel.all_functional_pages')}
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                      {t('settings_panel.all_pages_use_this_background')}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
+                  }`}>
+                    <span className="text-white text-xs font-bold">2</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                      {t('settings_panel.current_functional_page_only')}
+                    </p>
+                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                      {t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 按钮组 */}
+              <div className="space-y-3">
+                <button
+                  onClick={async () => {
+                    // 应用到所有功能页面
+                    console.log('用户选择了"应用到所有功能页面"');
+                    setApplyColorToAllPages(true);
+                    setBackgroundColor(pendingBackgroundColor);
+                    
+                    // 保存到通用 localStorage
+                    localStorage.setItem('timer-background-color', pendingBackgroundColor);
+                    
+                    // 清除各个功能页面的专用背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      localStorage.removeItem(`timer-background-color-${modeKey}`);
+                    });
+                    
+                    // 分析颜色亮度并自动设置主题
+                    const isLight = isLightColor(pendingBackgroundColor);
+                    setTimeout(() => {
+                      if (isLight) {
+                        if (theme !== 'light') setTheme('light');
+                      } else {
+                        if (theme !== 'dark') setTheme('dark');
+                      }
+                    }, 0);
+                    
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
+                    toast.success(t('settings_panel.background_applied_all'));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_all')}
+                </button>
+                <button
+                  onClick={async () => {
+                    // 仅应用到当前功能页面
+                    console.log('用户选择了"仅应用到当前功能页面"');
+                    setApplyColorToAllPages(false);
+                    setBackgroundColor(pendingBackgroundColor);
+                    
+                    // 保存当前页面的背景颜色到 localStorage
+                    localStorage.setItem(`timer-background-color-${mode}`, pendingBackgroundColor);
+                    
+                    // 清除其他功能页面的背景设置
+                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+                    allModes.forEach(modeKey => {
+                      if (modeKey !== mode) {
+                        localStorage.removeItem(`timer-background-color-${modeKey}`);
+                      }
+                    });
+                    
+                    // 清除通用背景设置
+                    localStorage.removeItem('timer-background-color');
+                    
+                    // 分析颜色亮度并自动设置主题和其他页面的默认背景
+                    const isLight = isLightColor(pendingBackgroundColor);
+                    setTimeout(() => {
+                      if (isLight) {
+                        // 浅色背景：设置为白天模式，其他页面使用浅色默认背景
+                        if (theme !== 'light') setTheme('light');
+                        // 为其他页面设置浅色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
+                          }
+                        });
+                      } else {
+                        // 深色背景：设置为夜间模式，其他页面使用深色默认背景
+                        if (theme !== 'dark') setTheme('dark');
+                        // 为其他页面设置深色默认背景
+                        allModes.forEach(modeKey => {
+                          if (modeKey !== mode) {
+                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
+                          }
+                        });
+                      }
+                    }, 0);
+                    
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
+                    const pageName = t(`modes.${mode}`);
+                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_current')}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowColorBackgroundConfirm(false);
+                    setPendingBackgroundColor('');
                   }}
                   className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
@@ -5946,362 +7234,6 @@ export default function HomePage() {
                   onClick={() => {
                     setShowThemeColorConfirm(false);
                     setPendingThemeColor(null);
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {t('settings_panel.cancel')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 背景应用确认对话框 */}
-      <AnimatePresence>
-        {showBackgroundConfirm && pendingBackgroundImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => {
-              setShowBackgroundConfirm(false);
-              setPendingBackgroundImage('');
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                应用背景图片
-              </h3>
-              
-              {/* 图片预览 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <img
-                  src={pendingBackgroundImage}
-                  alt="Background preview"
-                  className="w-full h-32 object-cover rounded-lg mb-3"
-                />
-                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  选择应用范围：
-                </p>
-              </div>
-              
-              {/* 选项说明 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                <div className="flex items-start gap-2 mb-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
-                  }`}>
-                    <span className="text-white text-xs font-bold">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                      所有页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                      计时器、秒表、闹钟、世界时间都使用此背景
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
-                  }`}>
-                    <span className="text-white text-xs font-bold">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                      仅当前页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在计时器页面使用此背景
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 按钮 */}
-              <div className="space-y-3">
-                <button
-                  onClick={async () => {
-                    // 应用到所有页面
-                    console.log('User selected "Apply to all pages"');
-                    setApplyToAllPages(true);
-                    setBackgroundImage(pendingBackgroundImage);
-                    
-                    // 保存到localStorage
-                    localStorage.setItem('timer-background-image', pendingBackgroundImage);
-                    
-                    // 分析图片亮度并自动设置主题
-                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
-                    setTimeout(() => {
-                      if (isLight) {
-                        if (theme !== 'light') setTheme('light');
-                      } else {
-                        if (theme !== 'dark') setTheme('dark');
-                      }
-                    }, 0);
-                    
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                    toast.success(t('settings_panel.background_applied_all'));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_all')}
-                </button>
-                <button
-                  onClick={async () => {
-                    // 仅应用到当前页面
-                    console.log('User selected "Apply to current page only"');
-                    setApplyToAllPages(false);
-                    setBackgroundImage(pendingBackgroundImage);
-                    
-                    // 清除其他功能页面的背景设置
-                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                    allModes.forEach(modeKey => {
-                      if (modeKey !== mode) {
-                        localStorage.removeItem(`timer-background-image-${modeKey}`);
-                      }
-                    });
-                    
-                    // 清除通用背景设置
-                    localStorage.removeItem('timer-background-image');
-                    
-                    // 分析图片亮度并自动设置主题和其他页面的默认背景
-                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
-                    setTimeout(() => {
-                      if (isLight) {
-                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
-                        if (theme !== 'light') setTheme('light');
-                        // 为其他页面设置浅色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                          }
-                        });
-                      } else {
-                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
-                        if (theme !== 'dark') setTheme('dark');
-                        // 为其他页面设置深色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                          }
-                        });
-                      }
-                    }, 0);
-                    
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                    toast.success(`背景已应用到${pageName}功能页面`);
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
-                  }`}
-                >
-                  仅应用到当前功能页面
-                </button>
-                <button
-                  onClick={() => {
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {t('settings_panel.cancel')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 纯色背景应用确认对话框 */}
-      <AnimatePresence>
-        {showColorBackgroundConfirm && pendingBackgroundColor && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => {
-              setShowColorBackgroundConfirm(false);
-              setPendingBackgroundColor('');
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                应用纯色背景
-              </h3>
-              
-              {/* 颜色预览 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <div 
-                  className="w-full h-20 rounded-lg mb-3 border-2 border-gray-300"
-                  style={{ backgroundColor: pendingBackgroundColor }}
-                />
-                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  选择应用范围：
-                </p>
-              </div>
-              
-              {/* 选项说明 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                <div className="flex items-start gap-2 mb-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
-                  }`}>
-                    <span className="text-white text-xs font-bold">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                      所有功能页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                      计时器、秒表、闹钟、世界时间都使用此背景
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
-                  }`}>
-                    <span className="text-white text-xs font-bold">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                      仅当前功能页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在计时器页面使用此背景
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 按钮组 */}
-              <div className="space-y-3">
-                <button
-                  onClick={async () => {
-                    // 应用到所有功能页面
-                    console.log('用户选择了"应用到所有功能页面"');
-                    setApplyColorToAllPages(true);
-                    setBackgroundColor(pendingBackgroundColor);
-                    
-                    // 分析颜色亮度并自动设置主题
-                    const isLight = isLightColor(pendingBackgroundColor);
-                    setTimeout(() => {
-                      if (isLight) {
-                        if (theme !== 'light') setTheme('light');
-                      } else {
-                        if (theme !== 'dark') setTheme('dark');
-                      }
-                    }, 0);
-                    
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
-                    toast.success(t('settings_panel.background_applied_all'));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_all')}
-                </button>
-                <button
-                  onClick={async () => {
-                    // 仅应用到当前功能页面
-                    console.log('用户选择了"仅应用到当前功能页面"');
-                    setApplyColorToAllPages(false);
-                    setBackgroundColor(pendingBackgroundColor);
-                    
-                    // 清除其他功能页面的背景设置
-                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                    allModes.forEach(modeKey => {
-                      if (modeKey !== mode) {
-                        localStorage.removeItem(`timer-background-color-${modeKey}`);
-                      }
-                    });
-                    
-                    // 清除通用背景设置
-                    localStorage.removeItem('timer-background-color');
-                    
-                    // 分析颜色亮度并自动设置主题和其他页面的默认背景
-                    const isLight = isLightColor(pendingBackgroundColor);
-                    setTimeout(() => {
-                      if (isLight) {
-                        // 浅色背景：设置为白天模式，其他页面使用浅色默认背景
-                        if (theme !== 'light') setTheme('light');
-                        // 为其他页面设置浅色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                          }
-                        });
-                      } else {
-                        // 深色背景：设置为夜间模式，其他页面使用深色默认背景
-                        if (theme !== 'dark') setTheme('dark');
-                        // 为其他页面设置深色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                          }
-                        });
-                      }
-                    }, 0);
-                    
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
-                    const pageName = mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间';
-                    toast.success(`背景已应用到${pageName}功能页面`);
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
-                  }`}
-                >
-                  仅应用到当前功能页面
-                </button>
-                <button
-                  onClick={() => {
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
                   }}
                   className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
                     theme === 'dark'
