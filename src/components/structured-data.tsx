@@ -9,7 +9,7 @@ export async function StructuredData({ locale, webUrl }: StructuredDataProps) {
   const t = await getTranslations();
 
   const title = t("metadata.title") || "Timero - Free Online Timer, Stopwatch, Alarm & World Clock";
-  const description = t("metadata.description") || "Free online timer and clock tool with countdown timer, stopwatch, alarm clock, and world clock features.";
+  const description = t("metadata.description") || "Free online timer tool featuring 5 minute timer, 10 minute timer, and 15 minute timer. Set custom countdown timers (10s-16h), use precise stopwatch with lap timer, multi-alarm system, and world clock.";
 
   // WebApplication structured data
   const webApplicationSchema = {
@@ -32,6 +32,9 @@ export async function StructuredData({ locale, webUrl }: StructuredDataProps) {
       "ratingCount": "1000"
     },
     "featureList": [
+      "5 Minute Timer",
+      "10 Minute Timer",
+      "15 Minute Timer",
       "Countdown Timer (10 seconds to 16 hours)",
       "Precise Stopwatch with Lap Timer",
       "Multi-Alarm System",
