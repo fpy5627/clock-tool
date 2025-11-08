@@ -19,6 +19,9 @@ import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
 import ClockControlButtons from '@/components/ui/ClockControlButtons';
 import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
+import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
+import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
+import ThemeColorConfirmDialog from '@/components/ui/ThemeColorConfirmDialog';
 
 
 // 闹钟类型定义
@@ -836,31 +839,6 @@ export default function HomePage() {
   // 注意：toggleFullscreen 函数已在 useFullscreen hook 中提供
 
 
-  const formatDate = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth() + 1;
-    const day = currentDate.getDate();
-    const weekdays = [
-      t('weekdays.sunday'), 
-      t('weekdays.monday'), 
-      t('weekdays.tuesday'), 
-      t('weekdays.wednesday'), 
-      t('weekdays.thursday'), 
-      t('weekdays.friday'), 
-      t('weekdays.saturday')
-    ];
-    const weekday = weekdays[currentDate.getDay()];
-    
-    // 根据语言环境选择日期格式
-    const dateStr = locale === 'zh' 
-      ? `${year}年${month}月${day}日`
-      : `${month}/${day}/${year}`;
-    
-    return {
-      dateStr,
-      weekdayStr: weekday
-    };
-  };
 
   // 格式化时长（仅返回时长字符串，不包含前缀）
   const formatDuration = (seconds: number) => {
@@ -884,67 +862,6 @@ export default function HomePage() {
     return t('alarm.ringing', { duration });
   };
 
-  // 根据天气代码返回图标
-  const getWeatherIcon = (code: string) => {
-    const iconProps = { 
-      className: `w-full h-full ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}` 
-    };
-    
-    // wttr.in 天气代码映射
-    switch(code) {
-      case '113': // Sunny/Clear
-        return <Sun {...iconProps} />;
-      case '116': // Partly cloudy
-        return <Cloudy {...iconProps} />;
-      case '119': // Cloudy
-      case '122': // Overcast
-        return <Cloud {...iconProps} />;
-      case '143': // Mist
-      case '248': // Fog
-      case '260': // Freezing fog
-        return <Cloud {...iconProps} />;
-      case '176': // Patchy rain possible
-      case '263': // Patchy light drizzle
-      case '266': // Light drizzle
-      case '281': // Freezing drizzle
-      case '284': // Heavy freezing drizzle
-        return <CloudDrizzle {...iconProps} />;
-      case '179': // Patchy snow possible
-      case '227': // Blowing snow
-      case '323': // Patchy light snow
-      case '326': // Light snow
-      case '329': // Patchy moderate snow
-      case '332': // Moderate snow
-      case '335': // Patchy heavy snow
-      case '338': // Heavy snow
-      case '368': // Light snow showers
-      case '371': // Moderate or heavy snow showers
-        return <CloudSnow {...iconProps} />;
-      case '182': // Patchy sleet possible
-      case '185': // Patchy freezing drizzle possible
-      case '293': // Patchy light rain
-      case '296': // Light rain
-      case '299': // Moderate rain at times
-      case '302': // Moderate rain
-      case '305': // Heavy rain at times
-      case '308': // Heavy rain
-      case '311': // Light freezing rain
-      case '314': // Moderate or heavy freezing rain
-      case '317': // Light sleet
-      case '320': // Moderate or heavy sleet
-      case '350': // Ice pellets
-      case '353': // Light rain shower
-      case '356': // Moderate or heavy rain shower
-      case '359': // Torrential rain shower
-      case '362': // Light sleet showers
-      case '365': // Moderate or heavy sleet showers
-      case '374': // Light showers of ice pellets
-      case '377': // Moderate or heavy showers of ice pellets
-        return <CloudRain {...iconProps} />;
-      default:
-        return <Cloud {...iconProps} />;
-    }
-  };
 
   // 根据当前模式选择对应的颜色
   // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch checks are never true
@@ -1347,58 +1264,19 @@ export default function HomePage() {
           className={`w-full flex flex-col items-center ${!isFullscreen ? 'mt-16 sm:mt-20 md:mt-24 lg:mt-28' : 'pt-12 sm:pt-20'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
-          {!isFullscreen && (
-            <div className="w-full flex justify-center -mt-4 mb-4 sm:mt-0 sm:mb-6 md:mb-8">
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center justify-between"
-                style={{
-                  width: 'var(--timer-width, auto)',
-                  minWidth: '300px',
-                  maxWidth: '90vw'
-                }}
-              >
-                {/* 左侧：天气图标和温度 */}
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  {weather && (showWeatherIcon || showTemperature) ? (
-                    <>
-                      {showWeatherIcon && (
-                        <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                          {getWeatherIcon(weather.icon)}
-                        </div>
-                      )}
-                      {showTemperature && (
-                        <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                          {weather.temp}°C
-                        </span>
-                      )}
-                    </>
-                  ) : (
-                    <span className="w-4 h-4 sm:w-5 sm:h-5"></span>
-                  )}
-                </div>
-                
-                {/* 右侧：日期 */}
-                <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
-                  style={{
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {(() => {
-                    const { dateStr, weekdayStr } = formatDate();
-                    return (
-                      <>
-                        {showDate && <span>{dateStr}</span>}
-                        {showDate && showWeekday && <span>&nbsp;</span>}
-                        {showWeekday && <span>{weekdayStr}</span>}
-    </>
-  );
-                  })()}
-                </div>
-              </motion.div>
-            </div>
-          )}
+          <WeatherDateDisplay
+            weather={weather}
+            theme={theme}
+            showWeatherIcon={showWeatherIcon}
+            showTemperature={showTemperature}
+            showDate={showDate}
+            showWeekday={showWeekday}
+            currentDate={currentDate}
+            locale={locale}
+            t={t}
+            isFullscreen={isFullscreen}
+            className="-mt-4 mb-4 sm:mt-0 sm:mb-6 md:mb-8"
+          />
 
           {/* Alarm List */}
           {mode === 'alarm' ? (
@@ -3234,503 +3112,56 @@ export default function HomePage() {
       </ClockSettingsPanel>
       
       {/* 主题颜色设置确认对话框 */}
-      <AnimatePresence>
-        {showThemeColorConfirm && pendingThemeColor && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
-            onClick={() => {
+      <ThemeColorConfirmDialog
+        show={showThemeColorConfirm}
+        pendingThemeColor={pendingThemeColor}
+        theme={theme}
+        t={t}
+        mode={mode}
+        onClose={() => {
               setShowThemeColorConfirm(false);
               setPendingThemeColor(null);
             }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {t('settings_panel.theme_color_confirm_title', { default: '设置主题颜色' })}
-              </h3>
-              
-              {/* 颜色预览 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  {t('settings_panel.color_preview', { default: '预览新颜色：' })}
-                </p>
-                <div 
-                  className="text-5xl font-bold text-center mb-2"
-                  style={{
-                    fontFamily: '"Rajdhani", sans-serif',
-                    color: (() => {
-                      const previewColor = THEME_COLORS.find(c => c.id === pendingThemeColor);
-                      if (!previewColor) {
-                        const defaultColor = theme === 'dark' ? 'white' : 'black';
-                        return defaultColor === 'white' ? '#ffffff' : '#000000';
-                      }
-                      return previewColor.gradient ? previewColor.color : previewColor.color;
-                    })(),
-                  }}
-                  suppressHydrationWarning
-                >
-                  {String(currentDate.getHours()).padStart(2, '0')}:{String(currentDate.getMinutes()).padStart(2, '0')}:{String(currentDate.getSeconds()).padStart(2, '0')}
-                </div>
-                <p className={`text-xs text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
-                  {(() => {
-                    if (pendingThemeColor === 'white' || pendingThemeColor === 'black') {
-                      return t('settings_panel.default');
-                    }
-                    const color = THEME_COLORS.find(c => c.id === pendingThemeColor);
-                    return color?.key ? t(`colors.${color.key}`) : '';
-                  })()}
-                </p>
-              </div>
-              
-              <p className={`text-base mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                {t('settings_panel.alarm_color_confirm_message', { default: '请选择应用范围：' })}
-              </p>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // 应用到所有页面
-                    if (pendingThemeColor) {
-                      // 应用到所有功能页面
-                      localStorage.setItem('timer-timer-color', pendingThemeColor);
-                      localStorage.setItem('timer-stopwatch-color', pendingThemeColor);
-                      localStorage.setItem('timer-alarm-color', pendingThemeColor);
-                      localStorage.setItem('timer-worldclock-color', pendingThemeColor);
-                      localStorage.setItem('timer-worldclock-smallcard-color', pendingThemeColor);
-                      // 设置闹钟颜色
-                      setAlarmColor(pendingThemeColor);
-                      // 触发自定义事件，通知其他页面更新颜色
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('color-change'));
-                      }
-                    }
-                    setShowThemeColorConfirm(false);
-                    setPendingThemeColor(null);
-                    toast.success(t('settings_panel.color_applied_all', { default: '颜色已应用到所有页面' }));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_all_pages', { default: '应用到所有页面' })}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    // 仅应用到当前页面（闹钟页面）
-                    if (pendingThemeColor) {
-                      setAlarmColor(pendingThemeColor);
-                      // 触发自定义事件，通知其他页面更新颜色
-                      if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('color-change'));
-                      }
-                    }
-                    setShowThemeColorConfirm(false);
-                    setPendingThemeColor(null);
-                    const pageName = t(`modes.${mode}`, { default: '闹钟' });
-                    toast.success(t('settings_panel.color_applied_to_current_page', { pageName, default: `颜色已应用到${pageName}页面` }));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-green-500 hover:bg-green-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_current_page', { default: '应用到当前页面' })}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowThemeColorConfirm(false);
-                    setPendingThemeColor(null);
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {t('settings_panel.cancel')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        onConfirm={(colorId) => {
+          setAlarmColor(colorId);
+        }}
+      />
       
       {/* 背景应用确认对话框 */}
-      <AnimatePresence>
-        {showBackgroundConfirm && pendingBackgroundImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => {
+      <BackgroundConfirmDialog
+        show={showBackgroundConfirm && !!pendingBackgroundImage}
+        pendingBackgroundImage={pendingBackgroundImage}
+        theme={theme}
+        t={t}
+        mode={mode}
+        onClose={() => {
               setShowBackgroundConfirm(false);
               setPendingBackgroundImage('');
             }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                应用背景图片
-              </h3>
-              
-              {/* 图片预览 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <img
-                  src={pendingBackgroundImage}
-                  alt="Background preview"
-                  className="w-full h-32 object-cover rounded-lg mb-3"
-                />
-                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  选择应用范围：
-                </p>
-              </div>
-              
-              {/* 选项说明 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                <div className="flex items-start gap-2 mb-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
-                  }`}>
-                    <span className="text-white text-xs font-bold">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                      所有页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                      计时器、秒表、闹钟、世界时间都使用此背景
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
-                  }`}>
-                    <span className="text-white text-xs font-bold">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                      仅当前页面
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      只在闹钟页面使用此背景 {/* Note: In alarm mode, mode is fixed to 'alarm' */}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 按钮 */}
-              <div className="space-y-3">
-                <button
-                  onClick={async () => {
-                    // 应用到所有页面
-                    console.log('User selected "Apply to all pages"');
-                    setApplyToAllPages(true);
-                    setBackgroundImage(pendingBackgroundImage);
-                    
-                    // 保存到localStorage
-                    localStorage.setItem('timer-background-image', pendingBackgroundImage);
-                    
-                    // 分析图片亮度并自动设置主题
-                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
-                    setTimeout(() => {
-                      if (isLight) {
-                        if (theme !== 'light') setTheme('light');
-                      } else {
-                        if (theme !== 'dark') setTheme('dark');
-                      }
-                    }, 0);
-                    
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                    toast.success(t('settings_panel.background_applied_all'));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_all')}
-                </button>
-                <button
-                  onClick={async () => {
-                    // 仅应用到当前页面
-                    console.log('User selected "Apply to current page only"');
-                    setApplyToAllPages(false);
-                    setBackgroundImage(pendingBackgroundImage);
-                    
-                    // 清除其他功能页面的背景设置
-                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                    allModes.forEach(modeKey => {
-                      if (modeKey !== mode) {
-                        localStorage.removeItem(`timer-background-image-${modeKey}`);
-                      }
-                    });
-                    
-                    // 清除通用背景设置
-                    localStorage.removeItem('timer-background-image');
-                    
-                    // 分析图片亮度并自动设置主题和其他页面的默认背景
-                    const isLight = await analyzeImageBrightness(pendingBackgroundImage);
-                    setTimeout(() => {
-                      if (isLight) {
-                        // 浅色图片：设置为白天模式，其他页面使用浅色默认背景
-                        if (theme !== 'light') setTheme('light');
-                        // 为其他页面设置浅色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                          }
-                        });
-                      } else {
-                        // 深色图片：设置为夜间模式，其他页面使用深色默认背景
-                        if (theme !== 'dark') setTheme('dark');
-                        // 为其他页面设置深色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                          }
-                        });
-                      }
-                    }, 0);
-                    
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                    const pageName = t(`modes.${mode}`);
-                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_current')}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowBackgroundConfirm(false);
-                    setPendingBackgroundImage('');
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {t('settings_panel.cancel')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        setBackgroundImage={setBackgroundImage}
+        setBackgroundColor={setBackgroundColor}
+        setApplyToAllPages={setApplyToAllPages}
+        setApplyColorToAllPages={setApplyColorToAllPages}
+        setTheme={setTheme}
+      />
 
       {/* 纯色背景应用确认对话框 */}
-      <AnimatePresence>
-        {showColorBackgroundConfirm && pendingBackgroundColor && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-            onClick={() => {
+      <BackgroundConfirmDialog
+        show={showColorBackgroundConfirm && !!pendingBackgroundColor}
+        pendingBackgroundColor={pendingBackgroundColor}
+        theme={theme}
+        t={t}
+        mode={mode}
+        onClose={() => {
               setShowColorBackgroundConfirm(false);
               setPendingBackgroundColor('');
             }}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
-                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
-              }`}
-            >
-              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {t('settings_panel.apply_solid_color_background')}
-              </h3>
-              
-              {/* 颜色预览 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                <div 
-                  className="w-full h-20 rounded-lg mb-3 border-2 border-gray-300"
-                  style={{ backgroundColor: pendingBackgroundColor }}
-                />
-                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                  {t('settings_panel.select_application_scope')}
-                </p>
-              </div>
-              
-              {/* 选项说明 */}
-              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
-                <div className="flex items-start gap-2 mb-3">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
-                  }`}>
-                    <span className="text-white text-xs font-bold">1</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                      {t('settings_panel.all_functional_pages')}
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                      {t('settings_panel.all_pages_use_this_background')}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                    theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
-                  }`}>
-                    <span className="text-white text-xs font-bold">2</span>
-                  </div>
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                      {t('settings_panel.current_functional_page_only')}
-                    </p>
-                    <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                      {t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* 按钮组 */}
-              <div className="space-y-3">
-                <button
-                  onClick={async () => {
-                    // 应用到所有功能页面
-                    console.log('用户选择了"应用到所有功能页面"');
-                    setApplyColorToAllPages(true);
-                    setBackgroundColor(pendingBackgroundColor);
-                    
-                    // 分析颜色亮度并自动设置主题
-                    const isLight = isLightColor(pendingBackgroundColor);
-                    setTimeout(() => {
-                      if (isLight) {
-                        if (theme !== 'light') setTheme('light');
-                      } else {
-                        if (theme !== 'dark') setTheme('dark');
-                      }
-                    }, 0);
-                    
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
-                    toast.success(t('settings_panel.background_applied_all'));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_all')}
-                </button>
-                <button
-                  onClick={async () => {
-                    // 仅应用到当前功能页面
-                    console.log('用户选择了"仅应用到当前功能页面"');
-                    setApplyColorToAllPages(false);
-                    setBackgroundColor(pendingBackgroundColor);
-                    
-                    // 清除其他功能页面的背景设置
-                    const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                    allModes.forEach(modeKey => {
-                      if (modeKey !== mode) {
-                        localStorage.removeItem(`timer-background-color-${modeKey}`);
-                      }
-                    });
-                    
-                    // 清除通用背景设置
-                    localStorage.removeItem('timer-background-color');
-                    
-                    // 清除手动主题设置，让主题跟随背景颜色
-                    if (typeof window !== 'undefined') {
-                      localStorage.removeItem(`timer-manual-theme-${mode}`);
-                    }
-                    
-                    // 分析颜色亮度并自动设置主题和其他页面的默认背景
-                    const isLight = isLightColor(pendingBackgroundColor);
-                    setTimeout(() => {
-                      if (isLight) {
-                        // 浅色背景：设置为白天模式，其他页面使用浅色默认背景
-                        if (theme !== 'light') setTheme('light');
-                        // 为其他页面设置浅色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#f8fafc'); // 浅色默认背景
-                          }
-                        });
-                      } else {
-                        // 深色背景：设置为夜间模式，其他页面使用深色默认背景
-                        if (theme !== 'dark') setTheme('dark');
-                        // 为其他页面设置深色默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            localStorage.setItem(`timer-background-color-${modeKey}`, '#1e293b'); // 深色默认背景
-                          }
-                        });
-                      }
-                    }, 0);
-                    
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
-                    const pageName = t(`modes.${mode}`);
-                    toast.success(t('settings_panel.background_applied_to_page', { pageName }));
-                  }}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white'
-                      : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
-                  }`}
-                >
-                  {t('settings_panel.apply_to_current')}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowColorBackgroundConfirm(false);
-                    setPendingBackgroundColor('');
-                  }}
-                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
-                    theme === 'dark'
-                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {t('settings_panel.cancel')}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        setBackgroundImage={setBackgroundImage}
+        setBackgroundColor={setBackgroundColor}
+        setApplyToAllPages={setApplyToAllPages}
+        setApplyColorToAllPages={setApplyColorToAllPages}
+        setTheme={setTheme}
+      />
       </div>
     </div>
   );
