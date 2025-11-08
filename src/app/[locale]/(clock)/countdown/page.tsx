@@ -14,11 +14,12 @@ import NProgress from 'nprogress';
 import LocaleToggle from '@/components/locale/toggle';
 import { SOUND_OPTIONS, THEME_COLORS } from '@/lib/clock-constants';
 import { notifySoundMetaList } from '@/lib/notify-sound';
-import { compressAndResizeImage, addToImageHistory, removeFromImageHistory, analyzeImageBrightness, isLightColor } from '@/lib/image-utils';
+import { compressAndResizeImage, analyzeImageBrightness, isLightColor } from '@/lib/image-utils';
 import { useFullscreen } from '@/lib/hooks/useFullscreen';
 import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
+import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
 import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
 import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
 import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
@@ -134,6 +135,23 @@ export default function HomePage() {
     notificationAudioLoopIntervalRef
   } = useNotificationSound();
   
+  // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
+  const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
+  
+  const {
+    uploadedImageHistory,
+    setUploadedImageHistory,
+    handleAddToImageHistory,
+    handleRemoveFromImageHistory,
+    handleThemeToggle,
+  } = useClockPageHandlers({
+    mode: 'timer',
+    setBackgroundType,
+    setBackgroundImage,
+    setApplyToAllPages,
+    setUserManuallySetTheme,
+  });
+  
   // 通用状态
   const [isRunning, setIsRunning] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -156,12 +174,6 @@ export default function HomePage() {
   // 主题颜色设置确认对话框
   const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
   const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
-  
-  // 上传图片历史记录
-  const [uploadedImageHistory, setUploadedImageHistory] = useState<string[]>([]);
-  
-  // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
-  const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -230,17 +242,6 @@ export default function HomePage() {
     }
   };
 
-  // 添加上传图片到历史记录（使用工具函数）
-  const handleAddToImageHistory = (imageDataUrl: string) => {
-    const newHistory = addToImageHistory(imageDataUrl);
-    setUploadedImageHistory(newHistory);
-  };
-
-  // 从历史记录中移除图片（使用工具函数）
-  const handleRemoveFromImageHistory = (imageDataUrl: string) => {
-    const newHistory = removeFromImageHistory(imageDataUrl);
-    setUploadedImageHistory(newHistory);
-  };
 
   // 监听路径变化，更新计时器初始时间
   useEffect(() => {

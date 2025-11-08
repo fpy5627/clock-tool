@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getWeatherIcon } from '@/lib/weather-utils';
 
@@ -60,10 +61,20 @@ export default function WeatherDateDisplay({
   isFullscreen = false,
   className = '',
 }: WeatherDateDisplayProps) {
+  // 使用 mounted 状态来避免服务器端和客户端渲染不一致
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
   // 如果处于全屏模式，不显示
   if (isFullscreen) {
     return null;
   }
+  
+  // 在客户端挂载前，使用默认主题以避免水合错误
+  const resolvedTheme = mounted ? theme : 'dark';
 
   /**
    * 格式化日期
@@ -110,11 +121,11 @@ export default function WeatherDateDisplay({
             <>
               {showWeatherIcon && weather.icon && (
                 <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                  {getWeatherIcon(weather.icon, theme || 'dark')}
+                  {getWeatherIcon(weather.icon, resolvedTheme || 'dark')}
                 </div>
               )}
               {showTemperature && weather.temp !== undefined && (
-                <span className={`text-sm sm:text-base md:text-lg font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                <span className={`text-sm sm:text-base md:text-lg font-medium ${resolvedTheme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
                   {weather.temp}°C
                 </span>
               )}
@@ -125,7 +136,7 @@ export default function WeatherDateDisplay({
         </div>
         
         {/* 右侧：日期 */}
-        <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
+        <div className={`flex items-center gap-1 text-sm sm:text-base md:text-lg font-normal ${resolvedTheme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}
           style={{
             letterSpacing: '0.05em',
           }}

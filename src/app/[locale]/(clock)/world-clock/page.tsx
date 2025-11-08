@@ -11,12 +11,13 @@ import { localeNames } from '@/i18n/locale';
 import { useTheme } from 'next-themes';
 import { SOUND_OPTIONS, THEME_COLORS, WORLD_CITIES, MORE_TIMEZONES, PRESET_TIMES } from '@/lib/clock-constants';
 import { notifySoundMetaList } from '@/lib/notify-sound';
-import { compressAndResizeImage, addToImageHistory, removeFromImageHistory, analyzeImageBrightness, isLightColor } from '@/lib/image-utils';
+import { compressAndResizeImage, analyzeImageBrightness, isLightColor } from '@/lib/image-utils';
 import { getWeatherIcon } from '@/lib/weather-utils';
 import { useFullscreen } from '@/lib/hooks/useFullscreen';
 import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
+import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
 import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
 import ClockControlButtons from '@/components/ui/ClockControlButtons';
 import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
@@ -94,6 +95,23 @@ export default function HomePage() {
     notificationAudioLoopIntervalRef
   } = useNotificationSound();
   
+  // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
+  const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
+  
+  const {
+    uploadedImageHistory,
+    setUploadedImageHistory,
+    handleAddToImageHistory,
+    handleRemoveFromImageHistory,
+    handleThemeToggle,
+  } = useClockPageHandlers({
+    mode,
+    setBackgroundType,
+    setBackgroundImage,
+    setApplyToAllPages,
+    setUserManuallySetTheme,
+  });
+  
   // 通用状态
   const [isRunning, setIsRunning] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -128,12 +146,6 @@ export default function HomePage() {
   // 主题颜色设置确认对话框
   const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
   const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
-  
-  // 上传图片历史记录
-  const [uploadedImageHistory, setUploadedImageHistory] = useState<string[]>([]);
-  
-  // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
-  const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
   
   // 显示控制状态
   const [showWeatherIcon, setShowWeatherIcon] = useState(true);
@@ -196,80 +208,6 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
-
-  // 添加上传图片到历史记录（使用工具函数）
-  const handleAddToImageHistory = (imageDataUrl: string) => {
-    const newHistory = addToImageHistory(imageDataUrl);
-    setUploadedImageHistory(newHistory);
-  };
-
-  // 从历史记录中移除图片（使用工具函数）
-  const handleRemoveFromImageHistory = (imageDataUrl: string) => {
-    const newHistory = removeFromImageHistory(imageDataUrl);
-    setUploadedImageHistory(newHistory);
-  };
-
-  /**
-   * 处理主题切换
-   * 根据切换的主题执行相应的逻辑，包括重置背景、保存设置等
-   */
-  const handleThemeToggle = () => {
-    // 使用 next-themes 的 setTheme
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    console.log('手动切换主题:', theme, '->', newTheme);
-    
-    // 如果切换到夜晚模式，重置所有功能页面到默认状态
-    if (newTheme === 'dark') {
-      console.log('切换到夜晚模式，重置所有功能页面到默认状态');
-      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-      
-      // 清除所有功能页面的自定义背景图片
-      allModes.forEach(modeKey => {
-        localStorage.removeItem(`timer-background-image-${modeKey}`);
-        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
-        console.log(`Clearing custom settings for ${modeKey} page`);
-      });
-      
-      // 清除通用背景图片设置
-      localStorage.removeItem('timer-background-image');
-      
-      // 重置背景类型为默认
-      setBackgroundType('default');
-      setBackgroundImage('');
-      setApplyToAllPages(true);
-      
-      // 清除手动主题设置标志
-      setUserManuallySetTheme(false);
-      
-      toast.success(t('settings_panel.reset_all_pages'));
-    } else {
-      // 切换到白天模式，保持现有逻辑
-      // 标记用户手动设置了主题
-      setUserManuallySetTheme(true);
-      localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
-      
-      // 检查当前页面是否有专用背景图片
-      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
-      const generalBackgroundImage = localStorage.getItem('timer-background-image');
-      
-      // 如果当前页面有专用背景图片，需要确保其他页面保持正确的默认背景
-      if (currentModeBackgroundImage && !generalBackgroundImage) {
-        console.log('当前页面有专用背景图片，确保其他页面保持默认背景');
-        const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-        
-        // 为其他页面设置与当前主题匹配的默认背景
-        allModes.forEach(modeKey => {
-          if (modeKey !== mode) {
-            const defaultBackgroundColor = newTheme === 'light' ? '#f8fafc' : '#1e293b';
-            localStorage.setItem(`timer-background-color-${modeKey}`, defaultBackgroundColor);
-            console.log(`Setting default background for ${modeKey} page:`, defaultBackgroundColor);
-          }
-        });
-      }
-    }
-    
-    setTheme(newTheme);
-  };
 
   // 注意：通知音效控制已在 useNotificationSound hook 中处理
   // 注意：背景颜色变化自动切换主题的逻辑已在 useBackground hook 中处理
