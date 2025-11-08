@@ -17,6 +17,8 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
+import ClockControlButtons from '@/components/ui/ClockControlButtons';
+import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
 
 
 // 闹钟类型定义
@@ -98,6 +100,13 @@ export default function HomePage() {
   // 上传图片历史记录
   const [uploadedImageHistory, setUploadedImageHistory] = useState<string[]>([]);
   
+  // 闹钟页面颜色
+  const [alarmColor, setAlarmColor] = useState('blue'); // 闹钟页面颜色
+  
+  // 主题颜色设置确认对话框
+  const [showThemeColorConfirm, setShowThemeColorConfirm] = useState(false);
+  const [pendingThemeColor, setPendingThemeColor] = useState<string | null>(null);
+  
   // 跟踪用户是否手动设置了主题（用于覆盖自动主题设置）
   const [userManuallySetTheme, setUserManuallySetTheme] = useState(false);
   
@@ -143,6 +152,68 @@ export default function HomePage() {
   const handleRemoveFromImageHistory = (imageDataUrl: string) => {
     const newHistory = removeFromImageHistory(imageDataUrl);
     setUploadedImageHistory(newHistory);
+  };
+
+  /**
+   * 处理主题切换
+   * 根据切换的主题执行相应的逻辑，包括重置背景、保存设置等
+   */
+  const handleThemeToggle = () => {
+    // 使用 next-themes 的 setTheme
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    console.log('手动切换主题:', theme, '->', newTheme);
+    
+    // 如果切换到夜晚模式，重置所有功能页面到默认状态
+    if (newTheme === 'dark') {
+      console.log('切换到夜晚模式，重置所有功能页面到默认状态');
+      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+      
+      // 清除所有功能页面的自定义背景图片
+      allModes.forEach(modeKey => {
+        localStorage.removeItem(`timer-background-image-${modeKey}`);
+        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
+        console.log(`Clearing custom settings for ${modeKey} page`);
+      });
+      
+      // 清除通用背景图片设置
+      localStorage.removeItem('timer-background-image');
+      
+      // 重置背景类型为默认
+      setBackgroundType('default');
+      setBackgroundImage('');
+      setApplyToAllPages(true);
+      
+      // 清除手动主题设置标志
+      setUserManuallySetTheme(false);
+      
+      toast.success(t('settings_panel.reset_all_pages'));
+    } else {
+      // 切换到白天模式，保持现有逻辑
+      // 标记用户手动设置了主题
+      setUserManuallySetTheme(true);
+      localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
+      
+      // 检查当前页面是否有专用背景图片
+      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
+      const generalBackgroundImage = localStorage.getItem('timer-background-image');
+      
+      // 如果当前页面有专用背景图片，需要确保其他页面保持正确的默认背景
+      if (currentModeBackgroundImage && !generalBackgroundImage) {
+        console.log('当前页面有专用背景图片，确保其他页面保持默认背景');
+        const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
+        
+        // 为其他页面设置与当前主题匹配的默认背景
+        allModes.forEach(modeKey => {
+          if (modeKey !== mode) {
+            const defaultBackgroundColor = newTheme === 'light' ? '#f8fafc' : '#1e293b';
+            localStorage.setItem(`timer-background-color-${modeKey}`, defaultBackgroundColor);
+            console.log(`Setting default background for ${modeKey} page:`, defaultBackgroundColor);
+          }
+        });
+      }
+    }
+    
+    setTheme(newTheme);
   };
 
   // 注意：背景颜色变化自动切换主题的逻辑已在 useBackground hook 中处理
@@ -877,9 +948,26 @@ export default function HomePage() {
 
   // 根据当前模式选择对应的颜色
   // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch checks are never true
-  // Use a default color for alarm mode
-  const currentColorId = 'blue'; // Default color for alarm mode
+  // Use alarmColor state for alarm mode
+  const currentColorId = alarmColor; // Use alarmColor state
   const themeColor = THEME_COLORS.find(c => c.id === currentColorId) || THEME_COLORS[0];
+  
+  // 从localStorage加载闹钟颜色
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedColor = localStorage.getItem('timer-alarm-color');
+      if (savedColor) {
+        setAlarmColor(savedColor);
+      }
+    }
+  }, []);
+  
+  // 保存闹钟颜色到localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('timer-alarm-color', alarmColor);
+    }
+  }, [alarmColor]);
 
   return (
     <div 
@@ -1196,132 +1284,24 @@ export default function HomePage() {
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               />
 
-              {/* 右上角：功能按钮 - 移动端隐藏 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-40"
+              {/* 右上角：功能按钮 - 使用公共组件 */}
+              <ClockControlButtons
+                theme={theme}
+                notificationEnabled={notificationEnabled}
+                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+                soundEnabled={soundEnabled}
+                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+                onThemeToggle={handleThemeToggle}
+                showSettingsPanel={showSettingsPanel}
+                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+                onFullscreenToggle={toggleFullscreen}
+                isFullscreen={isFullscreen}
+                t={t}
+                showControls={showControls}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                {/* 移动端隐藏通知按钮 */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setNotificationEnabled(!notificationEnabled)}
-                  className={`hidden sm:flex p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
-                >
-                  {notificationEnabled ? (
-                    <Bell className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  ) : (
-                    <BellOff className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  ) : (
-                    <VolumeX className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    // 使用 next-themes 的 setTheme
-                    const newTheme = theme === 'dark' ? 'light' : 'dark';
-                    console.log('手动切换主题:', theme, '->', newTheme);
-                    
-                    // 如果切换到夜晚模式，重置所有功能页面到默认状态
-                    if (newTheme === 'dark') {
-                      console.log('切换到夜晚模式，重置所有功能页面到默认状态');
-                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                      
-                      // 清除所有功能页面的自定义背景图片
-                      allModes.forEach(modeKey => {
-                        localStorage.removeItem(`timer-background-image-${modeKey}`);
-                        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
-                        console.log(`Clearing custom settings for ${modeKey} page`);
-                      });
-                      
-                      // 清除通用背景图片设置
-                      localStorage.removeItem('timer-background-image');
-                      
-                      // 重置背景类型为默认
-                      setBackgroundType('default');
-                      setBackgroundImage('');
-                      setApplyToAllPages(true);
-                      
-                      // 清除手动主题设置标志
-                      setUserManuallySetTheme(false);
-                      
-                      toast.success(t('settings_panel.reset_all_pages'));
-                    } else {
-                      // 切换到白天模式，保持现有逻辑
-                      // 标记用户手动设置了主题
-                      setUserManuallySetTheme(true);
-                      localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
-                      
-                      // 检查当前页面是否有专用背景图片
-                      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
-                      const generalBackgroundImage = localStorage.getItem('timer-background-image');
-                      
-                      // 如果当前页面有专用背景图片，需要确保其他页面保持正确的默认背景
-                      if (currentModeBackgroundImage && !generalBackgroundImage) {
-                        console.log('当前页面有专用背景图片，确保其他页面保持默认背景');
-                        const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                        
-                        // 为其他页面设置与当前主题匹配的默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            const defaultBackgroundColor = newTheme === 'light' ? '#f8fafc' : '#1e293b';
-                            localStorage.setItem(`timer-background-color-${modeKey}`, defaultBackgroundColor);
-                            console.log(`Setting default background for ${modeKey} page:`, defaultBackgroundColor);
-                          }
-                        });
-                      }
-                    }
-                    
-                    setTheme(newTheme);
-                  }}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-white" />
-                  ) : (
-                    <Moon className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-black" />
-                  )}
-                </motion.button>
-                {/* 移动端隐藏设置面板按钮 */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                  className={`hidden sm:flex p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
-                  title={t('buttons.settings')}
-                >
-                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={toggleFullscreen}
-                  className={`p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={t('tooltips.fullscreen')}
-                >
-                  <Maximize className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
-              </motion.div>
+                hideNotificationOnMobile={true}
+              />
             </>
           )}
         </AnimatePresence>
@@ -1339,39 +1319,24 @@ export default function HomePage() {
                 onMouseLeave={() => { isHoveringControls.current = false; }}
               />
 
-              {/* 右上角：功能按钮 - 全屏模式移动端优化 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="fixed top-1 sm:top-6 right-1 sm:right-6 flex gap-0.5 sm:gap-3 z-50"
+              {/* 右上角：功能按钮 - 全屏模式使用公共组件 */}
+              <ClockControlButtons
+                theme={theme}
+                notificationEnabled={notificationEnabled}
+                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+                soundEnabled={soundEnabled}
+                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+                onThemeToggle={handleThemeToggle}
+                showSettingsPanel={showSettingsPanel}
+                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+                onFullscreenToggle={toggleFullscreen}
+                isFullscreen={isFullscreen}
+                t={t}
+                showControls={showControls}
                 onMouseEnter={() => { isHoveringControls.current = true; }}
                 onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
-                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                  ) : (
-                    <VolumeX className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={toggleFullscreen}
-                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
-                  title={t('tooltips.exit_fullscreen')}
-                >
-                  <X className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                </motion.button>
-              </motion.div>
+                hideNotificationOnMobile={true}
+              />
             </>
           )}
         </AnimatePresence>
@@ -2212,35 +2177,17 @@ export default function HomePage() {
         )}
       </AnimatePresence>
 
-      {/* 设置面板 */}
-      <AnimatePresence>
-        {showSettingsPanel && !isFullscreen && (
-          <motion.div
-            initial={{ opacity: 0, x: 300 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 300 }}
-            transition={{ type: "spring", damping: 20 }}
-            className="fixed right-4 top-20 bottom-4 z-40 w-80 flex flex-col"
-          >
-            <div className={`${theme === 'dark' ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'} border rounded-2xl shadow-2xl flex flex-col max-h-full overflow-hidden`}>
-              {/* 固定头部 */}
-              <div className="flex-shrink-0 flex justify-between items-center p-6 pb-4 border-b" style={{ borderColor: theme === 'dark' ? '#334155' : '#e5e7eb' }}>
-                <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{t('settings_panel.title')}</h3>
-                <button
-                  onClick={() => setShowSettingsPanel(false)}
-                  className={`p-2 ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'} rounded-lg transition-colors`}
-                >
-                  <X className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`} />
-                </button>
-              </div>
-
-              {/* 可滚动内容区域 */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 pt-4 settings-scrollbar" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: theme === 'dark' ? '#475569 #1e293b' : '#d1d5db #f1f5f9'
-              }}>
-              {/* 主题颜色选择 */}
-              <div className="mb-6">
+      {/* 设置面板 - 使用公共组件 */}
+      <ClockSettingsPanel
+        showSettingsPanel={showSettingsPanel}
+        isFullscreen={isFullscreen}
+        onClose={() => setShowSettingsPanel(false)}
+        theme={theme}
+        t={t}
+        mode={mode}
+      >
+        {/* 主题颜色选择 */}
+        <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.theme_color')}
                   {/* Note: In alarm mode, mode is fixed to 'alarm', so worldclock check is never true */}
@@ -2256,9 +2203,9 @@ export default function HomePage() {
                   {(() => {
                     // 根据当前主题确定默认颜色：白天模式为黑色，夜晚模式为白色
                     const defaultColor = theme === 'dark' ? 'white' : 'black';
-                    // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                    const currentColor = 'blue'; // Use default for alarm mode
-                    const isDefault = false; // Always false in alarm mode since currentColor is 'blue' and defaultColor is 'white' | 'black'
+                    // 使用 alarmColor 状态
+                    const currentColor = alarmColor;
+                    const isDefault = currentColor === defaultColor;
                     
                     return (
                       <button
@@ -2267,8 +2214,9 @@ export default function HomePage() {
                           e.stopPropagation();
                           // 根据当前主题设置对应的默认颜色：白天模式为黑色，夜晚模式为白色
                           const defaultColorToSet = theme === 'dark' ? 'white' : 'black';
-                          // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                          // Alarm mode doesn't need color setting for timer/stopwatch/worldclock
+                          // 弹出确认对话框
+                          setPendingThemeColor(defaultColorToSet);
+                          setShowThemeColorConfirm(true);
                         }}
                         className={`w-full py-2 px-4 rounded-lg transition-all relative border-2 flex items-center justify-center gap-2 ${
                           theme === 'dark' ? 'border-slate-600' : 'border-gray-300'
@@ -2315,9 +2263,8 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                    const isSelectedPrimary = false; // Always false in alarm mode
-                    const isSelectedSecondary = false; // Always false in alarm mode
+                    const isSelectedPrimary = alarmColor === color.id;
+                    const isSelectedSecondary = false; // 闹钟页面没有小卡片
                     
                     return (
                     <button
@@ -2326,8 +2273,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                            // Alarm mode doesn't need color setting for timer/stopwatch/worldclock
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -2363,9 +2311,8 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                    const isSelectedPrimary = false; // Always false in alarm mode
-                    const isSelectedSecondary = false; // Always false in alarm mode
+                    const isSelectedPrimary = alarmColor === color.id;
+                    const isSelectedSecondary = false; // 闹钟页面没有小卡片
                     
                     return (
                       <button
@@ -2374,8 +2321,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                            // Alarm mode doesn't need color setting for timer/stopwatch/worldclock
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -2411,9 +2359,8 @@ export default function HomePage() {
                     // 白天模式禁用白色，夜晚模式禁用黑色
                     const isDisabled = (theme === 'light' && color.id === 'white') || (theme === 'dark' && color.id === 'black');
                     // 根据当前模式判断是否选中
-                    // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                    const isSelectedPrimary = false; // Always false in alarm mode
-                    const isSelectedSecondary = false; // Always false in alarm mode
+                    const isSelectedPrimary = alarmColor === color.id;
+                    const isSelectedSecondary = false; // 闹钟页面没有小卡片
                     
                     return (
                       <button
@@ -2422,8 +2369,9 @@ export default function HomePage() {
                           e.preventDefault();
                           e.stopPropagation();
                           if (!isDisabled) {
-                            // Note: In alarm mode, mode is fixed to 'alarm', so timer/stopwatch/worldclock checks are never true
-                            // Alarm mode doesn't need color setting for timer/stopwatch/worldclock
+                            // 弹出确认对话框
+                            setPendingThemeColor(color.id);
+                            setShowThemeColorConfirm(true);
                           }
                         }}
                         disabled={isDisabled}
@@ -2453,8 +2401,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* 提示音选择 */}
-              <NotificationSoundSelector
+        {/* 提示音选择 */}
+        <NotificationSoundSelector
                 selectedSound={selectedSound}
                 setSelectedSound={setSelectedSound}
                 soundOptions={SOUND_OPTIONS}
@@ -2466,8 +2414,8 @@ export default function HomePage() {
                 playNotificationSound={playNotificationSound}
               />
 
-              {/* 背景自定义 */}
-              <div className="mb-6">
+        {/* 背景自定义 */}
+        <div className="mb-6">
                 <label className={`block text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'} mb-3`}>
                   {t('settings_panel.background_customization')}
                 </label>
@@ -3186,8 +3134,8 @@ export default function HomePage() {
                 )}
               </div>
 
-              {/* 显示控制开关组 */}
-              <div className="space-y-4">
+        {/* 显示控制开关组 */}
+        <div className="space-y-4">
                 {/* 进度环开关 */}
                 <div className="flex items-center justify-between">
                   <label className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
@@ -3282,9 +3230,143 @@ export default function HomePage() {
                     />
                   </button>
                 </div>
+        </div>
+      </ClockSettingsPanel>
+      
+      {/* 主题颜色设置确认对话框 */}
+      <AnimatePresence>
+        {showThemeColorConfirm && pendingThemeColor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+            onClick={() => {
+              setShowThemeColorConfirm(false);
+              setPendingThemeColor(null);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-md rounded-2xl shadow-2xl p-6 ${
+                theme === 'dark' ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'
+              }`}
+            >
+              <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {t('settings_panel.theme_color_confirm_title', { default: '设置主题颜色' })}
+              </h3>
+              
+              {/* 颜色预览 */}
+              <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-slate-900' : 'bg-gray-50'}`}>
+                <p className={`text-sm mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                  {t('settings_panel.color_preview', { default: '预览新颜色：' })}
+                </p>
+                <div 
+                  className="text-5xl font-bold text-center mb-2"
+                  style={{
+                    fontFamily: '"Rajdhani", sans-serif',
+                    color: (() => {
+                      const previewColor = THEME_COLORS.find(c => c.id === pendingThemeColor);
+                      if (!previewColor) {
+                        const defaultColor = theme === 'dark' ? 'white' : 'black';
+                        return defaultColor === 'white' ? '#ffffff' : '#000000';
+                      }
+                      return previewColor.gradient ? previewColor.color : previewColor.color;
+                    })(),
+                  }}
+                  suppressHydrationWarning
+                >
+                  {String(currentDate.getHours()).padStart(2, '0')}:{String(currentDate.getMinutes()).padStart(2, '0')}:{String(currentDate.getSeconds()).padStart(2, '0')}
                 </div>
+                <p className={`text-xs text-center ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
+                  {(() => {
+                    if (pendingThemeColor === 'white' || pendingThemeColor === 'black') {
+                      return t('settings_panel.default');
+                    }
+                    const color = THEME_COLORS.find(c => c.id === pendingThemeColor);
+                    return color?.key ? t(`colors.${color.key}`) : '';
+                  })()}
+                </p>
               </div>
-            </div>
+              
+              <p className={`text-base mb-6 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                {t('settings_panel.alarm_color_confirm_message', { default: '请选择应用范围：' })}
+              </p>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 应用到所有页面
+                    if (pendingThemeColor) {
+                      // 应用到所有功能页面
+                      localStorage.setItem('timer-timer-color', pendingThemeColor);
+                      localStorage.setItem('timer-stopwatch-color', pendingThemeColor);
+                      localStorage.setItem('timer-alarm-color', pendingThemeColor);
+                      localStorage.setItem('timer-worldclock-color', pendingThemeColor);
+                      localStorage.setItem('timer-worldclock-smallcard-color', pendingThemeColor);
+                      // 设置闹钟颜色
+                      setAlarmColor(pendingThemeColor);
+                      // 触发自定义事件，通知其他页面更新颜色
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('color-change'));
+                      }
+                    }
+                    setShowThemeColorConfirm(false);
+                    setPendingThemeColor(null);
+                    toast.success(t('settings_panel.color_applied_all', { default: '颜色已应用到所有页面' }));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_all_pages', { default: '应用到所有页面' })}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 仅应用到当前页面（闹钟页面）
+                    if (pendingThemeColor) {
+                      setAlarmColor(pendingThemeColor);
+                      // 触发自定义事件，通知其他页面更新颜色
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('color-change'));
+                      }
+                    }
+                    setShowThemeColorConfirm(false);
+                    setPendingThemeColor(null);
+                    const pageName = t(`modes.${mode}`, { default: '闹钟' });
+                    toast.success(t('settings_panel.color_applied_to_current_page', { pageName, default: `颜色已应用到${pageName}页面` }));
+                  }}
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-green-600 hover:bg-green-700 text-white'
+                      : 'bg-green-500 hover:bg-green-600 text-white'
+                  }`}
+                >
+                  {t('settings_panel.apply_to_current_page', { default: '应用到当前页面' })}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowThemeColorConfirm(false);
+                    setPendingThemeColor(null);
+                  }}
+                  className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                    theme === 'dark'
+                      ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  {t('settings_panel.cancel')}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
