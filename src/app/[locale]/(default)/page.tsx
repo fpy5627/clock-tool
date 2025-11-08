@@ -321,11 +321,29 @@ export default function HomePage() {
   // —— 提示音播放控制：可在用户点击时提前停止 ——
   const notificationAudioCtxRef = useRef<AudioContext | null>(null);
   const notificationStopTimeoutRef = useRef<number | null>(null);
+  const notificationAudioElementRef = useRef<HTMLAudioElement | null>(null);
 
   const stopNotificationSound = () => {
     if (notificationStopTimeoutRef.current) {
       window.clearTimeout(notificationStopTimeoutRef.current);
       notificationStopTimeoutRef.current = null;
+    }
+    // 停止并重置音频元素
+    if (notificationAudioElementRef.current) {
+      try {
+        notificationAudioElementRef.current.pause();
+        notificationAudioElementRef.current.currentTime = 0;
+        notificationAudioElementRef.current = null;
+      } catch {}
+    }
+    // 停止所有带有 data-sound-id 的音频元素
+    if (typeof window !== 'undefined') {
+      const allAudioElements = document.querySelectorAll('audio[data-sound-id]') as NodeListOf<HTMLAudioElement>;
+      allAudioElements.forEach((audio) => {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.remove();
+      });
     }
     if (notificationAudioCtxRef.current) {
       try { notificationAudioCtxRef.current.close(); } catch {}
@@ -355,8 +373,15 @@ export default function HomePage() {
         const audio = new Audio(audioPath);
         audio.setAttribute('data-sound-id', soundType);
         audio.volume = 0.8;
+        // 保存音频元素引用，以便后续停止
+        notificationAudioElementRef.current = audio;
+        // 监听音频播放结束事件，清理引用
+        audio.addEventListener('ended', () => {
+          notificationAudioElementRef.current = null;
+        });
         audio.play().catch((error) => {
           console.warn('Failed to play sound file:', error);
+          notificationAudioElementRef.current = null;
         });
         return; // 成功播放文件，直接返回
       }
@@ -4614,7 +4639,13 @@ export default function HomePage() {
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
                           className="block"
-                          onClick={() => {
+                          onClick={(e) => {
+                            // 如果当前按钮已选中，阻止导航以避免不必要的页面重新加载
+                            if (isSelected) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              return;
+                            }
                             NProgress.start();
                           }}
                         >
@@ -4654,7 +4685,13 @@ export default function HomePage() {
                           key={preset.seconds}
                           href={`/${locale}/${preset.path}`}
                           className="block"
-                          onClick={() => {
+                          onClick={(e) => {
+                            // 如果当前按钮已选中，阻止导航以避免不必要的页面重新加载
+                            if (isSelected) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              return;
+                            }
                             NProgress.start();
                           }}
                         >
@@ -4691,7 +4728,13 @@ export default function HomePage() {
                           key={preset.key}
                           href={`/${locale}/${preset.path}`}
                           className="block"
-                          onClick={() => {
+                          onClick={(e) => {
+                            // 如果当前按钮已选中，阻止导航以避免不必要的页面重新加载
+                            if (isSelected) {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              return;
+                            }
                             NProgress.start();
                           }}
                         >
