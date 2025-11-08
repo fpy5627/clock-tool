@@ -1582,6 +1582,22 @@ export default function HomePage() {
           <div className={`border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
             <div className="flex items-center justify-around py-3 px-2">
             <button
+              onClick={() => navigateToPage('countdown')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                // Note: In stopwatch mode, mode is fixed to 'stopwatch', so timer check is never true
+                false // Always false in stopwatch mode
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Timer className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.timer')}</span>
+            </button>
+            <button
               onClick={() => navigateToPage('stopwatch')}
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                 mode === 'stopwatch' 
@@ -1595,6 +1611,38 @@ export default function HomePage() {
             >
               <Clock className="w-5 h-5" />
               <span className="text-xs font-medium">{t('modes.stopwatch')}</span>
+            </button>
+            <button
+              onClick={() => navigateToPage('alarm')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                // Note: In stopwatch mode, mode is fixed to 'stopwatch', so alarm check is never true
+                false // Always false in stopwatch mode
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <AlarmClock className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.alarm')}</span>
+            </button>
+            <button
+              onClick={() => navigateToPage('world-clock')}
+              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                // Note: In stopwatch mode, mode is fixed to 'stopwatch', so worldclock check is never true
+                false // Always false in stopwatch mode
+                  ? theme === 'dark'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-400 text-white'
+                  : theme === 'dark'
+                  ? 'text-slate-400 hover:bg-slate-800'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <Globe className="w-5 h-5" />
+              <span className="text-xs font-medium">{t('modes.worldclock')}</span>
             </button>
             {/* 移动端设置按钮 */}
             <motion.button
