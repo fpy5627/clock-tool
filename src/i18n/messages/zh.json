@@ -458,6 +458,7 @@
       "dark_mode": "夜间模式",
       "theme_color_confirm_title": "设置主题颜色",
       "theme_color_confirm_message": "请选择应用范围：",
+      "theme_color_applied": "主题颜色 {colorName} 已应用",
       "color_preview": "预览新颜色：",
       "modify_large_card": "修改大卡片颜色",
       "modify_small_card": "修改小卡片颜色",

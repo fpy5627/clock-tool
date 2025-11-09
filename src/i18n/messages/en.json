@@ -458,6 +458,7 @@
       "dark_mode": "Dark mode",
       "theme_color_confirm_title": "Set Theme Color",
       "theme_color_confirm_message": "Please select application scope:",
+      "theme_color_applied": "Theme color {colorName} has been applied",
       "color_preview": "Preview new color:",
       "modify_large_card": "Modify large card color",
       "modify_small_card": "Modify small card color",

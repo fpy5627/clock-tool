@@ -57,7 +57,8 @@ export default function ThemeColorConfirmDialog({
   const handleConfirm = () => {
     onConfirm(pendingThemeColor);
     onClose();
-    toast.success(t('settings_panel.theme_color_applied', { colorName: selectedColor.name }));
+    const colorName = t(`colors.${selectedColor.key}`);
+    toast.success(t('settings_panel.theme_color_applied', { colorName }));
   };
 
   return (
@@ -92,7 +93,7 @@ export default function ThemeColorConfirmDialog({
                 />
                 <div>
                   <p className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                    {selectedColor.name}
+                    {t(`colors.${selectedColor.key}`)}
                   </p>
                   <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                     {t('settings_panel.theme_color_description')}
