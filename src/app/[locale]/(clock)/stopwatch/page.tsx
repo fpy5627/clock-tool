@@ -17,12 +17,14 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
-import ClockControlButtons from '@/components/ui/ClockControlButtons';
+import ClockToolbar from '@/components/ui/ClockToolbar';
 import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
-import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
 import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
 import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
 import ThemeColorConfirmDialog from '@/components/ui/ThemeColorConfirmDialog';
+import TimeDisplay from '@/components/ui/TimeDisplay';
+import TimerControlButtons from '@/components/ui/TimerControlButtons';
+import { useClockPageEffects } from '@/lib/hooks/useClockPageEffects';
 
 
 export default function HomePage() {
@@ -103,6 +105,7 @@ export default function HomePage() {
   const [customSeconds, setCustomSeconds] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [mounted, setMounted] = useState(false); // 标记客户端是否已挂载
   const [showCardBorder, setShowCardBorder] = useState(true); // 控制大卡片边框显示（全屏模式下）
   
   // 新增功能状态
@@ -125,13 +128,23 @@ export default function HomePage() {
   const [showWeekday, setShowWeekday] = useState(true);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isHoveringControls = useRef(false);
   const lastToastRef = useRef<{ id: string; time: number } | null>(null);
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
-  
+
+  // 使用公共的useEffect逻辑
+  const { isHoveringControls } = useClockPageEffects({
+    isFullscreen,
+    enterFullscreen,
+    showControls,
+    setShowControls,
+    mounted,
+    setMounted,
+    currentDate,
+    setCurrentDate,
+  });
+
   // 注意：通知音效控制已在 useNotificationSound hook 中处理
 
   // 注意：背景颜色变化自动切换主题的逻辑已在 useBackground hook 中处理
@@ -158,85 +171,6 @@ export default function HomePage() {
   }, [isRunning, mode, soundEnabled, notificationEnabled]);
 
   // 注意：全屏监听和状态同步已在 useFullscreen hook 中处理
-  
-  // 检查是否需要自动进入全屏（从其他页面跳转过来时）
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
-      if (shouldEnterFullscreen) {
-        // 清除标记，避免重复进入
-        sessionStorage.removeItem('shouldEnterFullscreen');
-        
-        // 延迟执行以确保页面完全加载
-        const timer = setTimeout(async () => {
-          await enterFullscreen();
-        }, 100);
-        
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    }
-  }, [enterFullscreen]);
-
-  // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
-  useEffect(() => {
-    const handleInteraction = () => {
-      setShowControls(true);
-      
-      // 清除之前的定时器
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-      
-      // 只在全屏时，1.5秒后隐藏控制按钮
-      if (isFullscreen) {
-        hideControlsTimeoutRef.current = setTimeout(() => {
-          if (!isHoveringControls.current) {
-            setShowControls(false);
-          }
-        }, 1500);
-      }
-    };
-
-    // 监听鼠标移动事件（桌面端）
-    window.addEventListener('mousemove', handleInteraction);
-    // 监听触摸事件（移动端）
-    window.addEventListener('touchstart', handleInteraction);
-    window.addEventListener('touchmove', handleInteraction);
-    
-    // 初始显示控制按钮
-    handleInteraction();
-
-    return () => {
-      window.removeEventListener('mousemove', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('touchmove', handleInteraction);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    };
-  }, [isFullscreen]);
-
-  // 非全屏模式下始终显示控制按钮
-  useEffect(() => {
-    if (!isFullscreen) {
-      setShowControls(true);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    }
-  }, [isFullscreen]);
-
-
-  // 更新日期时间
-  useEffect(() => {
-    const dateInterval = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 1000);
-
-    return () => clearInterval(dateInterval);
-  }, []);
 
   // 从 localStorage 加载设置
   useEffect(() => {
@@ -521,28 +455,6 @@ export default function HomePage() {
     setShowEditModal(false);
   };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    // 秒表模式始终显示小时:分钟:秒
-    if (mode === 'stopwatch' || hours > 0) {
-      return {
-        hours: String(hours).padStart(2, '0'),
-        mins: String(mins).padStart(2, '0'),
-        secs: String(secs).padStart(2, '0'),
-        hasHours: true
-      };
-    }
-    return {
-      hours: null,
-      mins: String(mins).padStart(2, '0'),
-      secs: String(secs).padStart(2, '0'),
-      hasHours: false
-    };
-  };
-
 
 
 
@@ -821,157 +733,25 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
-        {/* 顶部工具栏 - 只在非全屏显示 */}
-        <AnimatePresence>
-          {!isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 移动端隐藏 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="hidden sm:flex fixed top-20 sm:top-24 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none z-40"
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('countdown')}
-                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    // Note: In stopwatch mode, mode is fixed to 'stopwatch', so timer check is never true
-                    false // Always false in stopwatch mode
-                      ? 'bg-blue-500 text-white' 
-                      : theme === 'dark'
-                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
-                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
-                  }`}
-                  title={t('modes.timer')}
-                >
-                  <Timer className="w-4 h-4 sm:w-6 sm:h-6" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('stopwatch')}
-                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    mode === 'stopwatch' 
-                      ? 'bg-blue-500 text-white' 
-                      : theme === 'dark'
-                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
-                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
-                  }`}
-                  title={t('modes.stopwatch')}
-                >
-                  <Clock className="w-4 h-4 sm:w-6 sm:h-6" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('alarm')}
-                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    // Note: In stopwatch mode, mode is fixed to 'stopwatch', so alarm check is never true
-                    false // Always false in stopwatch mode
-                      ? 'bg-blue-500 text-white' 
-                      : theme === 'dark'
-                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
-                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
-                  }`}
-                  title={t('modes.alarm')}
-                >
-                  <AlarmClock className="w-4 h-4 sm:w-6 sm:h-6" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('world-clock')}
-                  className={`p-1.5 sm:p-2.5 rounded-md sm:rounded-lg transition-colors ${
-                    // Note: In stopwatch mode, mode is fixed to 'stopwatch', so worldclock check is never true
-                    false // Always false in stopwatch mode
-                      ? 'bg-blue-500 text-white' 
-                      : theme === 'dark'
-                      ? 'bg-white/10 hover:bg-white/20 text-white/60'
-                      : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
-                  }`}
-                  title={t('modes.worldclock')}
-                >
-                  <Globe className="w-4 h-4 sm:w-6 sm:h-6" />
-                </motion.button>
-              </motion.div>
-
-              {/* 右上角：功能按钮 - 使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 全屏模式下的浮动工具栏 */}
-        <AnimatePresence>
-          {isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 全屏模式移动端优化 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="fixed top-1 sm:top-6 left-1 sm:left-6 flex gap-0.5 sm:gap-3 z-50 flex-wrap max-w-[70%] sm:max-w-none"
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('stopwatch')}
-                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'stopwatch' 
-                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
-                  }`}
-                  title={t('modes.stopwatch')}
-                >
-                  <Clock className="w-4 h-4 sm:w-7 sm:h-7" />
-                </motion.button>
-              </motion.div>
-
-              {/* 右上角：功能按钮 - 全屏模式使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
+        {/* 工具栏 - 使用公共组件 */}
+        <ClockToolbar
+          mode={mode}
+          isFullscreen={isFullscreen}
+          showControls={showControls}
+          theme={theme}
+          notificationEnabled={notificationEnabled}
+          onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+          soundEnabled={soundEnabled}
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          onThemeToggle={handleThemeToggle}
+          showSettingsPanel={showSettingsPanel}
+          onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+          onFullscreenToggle={toggleFullscreen}
+          t={t}
+          onMouseEnter={() => { isHoveringControls.current = true; }}
+          onMouseLeave={() => { isHoveringControls.current = false; }}
+          hideNotificationOnMobile={true}
+        />
 
         <motion.div 
           initial={{ opacity: 0 }}
@@ -993,196 +773,40 @@ export default function HomePage() {
             className="mb-4 sm:mb-6 md:mb-8"
           />
 
-          {/* Time Display */}
-          <div 
-            className={`text-center w-full flex flex-col sm:flex-row items-center justify-center px-2 sm:px-4 ${
-              isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
-            }`} 
+          {/* Time Display - 使用公共组件 */}
+          <TimeDisplay
+            seconds={stopwatchTime}
+            mode="stopwatch"
+            isFullscreen={isFullscreen}
+            themeColor={themeColor}
+            useGradient={true}
+            className={isFullscreen ? '' : '-mt-4'}
             style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '-1rem', marginBottom: '0.5rem' }}
-          >
-            <div 
-              id="timer-display"
-              className={`${
-                (() => {
-                  const time = formatTime(stopwatchTime);
-                  // 根据是否有小时调整字体大小
-                  if (isFullscreen) {
-                    return time.hasHours 
-                      ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
-                      : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
-                  } else {
-                    return time.hasHours
-                      ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
-                      : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
-                  }
-                })()
-              } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
-              style={{
-                fontFamily: '"Rajdhani", sans-serif',
-                fontWeight: '580',
-                letterSpacing: '0.05em',
-                WebkitFontSmoothing: 'antialiased',
-                MozOsxFontSmoothing: 'grayscale',
-              }}
-            >
-              {(() => {
-                const time = formatTime(stopwatchTime);
-                
-                // 检查是否使用渐变色
-                const hasGradient = themeColor.gradient && true;
-                
-                // 计算当前应该使用的颜色
-                const currentColor = themeColor.color;
-                
-                // 数字的样式
-                const getNumberStyle = (): React.CSSProperties => {
-                  if (hasGradient) {
-                    return {
-                      backgroundImage: themeColor.gradient,
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      color: 'transparent',
-                    };
-                  }
-                  return { color: currentColor };
-                };
-                
-                const numberStyle = getNumberStyle();
-                
-                return (
-                  <>
-                    {time.hasHours && (
-                      <>
-                        <span style={numberStyle}>{time.hours}</span>
-                        <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                          <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                          <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                        </span>
-                      </>
-                    )}
-                    <span style={numberStyle}>{time.mins}</span>
-                    <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                      <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                      <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                    </span>
-                    <span style={numberStyle}>{time.secs}</span>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
+          />
               
           {/* 闹钟列表已删除 - stopwatch模式不需要 */}
           {/* 世界时间已删除 - stopwatch模式不需要 */}
           {/* 进度条已删除 - stopwatch模式不需要 */}
 
-          {/* Control Buttons */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
-                  isFullscreen 
-                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
-                    : 'mt-6 sm:mt-8 md:mt-12'
-                }`}
-                style={isFullscreen ? {
-                  marginTop: 'auto'
-                } : {
-                  marginTop: '-1rem'
-                }}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                {(
-                  <>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={toggleTimer}
-                      disabled={false}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } rounded-[10px] font-semibold text-white shadow-lg transition-all ${
-                        false
-                          ? 'bg-slate-700 cursor-not-allowed'
-                          : isRunning
-                          ? 'bg-orange-500 hover:bg-orange-600'
-                          : 'bg-blue-500 hover:bg-blue-600'
-                      }`}
-                    >
-                      {isRunning ? (
-                        <>
-                          <Pause className={
-                            isFullscreen 
-                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                              : 'w-4 h-4 sm:w-5 sm:h-5'
-                          } />
-                          <span>{t('buttons.pause')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className={
-                            isFullscreen 
-                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                              : 'w-4 h-4 sm:w-5 sm:h-5'
-                          } />
-                          <span>{t('buttons.start')}</span>
-                        </>
-                      )}
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={resetTimer}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } bg-slate-700 hover:bg-slate-600 text-white rounded-[8px] font-semibold shadow-lg transition-all`}
-                    >
-                      <RotateCcw className={
-                        isFullscreen 
-                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                          : 'w-4 h-4 sm:w-5 sm:h-5'
-                      } />
-                      <span>{t('buttons.reset')}</span>
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        const currentSeconds = stopwatchTime;
-                        setCustomMinutes(Math.floor(currentSeconds / 60));
-                        setCustomSeconds(currentSeconds % 60);
-                        setShowEditModal(true);
-                      }}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } ${theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-500 hover:bg-indigo-600'} text-white rounded-[8px] font-semibold shadow-lg transition-all`}
-                    >
-                      <Settings className={
-                        isFullscreen 
-                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                          : 'w-4 h-4 sm:w-5 sm:h-5'
-                      } />
-                      <span>{t('buttons.settings')}</span>
-                    </motion.button>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Control Buttons - 使用公共组件 */}
+          <TimerControlButtons
+            isRunning={isRunning}
+            disabled={false}
+            onToggle={toggleTimer}
+            onReset={resetTimer}
+            onSettings={() => {
+              const currentSeconds = stopwatchTime;
+              setCustomMinutes(Math.floor(currentSeconds / 60));
+              setCustomSeconds(currentSeconds % 60);
+              setShowEditModal(true);
+            }}
+            isFullscreen={isFullscreen}
+            showControls={showControls}
+            t={t}
+            onMouseEnter={() => { isHoveringControls.current = true; }}
+            onMouseLeave={() => { isHoveringControls.current = false; }}
+            className={isFullscreen ? '' : '-mt-4'}
+          />
 
           {/* 预设时间快捷按钮已删除 - stopwatch模式不需要 */}
         </motion.div>

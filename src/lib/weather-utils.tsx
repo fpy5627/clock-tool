@@ -6,12 +6,14 @@ import { Sun, Moon, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy } from 'lu
  * 根据天气代码获取对应的天气图标组件
  * 
  * @param code - wttr.in 天气代码
- * @param theme - 当前主题 ('dark' | 'light')
+ * @param theme - 当前主题 ('dark' | 'light' | undefined)
+ * @param mounted - 是否已挂载（用于避免 hydration 错误）
  * @returns 天气图标 React 组件
  */
-export function getWeatherIcon(code: string, theme: string = 'dark') {
+export function getWeatherIcon(code: string, theme: string | undefined = 'dark', mounted: boolean = true) {
+  // 在服务器端或未挂载时，使用默认的浅色主题颜色，避免 hydration 错误
   const iconProps = { 
-    className: `w-full h-full ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}` 
+    className: `w-full h-full ${!mounted || theme === undefined || theme !== 'dark' ? 'text-gray-600' : 'text-slate-400'}` 
   };
   
   // wttr.in 天气代码映射

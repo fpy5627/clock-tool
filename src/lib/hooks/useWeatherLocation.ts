@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getIpInfo } from '@/services/ip-info';
+import { getCachedWeather, setCachedWeather } from '@/lib/weather-cache';
 
 /**
  * 天气信息类型
@@ -45,39 +46,12 @@ export const useWeatherLocation = (locale: string) => {
    */
   useEffect(() => {
     const fetchWeatherAndLocation = async () => {
-      // 天气信息缓存键
-      const WEATHER_CACHE_KEY = 'weather-cache';
-
-      // 从sessionStorage获取缓存的天气信息
-      const getCachedWeather = (): WeatherInfo | null => {
-        if (typeof window === 'undefined') return null;
-        try {
-          const cached = sessionStorage.getItem(WEATHER_CACHE_KEY);
-          if (cached) {
-            return JSON.parse(cached);
-          }
-        } catch (error) {
-          console.warn('Failed to read cached weather:', error);
-        }
-        return null;
-      };
-
-      // 将天气信息保存到sessionStorage
-      const setCachedWeather = (weatherInfo: WeatherInfo) => {
-        if (typeof window === 'undefined') return;
-        try {
-          sessionStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherInfo));
-          console.log('Weather info cached to sessionStorage');
-        } catch (error) {
-          console.warn('Failed to cache weather:', error);
-        }
-      };
+      // 使用统一的天气缓存工具（已包含4小时过期机制）
 
       try {
-        // 先尝试从缓存读取天气信息
+        // 先尝试从缓存读取天气信息（包含过期检查）
         const cachedWeather = getCachedWeather();
         if (cachedWeather) {
-          console.log('Using cached weather:', cachedWeather);
           setWeather(cachedWeather);
         }
 

@@ -20,10 +20,13 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
-import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
+import ClockToolbar from '@/components/ui/ClockToolbar';
 import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
 import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
 import ThemeColorConfirmDialog from '@/components/ui/ThemeColorConfirmDialog';
+import TimeDisplay from '@/components/ui/TimeDisplay';
+import TimerControlButtons from '@/components/ui/TimerControlButtons';
+import { useClockPageEffects } from '@/lib/hooks/useClockPageEffects';
 
 // 配置 NProgress
 NProgress.configure({ 
@@ -160,6 +163,7 @@ export default function HomePage() {
   const [customSeconds, setCustomSeconds] = useState(0);
   const [showControls, setShowControls] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [mounted, setMounted] = useState(false); // 标记客户端是否已挂载
   const [showCardBorder, setShowCardBorder] = useState(true); // 控制大卡片边框显示（全屏模式下）
   
   // 新增功能状态
@@ -195,13 +199,23 @@ export default function HomePage() {
   const [timerOvertime, setTimerOvertime] = useState(0); // 超时计时（秒）
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isHoveringControls = useRef(false);
   const lastToastRef = useRef<{ id: string; time: number } | null>(null);
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
+
+  // 使用公共的useEffect逻辑
+  const { isHoveringControls } = useClockPageEffects({
+    isFullscreen,
+    enterFullscreen,
+    showControls,
+    setShowControls,
+    mounted,
+    setMounted,
+    currentDate,
+    setCurrentDate,
+  });
 
   // 注意：通知音效控制已在 useNotificationSound hook 中处理
 
@@ -324,93 +338,6 @@ export default function HomePage() {
   }, [isRunning, mode, soundEnabled, notificationEnabled]);
 
   // 注意：全屏监听和状态同步已在 useFullscreen hook 中处理
-  
-  // 检查是否需要自动进入全屏（从其他页面跳转过来时）
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
-      if (shouldEnterFullscreen) {
-        // 清除标记，避免重复进入
-        sessionStorage.removeItem('shouldEnterFullscreen');
-        
-        // 延迟执行以确保页面完全加载
-        const timer = setTimeout(async () => {
-          await enterFullscreen();
-        }, 100);
-        
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    }
-  }, [enterFullscreen]);
-
-  // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
-  useEffect(() => {
-    const handleInteraction = () => {
-      setShowControls(true);
-      
-      // 清除之前的定时器
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-      
-      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
-      // Note: In timer mode, mode is fixed to 'timer', so alarm check is always true
-      if (isFullscreen) {
-        hideControlsTimeoutRef.current = setTimeout(() => {
-          if (!isHoveringControls.current) {
-            setShowControls(false);
-          }
-        }, 1500);
-      }
-    };
-
-    // 监听鼠标移动事件（桌面端）
-    window.addEventListener('mousemove', handleInteraction);
-    // 监听触摸事件（移动端）
-    window.addEventListener('touchstart', handleInteraction);
-    window.addEventListener('touchmove', handleInteraction);
-    
-    // 初始显示控制按钮
-    handleInteraction();
-
-    return () => {
-      window.removeEventListener('mousemove', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('touchmove', handleInteraction);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    };
-  }, [isFullscreen, mode]);
-
-  // 非全屏模式或闹钟模式下始终显示控制按钮
-  // Note: In timer mode, mode is fixed to 'timer', so alarm check is always false
-  useEffect(() => {
-    if (!isFullscreen) {
-      setShowControls(true);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    }
-  }, [isFullscreen, mode]);
-
-  // 当切换离开世界时间模式时，重置选中的城市
-  // Note: In timer mode, mode is fixed to 'timer', so worldclock check is always true
-  useEffect(() => {
-    // Timer mode doesn't need to handle world clock city selection
-    // setSelectedCity(null);
-  }, [mode]);
-
-  // 更新日期时间
-  useEffect(() => {
-    const dateInterval = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 1000);
-
-    return () => clearInterval(dateInterval);
-  }, []);
 
   // 从 localStorage 加载设置
   useEffect(() => {
@@ -776,28 +703,6 @@ export default function HomePage() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
-    // Always show hours:minutes:seconds if hours > 0
-    if (hours > 0) {
-      return {
-        hours: String(hours).padStart(2, '0'),
-        mins: String(mins).padStart(2, '0'),
-        secs: String(secs).padStart(2, '0'),
-        hasHours: true
-      };
-    }
-    return {
-      hours: null,
-      mins: String(mins).padStart(2, '0'),
-      secs: String(secs).padStart(2, '0'),
-      hasHours: false
-    };
-  };
 
 
   // 根据当前模式选择对应的颜色
@@ -1076,256 +981,25 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
-        {/* 顶部工具栏 - 只在非全屏显示 */}
-        <AnimatePresence>
-          {!isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 移动端隐藏 */}
-              <VerticalSidebar
-                currentMode={mode}
-                isFullscreen={false}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              />
-
-              {/* 右上角：功能按钮 - 移动端隐藏 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: showSettingsPanel ? 0 : 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className={`hidden sm:flex fixed top-20 sm:top-24 right-2 sm:right-4 gap-0.5 sm:gap-2 z-50 ${showSettingsPanel ? 'pointer-events-none' : ''}`}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                {/* 移动端隐藏通知按钮 */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setNotificationEnabled(!notificationEnabled)}
-                  className={`hidden sm:flex p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={notificationEnabled ? t('tooltips.close_notification') : t('tooltips.open_notification')}
-                >
-                  {notificationEnabled ? (
-                    <Bell className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  ) : (
-                    <BellOff className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  ) : (
-                    <VolumeX className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => {
-                    // 使用 next-themes 的 setTheme
-                    const newTheme = theme === 'dark' ? 'light' : 'dark';
-                    console.log('手动切换主题:', theme, '->', newTheme);
-                    
-                    // 如果切换到夜晚模式，重置所有功能页面到默认状态
-                    if (newTheme === 'dark') {
-                      console.log('切换到夜晚模式，重置所有功能页面到默认状态');
-                      const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                      
-                      // 清除所有功能页面的自定义背景图片
-                      allModes.forEach(modeKey => {
-                        localStorage.removeItem(`timer-background-image-${modeKey}`);
-                        localStorage.removeItem(`timer-manual-theme-${modeKey}`);
-                        console.log(`Clearing custom settings for ${modeKey} page`);
-                      });
-                      
-                      // 清除通用背景图片设置
-                      localStorage.removeItem('timer-background-image');
-                      
-                      // 重置背景类型为默认
-                      setBackgroundType('default');
-                      setBackgroundImage('');
-                      setApplyToAllPages(true);
-                      
-                      // 清除手动主题设置标志
-                      setUserManuallySetTheme(false);
-                      
-                      toast.success(t('settings_panel.reset_all_pages'));
-                    } else {
-                      // 切换到白天模式，保持现有逻辑
-                      // 标记用户手动设置了主题
-                      setUserManuallySetTheme(true);
-                      localStorage.setItem(`timer-manual-theme-${mode}`, newTheme);
-                      
-                      // 检查当前页面是否有专用背景图片
-                      const currentModeBackgroundImage = localStorage.getItem(`timer-background-image-${mode}`);
-                      const generalBackgroundImage = localStorage.getItem('timer-background-image');
-                      
-                      // 如果当前页面有专用背景图片，需要确保其他页面保持正确的默认背景
-                      if (currentModeBackgroundImage && !generalBackgroundImage) {
-                        console.log('当前页面有专用背景图片，确保其他页面保持默认背景');
-                        const allModes = ['timer', 'stopwatch', 'alarm', 'worldclock'];
-                        
-                        // 为其他页面设置与当前主题匹配的默认背景
-                        allModes.forEach(modeKey => {
-                          if (modeKey !== mode) {
-                            const defaultBackgroundColor = newTheme === 'light' ? '#f8fafc' : '#1e293b';
-                            localStorage.setItem(`timer-background-color-${modeKey}`, defaultBackgroundColor);
-                            console.log(`Setting default background for ${modeKey} page:`, defaultBackgroundColor);
-                          }
-                        });
-                      }
-                    }
-                    
-                    setTheme(newTheme);
-                  }}
-                  className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-white" />
-                  ) : (
-                    <Moon className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-black" />
-                  )}
-                </motion.button>
-                {/* 移动端隐藏设置面板按钮 */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                  className={`hidden sm:flex p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
-                  title={t('buttons.settings')}
-                >
-                  <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={toggleFullscreen}
-                  className={`p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
-                  title={t('tooltips.fullscreen')}
-                >
-                  <Maximize className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
-                </motion.button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 全屏模式下的浮动工具栏 */}
-        <AnimatePresence>
-          {isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 全屏模式移动端优化 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="fixed top-1 sm:top-6 left-1 sm:left-6 flex gap-0.5 sm:gap-3 z-50 flex-wrap max-w-[70%] sm:max-w-none"
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('countdown')}
-                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    mode === 'timer' 
-                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
-                  }`}
-                  title={t('modes.timer')}
-                >
-                  <Timer className="w-4 h-4 sm:w-7 sm:h-7" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('stopwatch')}
-                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
-                    false // Always false in timer mode
-                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
-                  }`}
-                  title={t('modes.stopwatch')}
-                >
-                  <Clock className="w-4 h-4 sm:w-7 sm:h-7" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('alarm')}
-                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
-                    false // Always false in timer mode
-                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
-                  }`}
-                  title={t('modes.alarm')}
-                >
-                  <AlarmClock className="w-4 h-4 sm:w-7 sm:h-7" />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => navigateToPage('world-clock')}
-                  className={`p-1.5 sm:p-4 rounded-md sm:rounded-xl transition-all backdrop-blur-md shadow-2xl ${
-                    // Note: In timer mode, mode is fixed to 'timer', so worldclock check is never true
-                    false // Always false in timer mode
-                      ? 'bg-blue-500 text-white shadow-blue-500/50' 
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
-                  }`}
-                  title={t('modes.worldclock')}
-                >
-                  <Globe className="w-4 h-4 sm:w-7 sm:h-7" />
-                </motion.button>
-              </motion.div>
-
-              {/* 右上角：功能按钮 - 全屏模式移动端优化 */}
-              <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-                className="fixed top-1 sm:top-6 right-1 sm:right-6 flex gap-0.5 sm:gap-3 z-50"
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSoundEnabled(!soundEnabled)}
-                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
-                  title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                  ) : (
-                    <VolumeX className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                  )}
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={toggleFullscreen}
-                  className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
-                  title={t('tooltips.exit_fullscreen')}
-                >
-                  <X className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
-                </motion.button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+        {/* 工具栏 - 使用公共组件 */}
+        <ClockToolbar
+          mode={mode}
+          isFullscreen={isFullscreen}
+          showControls={showControls}
+          theme={theme}
+          notificationEnabled={notificationEnabled}
+          onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+          soundEnabled={soundEnabled}
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          onThemeToggle={handleThemeToggle}
+          showSettingsPanel={showSettingsPanel}
+          onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+          onFullscreenToggle={toggleFullscreen}
+          t={t}
+          onMouseEnter={() => { isHoveringControls.current = true; }}
+          onMouseLeave={() => { isHoveringControls.current = false; }}
+          hideNotificationOnMobile={true}
+        />
 
         {/* Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true */}
         <motion.div 
@@ -1348,128 +1022,24 @@ export default function HomePage() {
             className="mt-8 mb-1 sm:mt-0 sm:mb-6 md:mb-8"
           />
 
-          {/* Time Display */}
-          {/* Note: In timer mode, mode is fixed to 'timer', so timer check is always true */}
-          {true ? (
-            <div 
-              className={`text-center w-full flex flex-col items-center justify-center px-2 sm:px-4 ${
-                isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh] mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8'
-              }`}
-              style={{}}
-            >
-              <div 
-                id="timer-display"
-                className={`${
-                  (() => {
-                    // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
-                    const time = formatTime(timeLeft);
-                    // 根据是否有小时调整字体大小
-                    if (isFullscreen) {
-                      return time.hasHours 
-                        ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
-                        : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]';
-                    } else {
-                      return time.hasHours
-                        ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
-                        : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
-                    }
-                  })()
-                } leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
-                style={{
-                  fontFamily: '"Rajdhani", sans-serif',
-                  fontWeight: '580',
-                  letterSpacing: '0.05em',
-                  WebkitFontSmoothing: 'antialiased',
-                  MozOsxFontSmoothing: 'grayscale',
-                  order: 1
-                }}
-              >
-                {(() => {
-                  // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
-                  const time = formatTime(timeLeft);
-                  
-                  // 检查是否使用渐变色
-                  // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
-                  const hasGradient = themeColor.gradient && (timeLeft > 60);
-                  
-                  // 计算当前应该使用的颜色
-                  // Note: In timer mode, mode is fixed to 'timer', so timer check is always true
-                  const currentColor = timeLeft === 0 
-                    ? '#22c55e'
-                    : timeLeft < 60 
-                    ? '#ef4444'
-                    : themeColor.color;
-                  
-                  // 数字的样式
-                  const getNumberStyle = (): React.CSSProperties => {
-                    if (hasGradient) {
-                      return {
-                        backgroundImage: themeColor.gradient,
-                        backgroundClip: 'text',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        color: 'transparent',
-                      };
-                    }
-                    return { color: currentColor };
-                  };
-                  
-                  const numberStyle = getNumberStyle();
-                  
-                  return (
-                    <>
-                      {time.hasHours && (
-                        <>
-                          <span style={numberStyle}>{time.hours}</span>
-                          <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                            <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                            <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                          </span>
-                        </>
-                      )}
-                      <span style={numberStyle}>{time.mins}</span>
-                      <span className="inline-flex flex-col justify-center gap-[0.2em] mx-[0.15em]">
-                        <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                        <span className="w-[0.15em] h-[0.15em] rounded-sm" style={{ backgroundColor: hasGradient ? themeColor.color : currentColor }}></span>
-                      </span>
-                      <span style={numberStyle}>{time.secs}</span>
-                    </>
-                  );
-                })()}
-              </div>
-              {mode === 'timer' && timeLeft === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`font-semibold mt-4 sm:mt-6 md:mt-8 text-green-500 text-center w-full flex-shrink-0 ${
-                    isFullscreen 
-                      ? 'text-3xl sm:text-4xl md:text-5xl' 
-                      : 'text-2xl sm:text-3xl'
-                  }`}
-                  style={{ order: 2 }}
-                >
-                  {t('timer.time_up')}
-                </motion.div>
-              )}
-            </div>
-          ) : false ? ( // Note: In timer mode, mode is fixed to 'timer', so alarm check is never true
-            /* 闹钟模式 - 此代码块永远不会执行 */
-            <div className={`w-full flex flex-col ${!isFullscreen ? 'pt-24 sm:pt-28 md:pt-32 lg:pt-40' : 'flex-1 h-full'}`}>
-              <WeatherDateDisplay
-                weather={weather}
-                theme={theme}
-                showWeatherIcon={showWeatherIcon}
-                showTemperature={showTemperature}
-                showDate={showDate}
-                showWeekday={showWeekday}
-                currentDate={currentDate}
-                locale={locale}
-                t={t}
-                isFullscreen={isFullscreen}
-                className="mb-4 sm:mb-6 md:mb-8 px-4"
-              />
-            </div>
-          ) : null}
+          {/* Time Display - 使用公共组件 */}
+          <TimeDisplay
+            seconds={timeLeft}
+            mode="timer"
+            isFullscreen={isFullscreen}
+            themeColor={themeColor}
+            useGradient={timeLeft > 60}
+            customColor={
+              timeLeft === 0 
+                ? '#22c55e'
+                : timeLeft < 60 
+                ? '#ef4444'
+                : undefined
+            }
+            timeUpText={timeLeft === 0 ? t('timer.time_up') : undefined}
+            showTimeUpText={timeLeft === 0}
+            className={isFullscreen ? '' : 'mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8'}
+          />
 
           {/* 进度条 - 仅非全屏模式显示 */}
           {mode === 'timer' && progressVisible && !isFullscreen && timeLeft > 0 && initialTime > 0 && (
@@ -1511,112 +1081,25 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Control Buttons */}
-          <AnimatePresence>
-            {showControls && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3 }}
-                className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
-                  isFullscreen 
-                    ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
-                    : (mode === 'timer' ? 'mt-10 sm:mt-8 md:mt-12' : 'mt-6 sm:mt-8 md:mt-12')
-                }`}
-                style={isFullscreen ? {
-                  marginTop: 'auto'
-                } : {}} // Note: In timer mode, mode is fixed to 'timer', so stopwatch check is never true
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              >
-                {/* Note: In timer mode, mode is fixed to 'timer', so timer/stopwatch check is always true */}
-                {true && (
-                  <>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={toggleTimer}
-                      disabled={mode === 'timer' && timeLeft === 0}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } rounded-[10px] font-semibold text-white shadow-lg transition-all ${
-                        mode === 'timer' && timeLeft === 0
-                          ? 'bg-slate-700 cursor-not-allowed'
-                          : isRunning
-                          ? 'bg-orange-500 hover:bg-orange-600'
-                          : 'bg-blue-500 hover:bg-blue-600'
-                      }`}
-                    >
-                      {isRunning ? (
-                        <>
-                          <Pause className={
-                            isFullscreen 
-                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                              : 'w-4 h-4 sm:w-5 sm:h-5'
-                          } />
-                          <span>{t('buttons.pause')}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className={
-                            isFullscreen 
-                              ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                              : 'w-4 h-4 sm:w-5 sm:h-5'
-                          } />
-                          <span>{t('buttons.start')}</span>
-                        </>
-                      )}
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={resetTimer}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } bg-slate-700 hover:bg-slate-600 text-white rounded-[8px] font-semibold shadow-lg transition-all`}
-                    >
-                      <RotateCcw className={
-                        isFullscreen 
-                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                          : 'w-4 h-4 sm:w-5 sm:h-5'
-                      } />
-                      <span>{t('buttons.reset')}</span>
-                    </motion.button>
-
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        // Note: In timer mode, mode is fixed to 'timer', so we only use timeLeft
-                        const currentSeconds = timeLeft;
-                        setCustomMinutes(Math.floor(currentSeconds / 60));
-                        setCustomSeconds(currentSeconds % 60);
-                        setShowEditModal(true);
-                      }}
-                      className={`flex items-center gap-1 sm:gap-2 ${
-                        isFullscreen 
-                          ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                          : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
-                      } ${theme === 'dark' ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-indigo-500 hover:bg-indigo-600'} text-white rounded-[8px] font-semibold shadow-lg transition-all`}
-                    >
-                      <Settings className={
-                        isFullscreen 
-                          ? 'w-4 h-4 sm:w-6 sm:h-6 md:w-7 md:h-7' 
-                          : 'w-4 h-4 sm:w-5 sm:h-5'
-                      } />
-                      <span>{t('buttons.settings')}</span>
-                    </motion.button>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Control Buttons - 使用公共组件 */}
+          <TimerControlButtons
+            isRunning={isRunning}
+            disabled={mode === 'timer' && timeLeft === 0}
+            onToggle={toggleTimer}
+            onReset={resetTimer}
+            onSettings={() => {
+              const currentSeconds = timeLeft;
+              setCustomMinutes(Math.floor(currentSeconds / 60));
+              setCustomSeconds(currentSeconds % 60);
+              setShowEditModal(true);
+            }}
+            isFullscreen={isFullscreen}
+            showControls={showControls}
+            t={t}
+            onMouseEnter={() => { isHoveringControls.current = true; }}
+            onMouseLeave={() => { isHoveringControls.current = false; }}
+            className={mode === 'timer' ? 'mt-10 sm:mt-8 md:mt-12' : 'mt-6 sm:mt-8 md:mt-12'}
+          />
 
           {/* 预设时间快捷按钮 - 仅倒计时模式显示 */}
           <AnimatePresence>

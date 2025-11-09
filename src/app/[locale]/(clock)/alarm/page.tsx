@@ -17,12 +17,12 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
-import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
-import ClockControlButtons from '@/components/ui/ClockControlButtons';
+import ClockToolbar from '@/components/ui/ClockToolbar';
 import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
 import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
 import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
 import ThemeColorConfirmDialog from '@/components/ui/ThemeColorConfirmDialog';
+import { useClockPageEffects } from '@/lib/hooks/useClockPageEffects';
 
 
 // 闹钟类型定义
@@ -108,6 +108,7 @@ export default function HomePage() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showControls, setShowControls] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [mounted, setMounted] = useState(false); // 标记客户端是否已挂载
   const [showCardBorder, setShowCardBorder] = useState(true); // 控制大卡片边框显示（全屏模式下）
   
   // 新增功能状态
@@ -146,8 +147,6 @@ export default function HomePage() {
   const [lastAddedAlarmId, setLastAddedAlarmId] = useState<string | null>(null);
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isHoveringControls = useRef(false);
   const alarmCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastToastRef = useRef<{ id: string; time: number } | null>(null);
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
@@ -156,6 +155,18 @@ export default function HomePage() {
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
   const userInitiatedThemeChangeRef = useRef(false); // 跟踪用户是否刚刚手动切换了主题
+
+  // 使用公共的useEffect逻辑
+  const { isHoveringControls } = useClockPageEffects({
+    isFullscreen,
+    enterFullscreen,
+    showControls,
+    setShowControls,
+    mounted,
+    setMounted,
+    currentDate,
+    setCurrentDate,
+  });
 
   // 注意：背景颜色变化自动切换主题的逻辑已在 useBackground hook 中处理
 
@@ -182,86 +193,6 @@ export default function HomePage() {
   }, [isRunning, mode]);
 
   // 注意：全屏监听和状态同步已在 useFullscreen hook 中处理
-  
-  // 检查是否需要自动进入全屏（从其他页面跳转过来时）
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
-      if (shouldEnterFullscreen) {
-        // 清除标记，避免重复进入
-        sessionStorage.removeItem('shouldEnterFullscreen');
-        
-        // 延迟执行以确保页面完全加载
-        const timer = setTimeout(async () => {
-          // 使用 useFullscreen hook 提供的 enterFullscreen 函数
-          await enterFullscreen();
-        }, 100);
-        
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    }
-  }, []);
-
-  // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
-  useEffect(() => {
-    const handleInteraction = () => {
-      setShowControls(true);
-      
-      // 清除之前的定时器
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-      
-      // 只在全屏且不是闹钟模式时，1.5秒后隐藏控制按钮
-      if (isFullscreen && mode !== 'alarm') {
-        hideControlsTimeoutRef.current = setTimeout(() => {
-          if (!isHoveringControls.current) {
-            setShowControls(false);
-          }
-        }, 1500);
-      }
-    };
-
-    // 监听鼠标移动事件（桌面端）
-    window.addEventListener('mousemove', handleInteraction);
-    // 监听触摸事件（移动端）
-    window.addEventListener('touchstart', handleInteraction);
-    window.addEventListener('touchmove', handleInteraction);
-    
-    // 初始显示控制按钮
-    handleInteraction();
-
-    return () => {
-      window.removeEventListener('mousemove', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('touchmove', handleInteraction);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    };
-  }, [isFullscreen, mode]);
-
-  // 非全屏模式或闹钟模式下始终显示控制按钮
-  useEffect(() => {
-    if (!isFullscreen || mode === 'alarm') {
-      setShowControls(true);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    }
-  }, [isFullscreen, mode]);
-
-
-  // 更新日期时间
-  useEffect(() => {
-    const dateInterval = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 1000);
-
-    return () => clearInterval(dateInterval);
-  }, []);
 
   // 从 localStorage 加载设置
   useEffect(() => {
@@ -1126,75 +1057,25 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative sm:pt-0 pt-[120px]">
-        {/* 顶部工具栏 - 只在非全屏显示 */}
-        <AnimatePresence>
-          {!isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 移动端隐藏 */}
-              <VerticalSidebar
-                currentMode={mode}
-                isFullscreen={false}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              />
-
-              {/* 右上角：功能按钮 - 使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 全屏模式下的浮动工具栏 */}
-        <AnimatePresence>
-          {isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 全屏模式移动端优化 */}
-              <VerticalSidebar
-                currentMode={mode}
-                isFullscreen={true}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              />
-
-              {/* 右上角：功能按钮 - 全屏模式使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
+        {/* 工具栏 - 使用公共组件 */}
+        <ClockToolbar
+          mode={mode}
+          isFullscreen={isFullscreen}
+          showControls={showControls}
+          theme={theme}
+          notificationEnabled={notificationEnabled}
+          onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+          soundEnabled={soundEnabled}
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          onThemeToggle={handleThemeToggle}
+          showSettingsPanel={showSettingsPanel}
+          onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+          onFullscreenToggle={toggleFullscreen}
+          t={t}
+          onMouseEnter={() => { isHoveringControls.current = true; }}
+          onMouseLeave={() => { isHoveringControls.current = false; }}
+          hideNotificationOnMobile={true}
+        />
 
         <motion.div 
           initial={{ opacity: 0 }}

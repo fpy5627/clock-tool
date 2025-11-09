@@ -18,12 +18,12 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import { useWeatherLocation } from '@/lib/hooks/useWeatherLocation';
 import { useNotificationSound } from '@/lib/hooks/useNotificationSound';
 import { useClockPageHandlers } from '@/lib/hooks/useClockPageHandlers';
-import VerticalSidebar from '@/components/blocks/navigation/VerticalSidebar';
-import ClockControlButtons from '@/components/ui/ClockControlButtons';
+import ClockToolbar from '@/components/ui/ClockToolbar';
 import ClockSettingsPanel from '@/components/ui/ClockSettingsPanel';
 import WeatherDateDisplay from '@/components/ui/WeatherDateDisplay';
 import BackgroundConfirmDialog from '@/components/ui/BackgroundConfirmDialog';
 import ThemeColorConfirmDialog from '@/components/ui/ThemeColorConfirmDialog';
+import { useClockPageEffects } from '@/lib/hooks/useClockPageEffects';
 
 // 注意：WORLD_CITIES 和 MORE_TIMEZONES 已在 @/lib/clock-constants 中定义
 
@@ -198,8 +198,6 @@ export default function HomePage() {
   const [timerOvertime, setTimerOvertime] = useState(0); // 超时计时（秒）
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isHoveringControls = useRef(false);
   const alarmCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastToastRef = useRef<{ id: string; time: number } | null>(null);
   const lastClickRef = useRef<{ action: string; time: number } | null>(null);
@@ -208,6 +206,18 @@ export default function HomePage() {
   const overtimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const colorInitializedRef = useRef(false); // 跟踪颜色是否已初始化
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
+
+  // 使用公共的useEffect逻辑
+  const { isHoveringControls } = useClockPageEffects({
+    isFullscreen,
+    enterFullscreen,
+    showControls,
+    setShowControls,
+    mounted,
+    setMounted,
+    currentDate,
+    setCurrentDate,
+  });
 
   // 注意：通知音效控制已在 useNotificationSound hook 中处理
   // 注意：背景颜色变化自动切换主题的逻辑已在 useBackground hook 中处理
@@ -234,75 +244,6 @@ export default function HomePage() {
   }, [isRunning, soundEnabled, notificationEnabled]);
 
   // 注意：全屏监听和状态同步已在 useFullscreen hook 中处理
-  
-  // 检查是否需要自动进入全屏（从其他页面跳转过来时）
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const shouldEnterFullscreen = sessionStorage.getItem('shouldEnterFullscreen') === 'true';
-      if (shouldEnterFullscreen) {
-        // 清除标记，避免重复进入
-        sessionStorage.removeItem('shouldEnterFullscreen');
-        
-        // 延迟执行以确保页面完全加载
-        const timer = setTimeout(async () => {
-          await enterFullscreen();
-        }, 100);
-        
-        return () => {
-          clearTimeout(timer);
-        };
-      }
-    }
-  }, [enterFullscreen]);
-
-  // 鼠标移动和触摸显示控制按钮（仅在全屏模式下自动隐藏）
-  useEffect(() => {
-    const handleInteraction = () => {
-      setShowControls(true);
-      
-      // 清除之前的定时器
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-      
-      // 只在全屏时，1.5秒后隐藏控制按钮
-      if (isFullscreen) {
-        hideControlsTimeoutRef.current = setTimeout(() => {
-          if (!isHoveringControls.current) {
-            setShowControls(false);
-          }
-        }, 1500);
-      }
-    };
-
-    // 监听鼠标移动事件（桌面端）
-    window.addEventListener('mousemove', handleInteraction);
-    // 监听触摸事件（移动端）
-    window.addEventListener('touchstart', handleInteraction);
-    window.addEventListener('touchmove', handleInteraction);
-    
-    // 初始显示控制按钮
-    handleInteraction();
-
-    return () => {
-      window.removeEventListener('mousemove', handleInteraction);
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('touchmove', handleInteraction);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    };
-  }, [isFullscreen, mode]);
-
-  // 非全屏模式下始终显示控制按钮
-  useEffect(() => {
-    if (!isFullscreen) {
-      setShowControls(true);
-      if (hideControlsTimeoutRef.current) {
-        clearTimeout(hideControlsTimeoutRef.current);
-      }
-    }
-  }, [isFullscreen]);
 
   // 当切换离开世界时间模式时，重置选中的城市
   useEffect(() => {
@@ -310,25 +251,6 @@ export default function HomePage() {
       setSelectedCity(null);
     }
   }, [mode]);
-
-  // 标记客户端已挂载
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // 更新日期时间
-  useEffect(() => {
-    // 客户端挂载后立即更新一次时间
-    if (mounted) {
-      setCurrentDate(new Date());
-      
-      const dateInterval = setInterval(() => {
-        setCurrentDate(new Date());
-      }, 1000);
-
-      return () => clearInterval(dateInterval);
-    }
-  }, [mounted]);
 
   // 从 localStorage 加载设置
   useEffect(() => {
@@ -1280,7 +1202,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className={`border-t ${theme === 'dark' ? 'border-slate-700/50' : 'border-gray-200/50'}`}
+                className={`border-t ${!mounted ? 'border-gray-200/50' : theme === 'dark' ? 'border-slate-700/50' : 'border-gray-200/50'}`}
               >
                 <div className="grid grid-cols-2 gap-3 p-4">
                   {/* 桌面通知开关 */}
@@ -1404,75 +1326,25 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative sm:pt-0 pt-[120px]">
-        {/* 顶部工具栏 - 只在非全屏显示 */}
-        <AnimatePresence>
-          {!isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 移动端隐藏 */}
-              <VerticalSidebar
-                currentMode={mode}
-                isFullscreen={false}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              />
-
-              {/* 右上角：功能按钮 - 使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 全屏模式下的浮动工具栏 */}
-        <AnimatePresence>
-          {isFullscreen && showControls && (
-            <>
-              {/* 左上角：模式切换 - 全屏模式移动端优化 */}
-              <VerticalSidebar
-                currentMode={mode}
-                isFullscreen={true}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-              />
-
-              {/* 右上角：功能按钮 - 全屏模式使用公共组件 */}
-              <ClockControlButtons
-                theme={theme}
-                notificationEnabled={notificationEnabled}
-                onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
-                soundEnabled={soundEnabled}
-                onSoundToggle={() => setSoundEnabled(!soundEnabled)}
-                onThemeToggle={handleThemeToggle}
-                showSettingsPanel={showSettingsPanel}
-                onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-                onFullscreenToggle={toggleFullscreen}
-                isFullscreen={isFullscreen}
-                t={t}
-                showControls={showControls}
-                onMouseEnter={() => { isHoveringControls.current = true; }}
-                onMouseLeave={() => { isHoveringControls.current = false; }}
-                hideNotificationOnMobile={true}
-              />
-            </>
-          )}
-        </AnimatePresence>
+        {/* 工具栏 - 使用公共组件 */}
+        <ClockToolbar
+          mode={mode}
+          isFullscreen={isFullscreen}
+          showControls={showControls}
+          theme={theme}
+          notificationEnabled={notificationEnabled}
+          onNotificationToggle={() => setNotificationEnabled(!notificationEnabled)}
+          soundEnabled={soundEnabled}
+          onSoundToggle={() => setSoundEnabled(!soundEnabled)}
+          onThemeToggle={handleThemeToggle}
+          showSettingsPanel={showSettingsPanel}
+          onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
+          onFullscreenToggle={toggleFullscreen}
+          t={t}
+          onMouseEnter={() => { isHoveringControls.current = true; }}
+          onMouseLeave={() => { isHoveringControls.current = false; }}
+          hideNotificationOnMobile={true}
+        />
 
         <motion.div 
           initial={{ opacity: 0 }}
@@ -1914,7 +1786,7 @@ export default function HomePage() {
                         {/* 顶部：城市和白天/黑夜图标 */}
                         <div className="flex items-center justify-between mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 overflow-visible">
                           <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold flex-1 mr-2 leading-normal ${
-                            theme === 'dark' ? 'text-white' : 'text-gray-900'
+                            !mounted ? 'text-gray-900' : theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
                             {displayCity.city} | {displayCity.country}
                           </h2>
@@ -1926,15 +1798,15 @@ export default function HomePage() {
                             const isNight = hours < 6 || hours >= 18;
                             
                             return isNight ? (
-                              <Moon className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
+                              <Moon className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${!mounted ? 'text-slate-500' : theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                             ) : (
-                              <Sun className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
+                              <Sun className={`w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12 flex-shrink-0 ${!mounted ? 'text-yellow-600' : theme === 'dark' ? 'text-yellow-500' : 'text-yellow-600'}`} />
                             );
                           })()}
                         </div>
                         
                         {/* 分隔线 */}
-                        <div className={`border-t mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        <div className={`border-t mb-2 sm:mb-3 md:mb-4 lg:mb-5 flex-shrink-0 ${!mounted ? 'border-gray-300' : theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                         
                         {/* 大时间显示 */}
                         {(() => {
@@ -2054,7 +1926,7 @@ export default function HomePage() {
                             return displayWeather ? (
                               <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
                                 <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 xl:w-8 xl:h-8 flex-shrink-0">
-                                  {getWeatherIcon(displayWeather.icon, theme || 'dark')}
+                                  {getWeatherIcon(displayWeather.icon, theme || 'dark', mounted)}
                                 </div>
                                 <span className={`font-semibold ${
                                   theme === 'dark' ? 'text-white' : 'text-gray-900'
@@ -2159,24 +2031,26 @@ export default function HomePage() {
                           });
                         }}
                         className={`p-3 sm:p-4 rounded-xl transition-all cursor-pointer ${
-                          theme === 'dark' 
-                              ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
+                          !mounted
+                            ? 'bg-white border border-gray-200 hover:bg-gray-50'
+                            : theme === 'dark' 
+                            ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
                             : 'bg-white border border-gray-200 hover:bg-gray-50'
                         } shadow-lg hover:shadow-xl`}
                       >
                         <div className="flex items-center justify-between mb-3">
-                          <h3 className={`text-base sm:text-lg font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                          <h3 className={`text-base sm:text-lg font-bold ${!mounted ? 'text-gray-600' : theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                             {t(`cities.${city.key}`)} | {t(`countries.${city.countryKey}`)}
                           </h3>
                           {isNight ? (
-                            <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
+                            <Moon className={`w-5 h-5 ${!mounted ? 'text-slate-500' : theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
                           ) : (
-                            <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-yellow-600/70' : 'text-yellow-600/80'}`} />
+                            <Sun className={`w-5 h-5 ${!mounted ? 'text-yellow-600/80' : theme === 'dark' ? 'text-yellow-600/70' : 'text-yellow-600/80'}`} />
                           )}
                         </div>
                         
                         {/* 分隔线 */}
-                        <div className={`border-t mb-3 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        <div className={`border-t mb-3 ${!mounted ? 'border-gray-300' : theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                         
                         <div 
                           className={`text-3xl sm:text-4xl font-bold mb-4 text-center`}
@@ -2203,7 +2077,7 @@ export default function HomePage() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-1">
                             <div className="w-5 h-5">
-                            {getWeatherIcon(city.weatherCode, theme || 'dark')}
+                            {getWeatherIcon(city.weatherCode, theme || 'dark', mounted)}
                             </div>
                             <span className={`text-base sm:text-lg font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                               {city.temp}°C
@@ -2267,8 +2141,10 @@ export default function HomePage() {
                           });
                         }}
                         className={`p-3 sm:p-4 rounded-xl transition-all cursor-pointer relative ${
-                          theme === 'dark' 
-                              ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
+                          !mounted
+                            ? 'bg-white border border-gray-200 hover:bg-gray-50'
+                            : theme === 'dark' 
+                            ? 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800/70' 
                             : 'bg-white border border-gray-200 hover:bg-gray-50'
                         } shadow-lg hover:shadow-xl`}
                       >
@@ -2279,7 +2155,9 @@ export default function HomePage() {
                             setCustomCities(customCities.filter((_, i) => i !== index));
                           }}
                           className={`absolute top-2 right-2 p-1 rounded-full transition-colors ${
-                            theme === 'dark'
+                            !mounted
+                              ? 'hover:bg-red-100 text-red-600'
+                              : theme === 'dark'
                               ? 'hover:bg-red-900/30 text-red-400'
                               : 'hover:bg-red-100 text-red-600'
                           }`}
@@ -2288,18 +2166,18 @@ export default function HomePage() {
                         </button>
                         
                         <div className="flex items-center justify-between mb-3 pr-6">
-                          <h3 className={`text-base sm:text-lg font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                          <h3 className={`text-base sm:text-lg font-bold ${!mounted ? 'text-gray-600' : theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                             {customCity.name} | {customCity.country}
                           </h3>
                           {isNight ? (
-                            <Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
+                            <Moon className={`w-5 h-5 ${!mounted ? 'text-slate-500' : theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`} />
                           ) : (
-                            <Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-yellow-600/70' : 'text-yellow-600/80'}`} />
+                            <Sun className={`w-5 h-5 ${!mounted ? 'text-yellow-600/80' : theme === 'dark' ? 'text-yellow-600/70' : 'text-yellow-600/80'}`} />
                           )}
                         </div>
                         
                         {/* 分隔线 */}
-                        <div className={`border-t mb-3 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
+                        <div className={`border-t mb-3 ${!mounted ? 'border-gray-300' : theme === 'dark' ? 'border-slate-700' : 'border-gray-300'}`}></div>
                         
                         <div 
                           className={`text-3xl sm:text-4xl font-bold mb-4 text-center`}

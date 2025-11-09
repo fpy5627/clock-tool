@@ -121,7 +121,7 @@ export default function WeatherDateDisplay({
             <>
               {showWeatherIcon && weather.icon && (
                 <div className="w-4 h-4 sm:w-5 sm:h-5 md:w-5 md:h-5">
-                  {getWeatherIcon(weather.icon, resolvedTheme || 'dark')}
+                  {getWeatherIcon(weather.icon, resolvedTheme || 'dark', mounted)}
                 </div>
               )}
               {showTemperature && weather.temp !== undefined && (

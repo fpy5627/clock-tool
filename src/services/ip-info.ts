@@ -328,9 +328,22 @@ const IP_INFO_APIS: ApiConfig[] = [
 ];
 
 const IP_INFO_CACHE_KEY = 'ip-info-cache';
+/** IP信息缓存过期时间：4小时（毫秒） */
+const IP_INFO_CACHE_EXPIRY = 4 * 60 * 60 * 1000;
+
+/**
+ * 缓存的IP信息结构（包含时间戳）
+ */
+interface CachedIpInfo {
+  data: IpInfo;
+  timestamp: number;
+}
 
 /**
  * 从 sessionStorage 获取缓存的IP信息
+ * 如果缓存已过期（超过4小时），则返回null
+ * 
+ * @returns 缓存的IP信息，如果不存在或已过期则返回null
  */
 function getCachedIpInfo(): IpInfo | null {
   if (typeof window === 'undefined') {
@@ -340,10 +353,27 @@ function getCachedIpInfo(): IpInfo | null {
   try {
     const cached = sessionStorage.getItem(IP_INFO_CACHE_KEY);
     if (cached) {
-      return JSON.parse(cached) as IpInfo;
+      const cachedData: CachedIpInfo = JSON.parse(cached);
+      const now = Date.now();
+      
+      // 检查缓存是否过期（超过4小时）
+      if (now - cachedData.timestamp < IP_INFO_CACHE_EXPIRY) {
+        console.log('Using cached IP info (valid):', cachedData.data);
+        return cachedData.data;
+      } else {
+        // 缓存已过期，清除它
+        console.log('IP info cache expired, clearing...');
+        sessionStorage.removeItem(IP_INFO_CACHE_KEY);
+      }
     }
   } catch (error) {
     console.warn('Failed to read cached IP info:', error);
+    // 如果解析失败，清除可能损坏的缓存
+    try {
+      sessionStorage.removeItem(IP_INFO_CACHE_KEY);
+    } catch (e) {
+      // 忽略清除错误
+    }
   }
 
   return null;
@@ -351,6 +381,9 @@ function getCachedIpInfo(): IpInfo | null {
 
 /**
  * 将IP信息保存到 sessionStorage
+ * 同时保存时间戳，用于后续的过期检查
+ * 
+ * @param info - 要缓存的IP信息
  */
 function setCachedIpInfo(info: IpInfo): void {
   if (typeof window === 'undefined') {
@@ -358,7 +391,12 @@ function setCachedIpInfo(info: IpInfo): void {
   }
 
   try {
-    sessionStorage.setItem(IP_INFO_CACHE_KEY, JSON.stringify(info));
+    const cachedData: CachedIpInfo = {
+      data: info,
+      timestamp: Date.now(),
+    };
+    sessionStorage.setItem(IP_INFO_CACHE_KEY, JSON.stringify(cachedData));
+    console.log('IP info cached to sessionStorage with timestamp');
   } catch (error) {
     console.warn('Failed to cache IP info:', error);
   }
@@ -377,11 +415,10 @@ export async function getIpInfo(
 ): Promise<IpInfo | null> {
   const { ip, lang, timeout = 5000 } = options;
 
-  // 如果查询本机IP（未指定ip参数），先尝试从缓存读取
+  // 如果查询本机IP（未指定ip参数），先尝试从缓存读取（包含过期检查）
   if (!ip && typeof window !== 'undefined') {
     const cached = getCachedIpInfo();
     if (cached) {
-      console.log('Using cached IP info:', cached);
       return cached;
     }
   }
