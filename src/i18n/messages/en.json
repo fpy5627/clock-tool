@@ -473,6 +473,53 @@
       "timer_completed": "Timer Completed",
       "overtime": "Overtime",
       "got_it": "Got It"
+    },
+    "page_description": {
+      "alarm": {
+        "title": "Free Online Alarm Clock - Set Multiple Alarms with Custom Labels",
+        "description": "Set timer for 1 minute. Wake me up in 1 minute. Set the alarm for 1 minute from now. It is a free and easy-to-use alarm clock. Create multiple alarms with custom labels, set repeat schedules (once, daily, weekdays, weekends), and choose from various notification sounds. Perfect for waking up, reminders, and time management. No signup required - start using immediately.",
+        "features": [
+          "Set multiple alarms with custom labels",
+          "Choose repeat schedules: once, daily, weekdays, or weekends",
+          "Select from various notification sounds",
+          "Free and easy-to-use alarm clock",
+          "No registration required"
+        ]
+      },
+      "countdown": {
+        "title": "Free Online Countdown Timer - Set Custom Timers from 10 Seconds to 16 Hours",
+        "description_template": "Set timer for {time}. Wake me up in {time}. Set the alarm for {time} from now. It is a free and easy-to-use countdown timer. Set the hour, minute, and second for the online countdown timer, and start it. Alternatively, you can set the date and time to count till (or from) the event. Start {time} timer. Perfect for productivity, workouts, cooking, and time tracking. Choose from preset timers or set custom time. No signup required.",
+        "description": "Set the hour, minute, and second for the online countdown timer, and start it. Alternatively, you can set the date and time to count till (or from) the event. Start 1 minute timer. It is a free and easy-to-use countdown timer. Perfect for productivity, workouts, cooking, and time tracking. Choose from preset timers or set custom time. No signup required.",
+        "features": [
+          "Set custom timers from 10 seconds to 16 hours",
+          "Choose from preset timers (1 minute, 5 minutes, 10 minutes, etc.)",
+          "Custom time settings with hours, minutes, and seconds",
+          "Free and easy-to-use countdown timer",
+          "No registration required"
+        ]
+      },
+      "stopwatch": {
+        "title": "Free Online Stopwatch - Precise Time Tracking with Lap Functionality",
+        "description": "Start the stopwatch to track elapsed time with precision. Use the lap timer to measure multiple intervals. It is a free and easy-to-use stopwatch. Perfect for workouts, sports, cooking, and any activity that requires time tracking. No signup required - start timing immediately.",
+        "features": [
+          "Precise time tracking with millisecond accuracy",
+          "Lap timer functionality for measuring intervals",
+          "Start, pause, and reset controls",
+          "Free and easy-to-use stopwatch",
+          "No registration required"
+        ]
+      },
+      "worldclock": {
+        "title": "Free Online World Clock - View Multiple Timezones Simultaneously",
+        "description": "View time across multiple timezones simultaneously. Add custom cities and timezones to track time around the world. It is a free and easy-to-use world clock. Perfect for international meetings, travel planning, and staying connected with global teams. No signup required.",
+        "features": [
+          "View multiple timezones simultaneously",
+          "Add custom cities and timezones",
+          "See local time and time differences",
+          "Free and easy-to-use world clock",
+          "No registration required"
+        ]
+      }
     }
   },
   "legal": {

@@ -1101,6 +1101,8 @@ export default function HomePage() {
           {mode === 'alarm' ? (
             /* 闹钟模式 */
             <>
+              {/* H1 标题 - SEO优化 */}
+              <h1 className="sr-only">{t('modes.alarm')} - Alarm Clock</h1>
               {/* 闹钟列表 */}
             <div className="w-full flex justify-center px-4 overflow-x-hidden no-horizontal-scroll">
               <div 
@@ -1111,6 +1113,8 @@ export default function HomePage() {
                   maxWidth: 'min(var(--timer-width, 672px), 90vw)'
                 }}
               >
+                {/* H2 标题 - 闹钟列表 */}
+                <h2 className="sr-only">Alarm List</h2>
                 {/* 闹钟列表 */}
                 <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
                 {alarms.length === 0 ? (
@@ -1381,9 +1385,9 @@ export default function HomePage() {
                   
                   {/* AM 整点 */}
                   <div className="mb-4">
-                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                    <h3 className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                       {t('alarm.morning_hours')}
-                    </p>
+                    </h3>
                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
                         <motion.button
@@ -1474,9 +1478,9 @@ export default function HomePage() {
 
                   {/* PM 整点 */}
                   <div>
-                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                    <h3 className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                       {t('alarm.afternoon_evening_hours')}
-                    </p>
+                    </h3>
                     <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                       {[12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((hour) => (
                         <motion.button
@@ -2981,6 +2985,25 @@ export default function HomePage() {
         setApplyColorToAllPages={setApplyColorToAllPages}
         setTheme={setTheme}
       />
+      
+      {/* 功能说明 */}
+      {!isFullscreen && (
+        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+          <div className="space-y-4">
+            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              {t('page_description.alarm.title')}
+            </h2>
+            <p className="text-sm sm:text-base leading-relaxed">
+              {t('page_description.alarm.description')}
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+              {t.raw('page_description.alarm.features').map((feature: string, index: number) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

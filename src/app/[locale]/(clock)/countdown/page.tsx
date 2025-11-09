@@ -63,6 +63,52 @@ const PRESET_TIMES = [
   { key: '16hour', seconds: 57600, path: '16-hour-timer' },
 ];
 
+/**
+ * 格式化时间为可读格式
+ * 将秒数转换为可读的时间格式，如 "1 Minute", "5 Minutes", "1 Hour", "2 Hours 30 Minutes" 等
+ * 
+ * @param seconds - 总秒数
+ * @param locale - 语言环境
+ * @returns 格式化后的时间字符串
+ */
+function formatTimeForDescription(seconds: number, locale: string): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  
+  const parts: string[] = [];
+  
+  if (hours > 0) {
+    if (locale === 'zh') {
+      parts.push(`${hours}小时`);
+    } else {
+      parts.push(`${hours} ${hours === 1 ? 'Hour' : 'Hours'}`);
+    }
+  }
+  
+  if (minutes > 0) {
+    if (locale === 'zh') {
+      parts.push(`${minutes}分钟`);
+    } else {
+      parts.push(`${minutes} ${minutes === 1 ? 'Minute' : 'Minutes'}`);
+    }
+  }
+  
+  if (secs > 0 && hours === 0 && minutes === 0) {
+    if (locale === 'zh') {
+      parts.push(`${secs}秒`);
+    } else {
+      parts.push(`${secs} ${secs === 1 ? 'Second' : 'Seconds'}`);
+    }
+  }
+  
+  if (parts.length === 0) {
+    return locale === 'zh' ? '1分钟' : '1 Minute';
+  }
+  
+  return parts.join(' ');
+}
+
 export default function HomePage() {
   const t = useTranslations('clock');
   const locale = useLocale();
@@ -981,6 +1027,15 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
+        {/* H1 标题 - SEO优化 */}
+        {(() => {
+          // 根据路径找到对应的预设时间
+          const pathMatch = PRESET_TIMES.find(preset => pathname.endsWith(`/${preset.path}`));
+          const h1Text = pathMatch 
+            ? t(`presets.${pathMatch.key}`) 
+            : `${t('modes.timer')} - Countdown Timer`;
+          return <h1 className="sr-only">{h1Text}</h1>;
+        })()}
         {/* 工具栏 - 使用公共组件 */}
         <ClockToolbar
           mode={mode}
@@ -1022,6 +1077,8 @@ export default function HomePage() {
             className="mt-8 mb-1 sm:mt-0 sm:mb-6 md:mb-8"
           />
 
+          {/* H2 标题 - 倒计时显示 */}
+          <h2 className="sr-only">Remaining Time</h2>
           {/* Time Display - 使用公共组件 */}
           <TimeDisplay
             seconds={timeLeft}
@@ -1125,9 +1182,9 @@ export default function HomePage() {
                   
                   {/* 秒级计时器 */}
                   <div>
-                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                    <h3 className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                       {t('timer.second_timers')}
-                    </p>
+                    </h3>
                     <div className="grid grid-cols-3 gap-2">
                       {PRESET_TIMES.filter(preset => preset.seconds < 120 && preset.key.endsWith('s')).map((preset) => {
                         const isSelected = pathname.endsWith(`/${preset.path}`);
@@ -1214,9 +1271,9 @@ export default function HomePage() {
 
                   {/* 小时级计时器 */}
                   <div>
-                    <p className={`text-xs mb-2 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                    <h3 className={`text-xs mb-2 font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
                       {t('timer.hour_timers')}
-                    </p>
+                    </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {PRESET_TIMES.filter(preset => preset.key.endsWith('hour')).map((preset) => {
                         const isSelected = pathname.endsWith(`/${preset.path}`);
@@ -2684,6 +2741,30 @@ export default function HomePage() {
           setTimerColor(colorId);
         }}
       />
+      
+      {/* 功能说明 */}
+      {!isFullscreen && (() => {
+        const timeText = formatTimeForDescription(initialTime, locale);
+        const description = t('page_description.countdown.description_template', { time: timeText });
+        
+        return (
+          <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+            <div className="space-y-4">
+              <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                {t('page_description.countdown.title')}
+              </h2>
+              <p className="text-sm sm:text-base leading-relaxed">
+                {description}
+              </p>
+              <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+                {t.raw('page_description.countdown.features').map((feature: string, index: number) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        );
+      })()}
       </div>
     </div>
   );

@@ -733,6 +733,8 @@ export default function HomePage() {
 
       {/* 主计时器区域 */}
       <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
+        {/* H1 标题 - SEO优化 */}
+        <h1 className="sr-only">{t('modes.stopwatch')} - Stopwatch</h1>
         {/* 工具栏 - 使用公共组件 */}
         <ClockToolbar
           mode={mode}
@@ -773,6 +775,8 @@ export default function HomePage() {
             className="mb-4 sm:mb-6 md:mb-8"
           />
 
+          {/* H2 标题 - 时间显示 */}
+          <h2 className="sr-only">Current Time</h2>
           {/* Time Display - 使用公共组件 */}
           <TimeDisplay
             seconds={stopwatchTime}
@@ -2026,6 +2030,25 @@ export default function HomePage() {
           }
         }}
       />
+      
+      {/* 功能说明 */}
+      {!isFullscreen && (
+        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+          <div className="space-y-4">
+            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              {t('page_description.stopwatch.title')}
+            </h2>
+            <p className="text-sm sm:text-base leading-relaxed">
+              {t('page_description.stopwatch.description')}
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+              {t.raw('page_description.stopwatch.features').map((feature: string, index: number) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

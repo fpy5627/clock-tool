@@ -1750,6 +1750,8 @@ export default function HomePage() {
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
             <div className="w-full overflow-x-hidden mt-4 sm:mt-6 md:mt-8 lg:mt-12" style={{ paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
+              {/* H1 标题 - SEO优化 */}
+              <h1 className="sr-only">{t('modes.worldclock')} - {t('worldclock.local_time')}</h1>
               <div className="w-full flex flex-col items-center">
                 {/* 用户当前时间卡片 */}
                 {(selectedCity || userLocation) && (() => {
@@ -1973,6 +1975,8 @@ export default function HomePage() {
                       transition={{ duration: 0.3 }}
                       className="w-full flex justify-center"
                     >
+                      {/* H2 标题 - 世界城市时间列表 */}
+                      <h2 className="sr-only">{t('worldclock.more')} - {t('worldclock.add_timezone')}</h2>
                       <div 
                         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 mb-8"
                         style={{
@@ -4688,6 +4692,25 @@ export default function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* 功能说明 */}
+      {!isFullscreen && (
+        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+          <div className="space-y-4">
+            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              {t('page_description.worldclock.title')}
+            </h2>
+            <p className="text-sm sm:text-base leading-relaxed">
+              {t('page_description.worldclock.description')}
+            </p>
+            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+              {t.raw('page_description.worldclock.features').map((feature: string, index: number) => (
+                <li key={index}>{feature}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
