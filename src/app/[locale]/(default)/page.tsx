@@ -3312,6 +3312,7 @@ export default function HomePage() {
                   }}
                   className={`p-1 sm:p-2.5 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
+                  aria-label={theme === 'dark' ? t('tooltips.switch_to_light') : t('tooltips.switch_to_dark')}
                 >
                   {theme === 'dark' ? (
                     <Sun className="w-3.5 h-3.5 sm:w-6 sm:h-6 text-white" />
@@ -3326,6 +3327,7 @@ export default function HomePage() {
                   onClick={() => setShowSettingsPanel(!showSettingsPanel)}
                   className={`hidden sm:flex p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors ${showSettingsPanel ? 'ring-2 ring-blue-500' : ''}`}
                   title={t('buttons.settings')}
+                  aria-label={t('buttons.settings')}
                 >
                   <Settings className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
@@ -3335,6 +3337,7 @@ export default function HomePage() {
                   onClick={toggleFullscreen}
                   className={`p-1 sm:p-2 ${theme === 'dark' ? 'bg-white/10 hover:bg-white/20' : 'bg-black/10 hover:bg-black/20'} rounded-md sm:rounded-lg transition-colors`}
                   title={t('tooltips.fullscreen')}
+                  aria-label={t('tooltips.fullscreen')}
                 >
                   <Maximize className={`w-3.5 h-3.5 sm:w-6 sm:h-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`} />
                 </motion.button>
@@ -3367,6 +3370,7 @@ export default function HomePage() {
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.timer')}
+                  aria-label={t('modes.timer')}
                 >
                   <Timer className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
@@ -3381,6 +3385,7 @@ export default function HomePage() {
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.stopwatch')}
+                  aria-label={t('modes.stopwatch')}
                 >
                   <Clock className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
@@ -3395,6 +3400,7 @@ export default function HomePage() {
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.alarm')}
+                  aria-label={t('modes.alarm')}
                 >
                   <AlarmClock className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
@@ -3409,6 +3415,7 @@ export default function HomePage() {
                       : 'bg-black/40 hover:bg-black/60 text-white border border-white/20'
                   }`}
                   title={t('modes.worldclock')}
+                  aria-label={t('modes.worldclock')}
                 >
                   <Globe className="w-4 h-4 sm:w-7 sm:h-7" />
                 </motion.button>
@@ -3430,6 +3437,7 @@ export default function HomePage() {
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
+                  aria-label={soundEnabled ? t('tooltips.close_sound') : t('tooltips.open_sound')}
                 >
                   {soundEnabled ? (
                     <Volume2 className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
@@ -3443,6 +3451,7 @@ export default function HomePage() {
                   onClick={toggleFullscreen}
                   className="p-1.5 sm:p-4 bg-black/40 hover:bg-black/60 backdrop-blur-md rounded-md sm:rounded-xl transition-all shadow-2xl border border-white/20"
                   title={t('tooltips.exit_fullscreen')}
+                  aria-label={t('tooltips.exit_fullscreen')}
                 >
                   <X className="w-4 h-4 sm:w-7 sm:h-7 text-white" />
                 </motion.button>

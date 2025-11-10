@@ -732,7 +732,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative w-full sm:pt-0 pt-[120px]">
+      <div className={`flex-1 flex ${isFullscreen ? 'items-center justify-center' : 'items-center justify-center'} relative w-full sm:pt-0 pt-[120px]`}>
         {/* H1 标题 - SEO优化 */}
         <h1 className="sr-only">{t('modes.stopwatch')} - Stopwatch</h1>
         {/* 工具栏 - 使用公共组件 */}
@@ -758,61 +758,70 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center -mt-12 sm:mt-0' : 'justify-between flex-1 h-full'}`}
+          className={`w-full flex flex-col ${!isFullscreen ? 'pt-4 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center items-center'}`}
         >
-          {/* 日期和天气显示 - 非全屏时显示 */}
-          <WeatherDateDisplay
-            weather={weather}
-            theme={theme}
-            showWeatherIcon={showWeatherIcon}
-            showTemperature={showTemperature}
-            showDate={showDate}
-            showWeekday={showWeekday}
-            currentDate={currentDate}
-            locale={locale}
-            t={t}
-            isFullscreen={isFullscreen}
-            className="mb-4 sm:mb-6 md:mb-8"
-          />
+          <div className="w-full flex justify-center">
+            <div className="inline-block" style={{
+              width: 'var(--timer-width, auto)',
+              minWidth: '300px',
+              maxWidth: '90vw'
+            }}>
+              {/* 日期和天气显示 - 非全屏时显示 */}
+              <WeatherDateDisplay
+                weather={weather}
+                theme={theme}
+                showWeatherIcon={showWeatherIcon}
+                showTemperature={showTemperature}
+                showDate={showDate}
+                showWeekday={showWeekday}
+                currentDate={currentDate}
+                locale={locale}
+                t={t}
+                isFullscreen={isFullscreen}
+                className="mb-20 sm:mb-6 md:mb-8"
+              />
 
-          {/* H2 标题 - 时间显示 */}
-          <h2 className="sr-only">Current Time</h2>
-          {/* Time Display - 使用公共组件 */}
-          <TimeDisplay
-            seconds={stopwatchTime}
-            mode="stopwatch"
-            isFullscreen={isFullscreen}
-            themeColor={themeColor}
-            useGradient={true}
-            className={isFullscreen ? '' : '-mt-4'}
-            style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '-1rem', marginBottom: '0.5rem' }}
-          />
-              
-          {/* 闹钟列表已删除 - stopwatch模式不需要 */}
-          {/* 世界时间已删除 - stopwatch模式不需要 */}
-          {/* 进度条已删除 - stopwatch模式不需要 */}
+              {/* H2 标题 - 时间显示 */}
+              <h2 className="sr-only">Current Time</h2>
+              {/* Time Display - 使用公共组件 */}
+              <TimeDisplay
+                seconds={stopwatchTime}
+                mode="stopwatch"
+                isFullscreen={isFullscreen}
+                themeColor={themeColor}
+                useGradient={true}
+                align={isFullscreen ? 'center' : 'left'}
+                className={isFullscreen ? '' : 'sm:-mt-4'}
+                style={isFullscreen ? { maxHeight: '100%', overflow: 'hidden' } : { marginTop: '0', marginBottom: '0' }}
+              />
+                  
+              {/* 闹钟列表已删除 - stopwatch模式不需要 */}
+              {/* 世界时间已删除 - stopwatch模式不需要 */}
+              {/* 进度条已删除 - stopwatch模式不需要 */}
 
-          {/* Control Buttons - 使用公共组件 */}
-          <TimerControlButtons
-            isRunning={isRunning}
-            disabled={false}
-            onToggle={toggleTimer}
-            onReset={resetTimer}
-            onSettings={() => {
-              const currentSeconds = stopwatchTime;
-              setCustomMinutes(Math.floor(currentSeconds / 60));
-              setCustomSeconds(currentSeconds % 60);
-              setShowEditModal(true);
-            }}
-            isFullscreen={isFullscreen}
-            showControls={showControls}
-            t={t}
-            onMouseEnter={() => { isHoveringControls.current = true; }}
-            onMouseLeave={() => { isHoveringControls.current = false; }}
-            className={isFullscreen ? '' : '-mt-4'}
-          />
+              {/* Control Buttons - 使用公共组件 */}
+              <TimerControlButtons
+                isRunning={isRunning}
+                disabled={false}
+                onToggle={toggleTimer}
+                onReset={resetTimer}
+                onSettings={() => {
+                  const currentSeconds = stopwatchTime;
+                  setCustomMinutes(Math.floor(currentSeconds / 60));
+                  setCustomSeconds(currentSeconds % 60);
+                  setShowEditModal(true);
+                }}
+                isFullscreen={isFullscreen}
+                showControls={showControls}
+                t={t}
+                onMouseEnter={() => { isHoveringControls.current = true; }}
+                onMouseLeave={() => { isHoveringControls.current = false; }}
+                className={isFullscreen ? '' : 'mt-1 sm:-mt-4'}
+              />
 
-          {/* 预设时间快捷按钮已删除 - stopwatch模式不需要 */}
+              {/* 预设时间快捷按钮已删除 - stopwatch模式不需要 */}
+            </div>
+          </div>
         </motion.div>
       </div>
 
@@ -2033,21 +2042,31 @@ export default function HomePage() {
       
       {/* 功能说明 */}
       {!isFullscreen && (
-        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-          <div className="space-y-4">
-            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {t('page_description.stopwatch.title')}
-            </h2>
-            <p className="text-sm sm:text-base leading-relaxed">
+        <>
+          {/* 分割线 - 拉通整个屏幕 */}
+          <div className={`w-full border-t mt-16 sm:mt-20 md:mt-24 lg:mt-28 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}></div>
+          <div className="w-full flex justify-center">
+            <div className="inline-block px-4 sm:px-6 pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-12" style={{
+              width: 'var(--timer-width, auto)',
+              minWidth: '300px',
+              maxWidth: '90vw'
+            }}>
+              <div className={`space-y-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                  {t('page_description.stopwatch.title')}
+                </h2>
+            <p className={`text-md leading-relaxed ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t('page_description.stopwatch.description')}
             </p>
-            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+            <ul className={`list-disc list-inside space-y-2 text-md ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t.raw('page_description.stopwatch.features').map((feature: string, index: number) => (
                 <li key={index}>{feature}</li>
               ))}
             </ul>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

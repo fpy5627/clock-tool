@@ -140,6 +140,7 @@ export default function VerticalSidebar({
                 : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300'
             }`}
             title={t(item.labelKey as any)}
+            aria-label={t(item.labelKey as any)}
           >
             <Icon className={`w-4 h-4 sm:w-6 sm:h-6 ${isFullscreen ? 'sm:w-7 sm:h-7' : ''}`} />
           </motion.button>

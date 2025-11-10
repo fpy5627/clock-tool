@@ -350,7 +350,9 @@
         "15min": "15 Minute Alarm",
         "30min": "30 Minute Alarm",
         "1hour": "1 Hour Alarm"
-      }
+      },
+      "fullscreen_add_alarm_hint": "Click the settings button in the top right to add alarm",
+      "fullscreen_edit_alarm_hint": "Click alarm time to edit settings"
     },
     "worldclock": {
       "local_time": "Local time",

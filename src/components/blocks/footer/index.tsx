@@ -9,8 +9,12 @@ export default function Footer({ footer }: { footer: FooterType }) {
 
   return (
     <section id={footer.name} className="py-16" data-footer>
-      <div className="max-w-7xl mx-auto px-8">
-        <footer>
+      <div className="w-full flex justify-center" style={{ paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
+        <div className="inline-block w-full" style={{
+          minWidth: '280px',
+          maxWidth: 'min(1400px, 95vw)'
+        }}>
+          <footer className="px-2 sm:px-6">
           <div className="flex flex-col items-center justify-between gap-10 text-center lg:flex-row lg:text-left">
             <div className="flex w-full max-w-96 shrink flex-col items-center justify-between gap-6 lg:items-start">
               {footer.brand && (
@@ -31,14 +35,14 @@ export default function Footer({ footer }: { footer: FooterType }) {
                     )}
                   </div>
                   {footer.brand.description && (
-                    <p className="mt-6 text-md text-muted-foreground">
+                    <p className="mt-6 text-md text-gray-500 dark:text-slate-500">
                       {footer.brand.description}
                     </p>
                   )}
                 </div>
               )}
               {footer.social && (
-                <ul className="flex items-center space-x-6 text-muted-foreground">
+                <ul className="flex items-center space-x-6 text-gray-500 dark:text-slate-500">
                   {footer.social.items?.map((item, i) => (
                     <li key={i} className="font-medium hover:text-primary">
                       {item.url ? (
@@ -59,28 +63,30 @@ export default function Footer({ footer }: { footer: FooterType }) {
                 </ul>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-6 lg:gap-20">
-              {footer.nav?.items?.map((item, i) => (
-                <div key={i}>
-                  <p className="mb-6 font-bold">{item.title}</p>
-                  <ul className="space-y-4 text-sm text-muted-foreground">
-                    {item.children?.map((iitem, ii) => (
-                      <li key={ii} className="font-medium hover:text-primary">
-                        {iitem.url ? (
-                          <Link href={iitem.url} target={iitem.target}>
-                            {iitem.title}
-                          </Link>
-                        ) : (
-                          <span>{iitem.title}</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            <div className="flex justify-end">
+              <div className="grid grid-cols-3 gap-6 lg:gap-20">
+                {footer.nav?.items?.map((item, i) => (
+                  <div key={i} className="text-right">
+                    <p className="mb-6 font-bold">{item.title}</p>
+                    <ul className="space-y-4 text-sm text-gray-500 dark:text-slate-500">
+                      {item.children?.map((iitem, ii) => (
+                        <li key={ii} className="font-medium hover:text-primary">
+                          {iitem.url ? (
+                            <Link href={iitem.url} target={iitem.target}>
+                              {iitem.title}
+                            </Link>
+                          ) : (
+                            <span>{iitem.title}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="mt-8 flex flex-col justify-between gap-4 border-t pt-8 text-center text-sm font-medium text-muted-foreground lg:flex-row lg:items-center lg:text-left">
+          <div className="mt-8 flex flex-col justify-between gap-4 border-t pt-8 text-center text-sm font-medium text-gray-500 dark:text-slate-500 lg:flex-row lg:items-center lg:text-left">
             {footer.copyright && (
               <p>
                 {footer.copyright}
@@ -88,7 +94,8 @@ export default function Footer({ footer }: { footer: FooterType }) {
                   <a
                     href="https://clock.toolina.com"
                     target="_blank"
-                    className="px-2 text-primary"
+                    className="px-2 text-primary hover:underline underline-offset-4 font-semibold"
+                    style={{ color: 'hsl(var(--primary))' }}
                   >
                     build with Timero
                   </a>
@@ -112,7 +119,8 @@ export default function Footer({ footer }: { footer: FooterType }) {
               </ul>
             )}
           </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     </section>
   );

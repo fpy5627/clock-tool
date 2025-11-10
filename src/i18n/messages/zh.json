@@ -350,7 +350,9 @@
         "15min": "15分钟闹钟",
         "30min": "30分钟闹钟",
         "1hour": "1小时闹钟"
-      }
+      },
+      "fullscreen_add_alarm_hint": "点击右上角设置按钮添加闹钟",
+      "fullscreen_edit_alarm_hint": "点击闹钟时间可编辑设置"
     },
     "worldclock": {
       "local_time": "本地时间",

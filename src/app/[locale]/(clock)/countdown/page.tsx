@@ -2748,21 +2748,31 @@ export default function HomePage() {
         const description = t('page_description.countdown.description_template', { time: timeText });
         
         return (
-          <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-            <div className="space-y-4">
-              <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-                {t('page_description.countdown.title')}
-              </h2>
-              <p className="text-sm sm:text-base leading-relaxed">
+          <>
+            {/* 分割线 - 拉通整个屏幕 */}
+            <div className={`w-full border-t mt-16 sm:mt-20 md:mt-24 lg:mt-28 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}></div>
+            <div className="w-full flex justify-center">
+              <div className="inline-block px-4 sm:px-6 pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-12" style={{
+                width: 'var(--timer-width, auto)',
+                minWidth: '300px',
+                maxWidth: '90vw'
+              }}>
+                <div className={`space-y-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                  <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                    {t('page_description.countdown.title')}
+                  </h2>
+              <p className={`text-md leading-relaxed ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
                 {description}
               </p>
-              <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+              <ul className={`list-disc list-inside space-y-2 text-md ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
                 {t.raw('page_description.countdown.features').map((feature: string, index: number) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>
+                </div>
+              </div>
             </div>
-          </div>
+          </>
         );
       })()}
       </div>

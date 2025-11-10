@@ -1116,7 +1116,7 @@ export default function HomePage() {
                 {/* H2 标题 - 闹钟列表 */}
                 <h2 className="sr-only">Alarm List</h2>
                 {/* 闹钟列表 */}
-                <div className="space-y-3 mb-4 max-h-[calc(100vh-500px)] min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll">
+                <div className={`space-y-3 mb-4 ${isFullscreen ? 'max-h-[calc(100vh-500px)]' : 'max-h-[calc(100vh-500px)]'} min-h-[200px] overflow-y-auto overflow-x-hidden scrollbar-thin no-horizontal-scroll`}>
                 {alarms.length === 0 ? (
                   <div className={`text-center py-12 rounded-lg ${
                     theme === 'dark' 
@@ -1255,32 +1255,29 @@ export default function HomePage() {
               </div>
 
               {/* 添加闹钟按钮 */}
-              {!isFullscreen && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    const now = new Date();
-                    setNewAlarmHour(now.getHours());
-                    setNewAlarmMinute(now.getMinutes());
-                    setNewAlarmRepeat('daily');
-                    setNewAlarmLabel('');
-                    setEditingAlarmId(null);
-                    setShowAddAlarm(true);
-                  }}
-                  className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
-                    theme === 'dark' 
-                      ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
-                      : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
-                  }`}
-                >
-                  <Plus className="w-5 h-5" />
-                    <span className="font-medium">{t('buttons.add_alarm')}</span>
-                </motion.button>
-              )}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  const now = new Date();
+                  setNewAlarmHour(now.getHours());
+                  setNewAlarmMinute(now.getMinutes());
+                  setNewAlarmRepeat('daily');
+                  setNewAlarmLabel('');
+                  setEditingAlarmId(null);
+                  setShowAddAlarm(true);
+                }}
+                className={`w-full p-4 mb-4 rounded-[8px] flex items-center justify-center gap-2 transition-colors backdrop-blur-sm ${
+                  theme === 'dark' 
+                    ? 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg' 
+                    : 'bg-blue-500/80 hover:bg-blue-600/80 text-white shadow-lg'
+                }`}
+              >
+                <Plus className="w-5 h-5" />
+                  <span className="font-medium">{t('buttons.add_alarm')}</span>
+              </motion.button>
 
               {/* 快捷设置按钮 - 仅在闹钟模式下显示 */}
-              {!isFullscreen && (
               <div className="mt-8 space-y-6">
                 {/* 相对时间快捷设置 */}
                 <div>
@@ -1570,7 +1567,6 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              )}
               </div>
             </div>
             </>
@@ -2988,21 +2984,31 @@ export default function HomePage() {
       
       {/* 功能说明 */}
       {!isFullscreen && (
-        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-          <div className="space-y-4">
-            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {t('page_description.alarm.title')}
-            </h2>
-            <p className="text-sm sm:text-base leading-relaxed">
+        <>
+          {/* 分割线 - 拉通整个屏幕 */}
+          <div className={`w-full border-t mt-16 sm:mt-20 md:mt-24 lg:mt-28 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}></div>
+          <div className="w-full flex justify-center px-4">
+            <div className="inline-block px-4 pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-12" style={{
+              width: '100%',
+              minWidth: '300px',
+              maxWidth: 'min(var(--timer-width, 672px), 90vw)'
+            }}>
+              <div className={`space-y-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                  {t('page_description.alarm.title')}
+                </h2>
+            <p className={`text-md leading-relaxed ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t('page_description.alarm.description')}
             </p>
-            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+            <ul className={`list-disc list-inside space-y-2 text-md ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t.raw('page_description.alarm.features').map((feature: string, index: number) => (
                 <li key={index}>{feature}</li>
               ))}
             </ul>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
       </div>
     </div>

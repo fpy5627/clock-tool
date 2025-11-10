@@ -1068,6 +1068,7 @@ export default function HomePage() {
         backgroundSize: 'cover',
         backgroundPosition: backgroundType === 'image' && backgroundImage ? `${imagePositionX}% ${imagePositionY}%` : 'center',
         backgroundRepeat: 'no-repeat',
+        ...(isFullscreen && mode === 'worldclock' ? { height: '100vh', display: 'flex', flexDirection: 'column' } : {})
       }}
     >
       {/* 图片背景遮罩层 - 提升内容可读性 */}
@@ -1317,6 +1318,50 @@ export default function HomePage() {
                       {t('tooltips.fullscreen')}
                     </span>
                   </motion.button>
+                  
+                  {/* 语言切换 */}
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        const currentLocale = (params?.locale as string) || locale || 'en';
+                        const targetLocale = currentLocale === 'zh' ? 'en' : 'zh';
+                        let newPathname = pathname.replace(`/${currentLocale}`, `/${targetLocale}`);
+                        // 如果替换后路径不以目标语言开头，则添加语言前缀
+                        if (!newPathname.startsWith(`/${targetLocale}`)) {
+                          // 如果当前路径不以语言开头，直接添加
+                          if (!pathname.startsWith(`/${currentLocale}`)) {
+                            newPathname = `/${targetLocale}${pathname}`;
+                          } else {
+                            // 否则在开头添加
+                            newPathname = `/${targetLocale}${pathname.replace(`/${currentLocale}`, '')}`;
+                          }
+                        }
+                        // 确保路径格式正确
+                        if (!newPathname.startsWith('/')) {
+                          newPathname = `/${targetLocale}${newPathname}`;
+                        }
+                        router.push(newPathname);
+                      } catch (error) {
+                        console.error('Language switch error:', error);
+                      }
+                    }}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      <Languages className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {locale === 'zh' ? 'English' : '中文'}
+                    </span>
+                  </motion.button>
                 </div>
               </motion.div>
             )}
@@ -1325,7 +1370,7 @@ export default function HomePage() {
       )}
 
       {/* 主计时器区域 */}
-      <div className="flex-1 flex items-center justify-center relative sm:pt-0 pt-[120px]">
+      <div className={`flex-1 flex items-center justify-center relative ${isFullscreen && mode === 'worldclock' ? 'pt-0 h-full' : 'sm:pt-0 pt-[120px]'}`} style={isFullscreen && mode === 'worldclock' ? { height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' } : {}}>
         {/* 工具栏 - 使用公共组件 */}
         <ClockToolbar
           mode={mode}
@@ -1349,7 +1394,8 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'justify-center' : 'pt-12 sm:pt-20'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-4 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : isFullscreen && mode === 'worldclock' ? 'absolute inset-0 flex items-center justify-center' : 'pt-12 sm:pt-20'}`}
+          style={isFullscreen && mode === 'worldclock' ? { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' } : {}}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           {false && (
@@ -1749,10 +1795,10 @@ export default function HomePage() {
             </>
           ) : mode === 'worldclock' ? (
             /* 世界时间 */
-            <div className="w-full overflow-x-hidden mt-4 sm:mt-6 md:mt-8 lg:mt-12" style={{ paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
+            <div className={`w-full overflow-x-hidden ${isFullscreen ? '' : 'mt-4 sm:mt-6 md:mt-8 lg:mt-12'}`} style={isFullscreen ? {} : { paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
               {/* H1 标题 - SEO优化 */}
               <h1 className="sr-only">{t('modes.worldclock')} - {t('worldclock.local_time')}</h1>
-              <div className="w-full flex flex-col items-center">
+              <div className={`w-full flex flex-col ${isFullscreen ? 'items-center justify-center h-full' : 'items-center'}`} style={isFullscreen ? { height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' } : {}}>
                 {/* 用户当前时间卡片 */}
                 {(selectedCity || userLocation) && (() => {
                   // 优先显示选中的城市，否则显示IP定位的城市
@@ -1766,7 +1812,9 @@ export default function HomePage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
                       className={`py-4 sm:py-6 md:py-8 lg:py-10 xl:py-12 px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 rounded-2xl sm:rounded-3xl ${
-                        showCardBorder 
+                        isFullscreen
+                          ? ''
+                          : showCardBorder
                           ? (theme === 'dark' 
                               ? 'bg-slate-800/50 border border-slate-700 shadow-2xl' 
                               : 'bg-white border border-gray-200 shadow-2xl')
@@ -1776,12 +1824,24 @@ export default function HomePage() {
                   width: '100%',
                   minWidth: '280px',
                         maxWidth: 'min(1400px, 95vw)',
-                        marginBottom: 'clamp(16px, 3vw, 48px)',
+                        marginBottom: isFullscreen ? '0' : 'clamp(32px, 6vw, 48px)',
+                        marginTop: isFullscreen ? '0' : undefined,
+                        marginLeft: isFullscreen ? 'auto' : undefined,
+                        marginRight: isFullscreen ? 'auto' : undefined,
                         transition: 'all 0.3s ease-in-out',
-                        maxHeight: 'calc(100vh - clamp(80px, 15vh, 200px))',
+                        maxHeight: isFullscreen ? '100%' : 'calc(100vh - clamp(80px, 15vh, 200px))',
                         overflow: 'visible',
                         display: 'flex',
-                        flexDirection: 'column'
+                        flexDirection: 'column',
+                        ...(isFullscreen ? {
+                          backgroundColor: 'transparent',
+                          background: 'transparent',
+                          border: 'none',
+                          boxShadow: 'none',
+                          backgroundImage: 'none',
+                          position: 'relative',
+                          zIndex: 1
+                        } : {})
                       }}
                     >
                       <div className="w-full flex-1 flex flex-col justify-between min-h-0 overflow-visible">
@@ -1965,7 +2025,8 @@ export default function HomePage() {
                   );
                 })()}
                 
-                {/* 小卡片网格 - 可自动隐藏 */}
+                {/* 小卡片网格 - 可自动隐藏 - 全屏模式下隐藏 */}
+                {!isFullscreen && (
                 <AnimatePresence>
                   {showCardBorder && (
                     <motion.div
@@ -1974,6 +2035,9 @@ export default function HomePage() {
                       exit={{ opacity: 0, y: 20 }}
                       transition={{ duration: 0.3 }}
                       className="w-full flex justify-center"
+                      style={{
+                        marginTop: 'clamp(24px, 4vw, 32px)'
+                      }}
                     >
                       {/* H2 标题 - 世界城市时间列表 */}
                       <h2 className="sr-only">{t('worldclock.more')} - {t('worldclock.add_timezone')}</h2>
@@ -2242,6 +2306,7 @@ export default function HomePage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+                )}
               </div>
             </div>
           ) : null}
@@ -4695,21 +4760,31 @@ export default function HomePage() {
       
       {/* 功能说明 */}
       {!isFullscreen && (
-        <div className={`w-full max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-          <div className="space-y-4">
-            <h2 className={`text-xl sm:text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {t('page_description.worldclock.title')}
-            </h2>
-            <p className="text-sm sm:text-base leading-relaxed">
+        <>
+          {/* 分割线 - 拉通整个屏幕 */}
+          <div className={`w-full border-t mt-16 sm:mt-20 md:mt-24 lg:mt-28 ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}></div>
+          <div className="w-full flex justify-center" style={{ paddingLeft: 'clamp(8px, 2vw, 32px)', paddingRight: 'clamp(8px, 2vw, 32px)' }}>
+            <div className="inline-block px-2 sm:px-6 pt-8 sm:pt-10 md:pt-12 pb-8 sm:pb-12" style={{
+              width: '100%',
+              minWidth: '280px',
+              maxWidth: 'min(1400px, 95vw)'
+            }}>
+              <div className={`space-y-4 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                <h2 className={`text-lg font-bold ${theme === 'dark' ? 'text-slate-300' : 'text-gray-600'}`}>
+                  {t('page_description.worldclock.title')}
+                </h2>
+            <p className={`text-md leading-relaxed ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t('page_description.worldclock.description')}
             </p>
-            <ul className="list-disc list-inside space-y-2 text-sm sm:text-base">
+            <ul className={`list-disc list-inside space-y-2 text-md ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}>
               {t.raw('page_description.worldclock.features').map((feature: string, index: number) => (
                 <li key={index}>{feature}</li>
               ))}
             </ul>
+              </div>
+            </div>
           </div>
-        </div>
+        </>
       )}
       </div>
     </div>

@@ -74,6 +74,8 @@ export interface TimeDisplayProps {
   className?: string;
   /** 自定义样式 */
   style?: React.CSSProperties;
+  /** 对齐方式（left | center） */
+  align?: 'left' | 'center';
 }
 
 /**
@@ -103,6 +105,7 @@ export default function TimeDisplay({
   showTimeUpText = false,
   className = '',
   style,
+  align = 'center',
 }: TimeDisplayProps) {
   const time = formatTime(seconds, mode);
   
@@ -139,14 +142,14 @@ export default function TimeDisplay({
 
   return (
     <div 
-      className={`text-center w-full flex flex-col items-center justify-center px-2 sm:px-4 ${
+      className={`w-full flex flex-col ${align === 'left' ? 'items-start' : 'items-center'} ${align === 'left' ? 'justify-start' : 'justify-center'} px-2 sm:px-4 ${
         isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
       } ${className}`}
       style={style}
     >
       <div 
         id="timer-display"
-        className={`${fontSizeClass} leading-none flex items-center justify-center whitespace-nowrap mx-auto`}
+        className={`${fontSizeClass} leading-none flex items-center ${align === 'left' ? 'justify-start' : 'justify-center'} whitespace-nowrap ${align === 'left' ? 'mx-0' : 'mx-auto'}`}
         style={{
           fontFamily: '"Rajdhani", sans-serif',
           fontWeight: '580',
