@@ -230,6 +230,7 @@
     },
     "cities": {
       "beijing": "Beijing",
+      "hongkong": "Hong Kong",
       "tokyo": "Tokyo",
       "seoul": "Seoul",
       "singapore": "Singapore",

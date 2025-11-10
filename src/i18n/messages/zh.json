@@ -230,6 +230,7 @@
     },
     "cities": {
       "beijing": "北京",
+      "hongkong": "香港",
       "tokyo": "东京",
       "seoul": "首尔",
       "singapore": "新加坡",

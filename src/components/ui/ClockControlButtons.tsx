@@ -171,11 +171,11 @@ export default function ClockControlButtons({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="fixed top-1 sm:top-6 right-1 sm:right-6 flex gap-0.5 sm:gap-3 z-50"
+      className="hidden sm:flex fixed top-1 sm:top-6 right-1 sm:right-6 gap-0.5 sm:gap-3 z-50"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* 声音按钮 */}
+      {/* 声音按钮 - 桌面端显示 */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -191,7 +191,7 @@ export default function ClockControlButtons({
         )}
       </motion.button>
 
-      {/* 退出全屏按钮 */}
+      {/* 退出全屏按钮 - 桌面端显示 */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

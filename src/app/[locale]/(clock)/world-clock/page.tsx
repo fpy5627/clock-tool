@@ -208,7 +208,7 @@ export default function HomePage() {
   const lastBackgroundColorRef = useRef<string>(''); // 跟踪上一次的背景颜色
 
   // 使用公共的useEffect逻辑
-  const { isHoveringControls } = useClockPageEffects({
+  const { isHoveringControls, hideControlsTimeoutRef } = useClockPageEffects({
     isFullscreen,
     enterFullscreen,
     showControls,
@@ -1070,6 +1070,27 @@ export default function HomePage() {
         backgroundRepeat: 'no-repeat',
         ...(isFullscreen && mode === 'worldclock' ? { height: '100vh', display: 'flex', flexDirection: 'column' } : {})
       }}
+      onClick={(e) => {
+        // 移动端全屏模式下，点击屏幕显示标签栏
+        if (isFullscreen && typeof window !== 'undefined' && window.innerWidth < 640) {
+          // 检查点击目标是否是标签栏本身或其子元素
+          const target = e.target as HTMLElement;
+          const isClickOnToolbar = target.closest('[class*="sm:hidden fixed top-0"]');
+          if (!isClickOnToolbar) {
+            setShowControls(true);
+            // 清除之前的定时器
+            if (hideControlsTimeoutRef.current) {
+              clearTimeout(hideControlsTimeoutRef.current);
+            }
+            // 1.5秒后自动隐藏
+            hideControlsTimeoutRef.current = setTimeout(() => {
+              if (!isHoveringControls.current) {
+                setShowControls(false);
+              }
+            }, 1500);
+          }
+        }
+      }}
     >
       {/* 图片背景遮罩层 - 提升内容可读性 */}
       {backgroundType === 'image' && backgroundImage && (
@@ -1084,8 +1105,8 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
-      {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
-      {!isFullscreen && (
+      {/* 移动端顶部菜单栏和导航栏 - 移动端显示，全屏模式下根据showControls显示 */}
+      {((!isFullscreen) || (isFullscreen && showControls)) && (
         <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>
           {/* 顶部菜单栏 - 应用名称和汉堡菜单按钮 */}
           <div className={`flex items-center justify-between px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
@@ -1805,6 +1826,24 @@ export default function HomePage() {
                   const displayCity = selectedCity || userLocation;
                   if (!displayCity) return null;
                   
+                  // 尝试通过时区匹配 WORLD_CITIES 中的城市，以获取翻译键
+                  const matchedCity = WORLD_CITIES.find(city => city.timezone === displayCity.timezone);
+                  
+                  // 获取翻译后的城市和国家名称
+                  const getCityName = () => {
+                    if (matchedCity) {
+                      return t(`cities.${matchedCity.key}`);
+                    }
+                    return displayCity.city;
+                  };
+                  
+                  const getCountryName = () => {
+                    if (matchedCity) {
+                      return t(`countries.${matchedCity.countryKey}`);
+                    }
+                    return displayCity.country;
+                  };
+                  
                   return (
                     <motion.div
                       key={selectedCity ? 'selected' : 'user-location'} // 添加 key 以触发重新渲染动画
@@ -1850,7 +1889,7 @@ export default function HomePage() {
                           <h2 className={`text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-bold flex-1 mr-2 leading-normal ${
                             !mounted ? 'text-gray-900' : theme === 'dark' ? 'text-white' : 'text-gray-900'
                           }`}>
-                            {displayCity.city} | {displayCity.country}
+                            {getCityName()} | {getCountryName()}
                           </h2>
                           {(() => {
                             // 使用 currentDate 状态而不是 new Date()，避免水合错误
@@ -2015,7 +2054,7 @@ export default function HomePage() {
                             style={{
                               fontSize: 'clamp(0.75rem, 1.5vw, 1.125rem)'
                             }}>
-                              {displayCity.city}
+                              {getCityName()}
                             </span>
                           </div>
                         </div>
@@ -2500,6 +2539,24 @@ export default function HomePage() {
             )}
           </AnimatePresence>
         </motion.div>
+        
+        {/* 移动端全屏模式下的退出全屏按钮 */}
+        {isFullscreen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleFullscreen}
+            className="sm:hidden fixed bottom-6 right-6 z-50 p-4 bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-full shadow-2xl border border-white/20 transition-all"
+            title={t('tooltips.exit_fullscreen')}
+            aria-label={t('tooltips.exit_fullscreen')}
+          >
+            <X className="w-6 h-6 text-white" />
+          </motion.button>
+        )}
       </div>
 
       {/* 编辑时间模态框 */}

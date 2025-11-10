@@ -157,7 +157,7 @@ export default function HomePage() {
   const userInitiatedThemeChangeRef = useRef(false); // 跟踪用户是否刚刚手动切换了主题
 
   // 使用公共的useEffect逻辑
-  const { isHoveringControls } = useClockPageEffects({
+  const { isHoveringControls, hideControlsTimeoutRef } = useClockPageEffects({
     isFullscreen,
     enterFullscreen,
     showControls,
@@ -768,6 +768,27 @@ export default function HomePage() {
         backgroundPosition: backgroundType === 'image' && backgroundImage ? `${imagePositionX}% ${imagePositionY}%` : 'center',
         backgroundRepeat: 'no-repeat',
       }}
+      onClick={(e) => {
+        // 移动端全屏模式下，点击屏幕显示标签栏
+        if (isFullscreen && typeof window !== 'undefined' && window.innerWidth < 640) {
+          // 检查点击目标是否是标签栏本身或其子元素
+          const target = e.target as HTMLElement;
+          const isClickOnToolbar = target.closest('[class*="sm:hidden fixed top-0"]');
+          if (!isClickOnToolbar) {
+            setShowControls(true);
+            // 清除之前的定时器
+            if (hideControlsTimeoutRef.current) {
+              clearTimeout(hideControlsTimeoutRef.current);
+            }
+            // 1.5秒后自动隐藏
+            hideControlsTimeoutRef.current = setTimeout(() => {
+              if (!isHoveringControls.current) {
+                setShowControls(false);
+              }
+            }, 1500);
+          }
+        }
+      }}
     >
       {/* 图片背景遮罩层 - 提升内容可读性 */}
       {backgroundType === 'image' && backgroundImage && (
@@ -782,8 +803,8 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
-      {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
-      {!isFullscreen && (
+      {/* 移动端顶部菜单栏和导航栏 - 移动端显示，全屏模式下根据showControls显示 */}
+      {((!isFullscreen) || (isFullscreen && showControls)) && (
         <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>
           {/* 顶部菜单栏 - 应用名称和汉堡菜单按钮 */}
           <div className={`flex items-center justify-between px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
@@ -1046,6 +1067,50 @@ export default function HomePage() {
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
                       {t('tooltips.fullscreen')}
+                    </span>
+                  </motion.button>
+                  
+                  {/* 语言切换 */}
+                  <motion.button
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        const currentLocale = (params?.locale as string) || locale || 'en';
+                        const targetLocale = currentLocale === 'zh' ? 'en' : 'zh';
+                        let newPathname = pathname.replace(`/${currentLocale}`, `/${targetLocale}`);
+                        // 如果替换后路径不以目标语言开头，则添加语言前缀
+                        if (!newPathname.startsWith(`/${targetLocale}`)) {
+                          // 如果当前路径不以语言开头，直接添加
+                          if (!pathname.startsWith(`/${currentLocale}`)) {
+                            newPathname = `/${targetLocale}${pathname}`;
+                          } else {
+                            // 否则在开头添加
+                            newPathname = `/${targetLocale}${pathname.replace(`/${currentLocale}`, '')}`;
+                          }
+                        }
+                        // 确保路径格式正确
+                        if (!newPathname.startsWith('/')) {
+                          newPathname = `/${targetLocale}${newPathname}`;
+                        }
+                        router.push(newPathname);
+                      } catch (error) {
+                        console.error('Language switch error:', error);
+                      }
+                    }}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
+                      theme === 'dark'
+                        ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-slate-700/50' : 'bg-gray-100'}`}>
+                      <Languages className="w-5 h-5" />
+                    </div>
+                    <span className="text-xs font-semibold text-center leading-tight">
+                      {locale === 'zh' ? 'English' : '中文'}
                     </span>
                   </motion.button>
                 </div>
@@ -1615,6 +1680,24 @@ export default function HomePage() {
           </AnimatePresence>
 
         </motion.div>
+        
+        {/* 移动端全屏模式下的退出全屏按钮 */}
+        {isFullscreen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.3 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={toggleFullscreen}
+            className="sm:hidden fixed bottom-6 right-6 z-50 p-4 bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-full shadow-2xl border border-white/20 transition-all"
+            title={t('tooltips.exit_fullscreen')}
+            aria-label={t('tooltips.exit_fullscreen')}
+          >
+            <X className="w-6 h-6 text-white" />
+          </motion.button>
+        )}
       </div>
 
 

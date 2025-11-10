@@ -132,30 +132,38 @@ export default function TimeDisplay({
   const numberStyle = getNumberStyle();
   
   // 根据是否有小时调整字体大小
-  const fontSizeClass = isFullscreen
+  // 全屏模式下使用 clamp() 确保数字不会被遮挡
+  const fontSizeStyle = isFullscreen
     ? time.hasHours 
-      ? 'text-[5rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] xl:text-[20rem] 2xl:text-[24rem]'
-      : 'text-[8rem] sm:text-[16rem] md:text-[20rem] lg:text-[24rem] xl:text-[28rem] 2xl:text-[32rem]'
+      ? { fontSize: 'clamp(3rem, 12vw, 24rem)' } // 移动端最小3rem，确保完整显示
+      : { fontSize: 'clamp(4rem, 18vw, 32rem)' }
+    : time.hasHours
+    ? { fontSize: 'clamp(4rem, 8vw, 13.5rem)' }
+    : { fontSize: 'clamp(6rem, 10vw, 17rem)' };
+
+  const fontSizeClass = isFullscreen
+    ? '' // 全屏模式下使用内联样式
     : time.hasHours
     ? 'text-[4rem] xs:text-[5.5rem] sm:text-[7.5rem] md:text-[9.5rem] lg:text-[11.5rem] xl:text-[13.5rem]'
     : 'text-[6rem] xs:text-[8rem] sm:text-[10rem] md:text-[13rem] lg:text-[15rem] xl:text-[17rem]';
 
   return (
     <div 
-      className={`w-full flex flex-col ${align === 'left' ? 'items-start' : 'items-center'} ${align === 'left' ? 'justify-start' : 'justify-center'} px-2 sm:px-4 ${
+      className={`w-full flex flex-col ${align === 'left' ? 'items-start' : 'items-center'} ${align === 'left' ? 'justify-start' : 'justify-center'} ${isFullscreen ? 'px-2 sm:px-4' : 'px-2 sm:px-4'} ${
         isFullscreen ? 'flex-1 min-h-0' : 'min-h-[25vh] sm:min-h-[50vh]'
       } ${className}`}
       style={style}
     >
       <div 
         id="timer-display"
-        className={`${fontSizeClass} leading-none flex items-center ${align === 'left' ? 'justify-start' : 'justify-center'} whitespace-nowrap ${align === 'left' ? 'mx-0' : 'mx-auto'}`}
+        className={`${fontSizeClass} leading-none flex items-center ${align === 'left' ? 'justify-start' : 'justify-center'} whitespace-nowrap ${align === 'left' ? 'mx-0' : 'mx-auto'} ${isFullscreen ? 'overflow-visible' : ''}`}
         style={{
           fontFamily: '"Rajdhani", sans-serif',
           fontWeight: '580',
           letterSpacing: '0.05em',
           WebkitFontSmoothing: 'antialiased',
           MozOsxFontSmoothing: 'grayscale',
+          ...(isFullscreen ? fontSizeStyle : {}),
           ...style,
         }}
       >

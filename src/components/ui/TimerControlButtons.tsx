@@ -72,12 +72,12 @@ export default function TimerControlButtons({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.3 }}
-          className={`flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 relative z-10 ${
+          className={`flex flex-nowrap justify-center items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 relative z-10 ${
             isFullscreen 
               ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
               : 'mt-6 sm:mt-8 md:mt-12'
           } ${className}`}
-          style={isFullscreen ? {
+          style={isFullscreen && !className.match(/mt-|!mt-/) ? {
             marginTop: 'auto'
           } : {}}
           onMouseEnter={onMouseEnter}
@@ -89,10 +89,10 @@ export default function TimerControlButtons({
             whileTap={{ scale: 0.95 }}
             onClick={onToggle}
             disabled={disabled}
-            className={`flex items-center gap-1 sm:gap-2 ${
+            className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
               isFullscreen 
                 ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
+                : 'px-3 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-xs sm:text-base'
             } rounded-[10px] font-semibold text-white shadow-lg transition-all ${
               disabled
                 ? 'bg-slate-700 cursor-not-allowed'
@@ -127,10 +127,10 @@ export default function TimerControlButtons({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onReset}
-            className={`flex items-center gap-1 sm:gap-2 ${
+            className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
               isFullscreen 
                 ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
+                : 'px-3 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-xs sm:text-base'
             } bg-slate-700 hover:bg-slate-600 text-white rounded-[8px] font-semibold shadow-lg transition-all`}
           >
             <RotateCcw className={
@@ -147,10 +147,10 @@ export default function TimerControlButtons({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onSettings}
-              className={`flex items-center gap-1 sm:gap-2 ${
+              className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
                 isFullscreen 
                   ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
-                  : 'px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-sm sm:text-base'
+                  : 'px-3 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 text-xs sm:text-base'
               } bg-indigo-600 hover:bg-indigo-700 text-white rounded-[8px] font-semibold shadow-lg transition-all`}
             >
               <Settings className={
