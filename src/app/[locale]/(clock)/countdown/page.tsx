@@ -2028,7 +2028,7 @@ export default function HomePage() {
                         <div className="flex items-center gap-2 mb-2">
                           <img
                             src={backgroundImage}
-                            alt="Current background"
+                            alt={t('settings_panel.image') || 'Background image'}
                             className="w-6 h-6 rounded border border-gray-300 object-cover"
                           />
                           <span className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
@@ -2144,7 +2144,7 @@ export default function HomePage() {
                             <div key={index} className="relative group">
                               <img
                                 src={imageUrl}
-                                alt={`历史图片 ${index + 1}`}
+                                alt={`${t('settings_panel.image_history') || 'Image history'} ${index + 1}`}
                                 className="w-full h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => {
                                   setPendingBackgroundImage(imageUrl);
@@ -2367,7 +2367,7 @@ export default function HomePage() {
                           <div className="relative">
                             <img
                               src={backgroundImage}
-                              alt="Background preview"
+                              alt={t('settings_panel.image') || 'Background image preview'}
                               className="w-full h-32 object-cover rounded-lg"
                             />
                             <div className="absolute top-2 right-2 flex gap-2">

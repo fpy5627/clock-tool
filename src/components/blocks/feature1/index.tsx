@@ -13,7 +13,7 @@ export default function Feature1({ section }: { section: SectionType }) {
           {section.image && (
             <img
               src={section.image?.src}
-              alt="placeholder hero"
+              alt={section.image?.alt || section.title || "Feature image"}
               className="max-h-full w-full rounded-md object-cover"
             />
           )}

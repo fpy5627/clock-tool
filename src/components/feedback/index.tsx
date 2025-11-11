@@ -151,7 +151,7 @@ export default function Feedback({
                       rel="noopener noreferrer"
                       className="text-muted-foreground hover:text-primary transition-colors"
                       title={link.title}
-                      aria-label={link.title || (link.url.includes('mailto:') ? 'Contact us via email' : 'Follow us on social media')}
+                      aria-label={link.title || (link.url?.includes('mailto:') ? 'Contact us via email' : 'Follow us on social media')}
                     >
                       <Icon name={link.icon || ""} className="text-xl" />
                     </a>

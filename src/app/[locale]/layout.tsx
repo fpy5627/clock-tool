@@ -21,14 +21,59 @@ export async function generateMetadata({
   setRequestLocale(locale);
 
   const t = await getTranslations();
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+
+  // 构建页面URL
+  const pageUrl = locale === "en" 
+    ? webUrl
+    : `${webUrl}/${locale}`;
+
+  const title = t("metadata.title") || "";
+  const description = t("metadata.description") || "";
 
   return {
     title: {
       template: `%s`,
-      default: t("metadata.title") || "",
+      default: title,
     },
-    description: t("metadata.description") || "",
+    description: description,
     keywords: t("metadata.keywords") || "",
+    alternates: {
+      canonical: pageUrl,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+    openGraph: {
+      title: title,
+      description: description,
+      url: pageUrl,
+      siteName: "Timero",
+      locale: locale,
+      type: "website",
+      images: [
+        {
+          url: `${webUrl}/og-image.png`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: title,
+      description: description,
+      images: [`${webUrl}/og-image.png`],
+    },
   };
 }
 

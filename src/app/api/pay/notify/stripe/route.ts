@@ -51,7 +51,12 @@ export async function POST(req: Request) {
     console.log("stripe notify failed: ", e);
     return Response.json(
       { error: `handle stripe notify failed: ${e.message}` },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      }
     );
   }
 }
