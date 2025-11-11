@@ -82,7 +82,7 @@ async function getBlogPosts(): Promise<Array<{ slug: string; locale: string; upd
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://timero.ai";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
   const now = new Date();
   const sitemapEntries: MetadataRoute.Sitemap = [];
 

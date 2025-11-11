@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { setRequestLocale } from "next-intl/server";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 /**
  * 生成世界时钟页面的元数据
@@ -17,12 +18,12 @@ export async function generateMetadata({
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
 
   // 构建页面URL
-  const pageUrl = locale === "en" 
-    ? `${webUrl}/world-clock`
-    : `${webUrl}/${locale}/world-clock`;
+  const pagePath = "/world-clock";
+  const pageUrl = getCanonicalUrl(pagePath, locale);
+  const languages = getHreflangLanguages(pagePath);
 
   // 获取翻译文本
   const title = t("clock.modes.worldclock") || "World Clock";
@@ -33,6 +34,7 @@ export async function generateMetadata({
     description: description,
     alternates: {
       canonical: pageUrl,
+      languages: languages,
     },
     robots: {
       index: true,

@@ -3,6 +3,7 @@ import { PostStatus, findPostBySlug } from "@/models/post";
 import BlogDetail from "@/components/blocks/blog-detail";
 import Empty from "@/components/blocks/empty";
 import { Post } from "@/types/post";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -13,17 +14,16 @@ export async function generateMetadata({
 
   const post = await findPostBySlug(slug, locale);
 
-  let canonicalUrl = `${process.env.NEXT_PUBLIC_WEB_URL}/posts/${slug}`;
-
-  if (locale !== "en") {
-    canonicalUrl = `${process.env.NEXT_PUBLIC_WEB_URL}/${locale}/posts/${slug}`;
-  }
+  const pagePath = `/posts/${slug}`;
+  const canonicalUrl = getCanonicalUrl(pagePath, locale);
+  const languages = getHreflangLanguages(pagePath);
 
   return {
     title: post?.title,
     description: post?.description,
     alternates: {
       canonical: canonicalUrl,
+      languages: languages,
     },
   };
 }

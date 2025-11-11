@@ -15,7 +15,7 @@ export async function generateMetadata({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations();
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
 
   // 构建页面URL
   const pageUrl = locale === "en" 

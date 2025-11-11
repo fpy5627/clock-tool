@@ -1,7 +1,7 @@
 import FAQ from "@/components/blocks/faq";
 import { getLandingPage } from "@/services/page";
 import { Metadata } from "next";
-import { getCanonicalUrl } from "@/lib/metadata";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -10,9 +10,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   
+  const pagePath = '/faq';
   return {
     alternates: {
-      canonical: getCanonicalUrl('/faq', locale),
+      canonical: getCanonicalUrl(pagePath, locale),
+      languages: getHreflangLanguages(pagePath),
     },
   };
 }

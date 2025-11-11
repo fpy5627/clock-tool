@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/providers/theme";
 import { Toaster } from "sonner";
 import { StructuredData } from "@/components/structured-data";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { getCanonicalUrl, getHreflangLanguages, getTimerTranslationKey } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -21,15 +22,17 @@ export async function generateMetadata({
   setRequestLocale(locale);
 
   const t = await getTranslations();
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
 
-  // 构建页面URL
-  const pageUrl = locale === "en" 
-    ? webUrl
-    : `${webUrl}/${locale}`;
+  // 构建页面URL（首页）
+  const pagePath = "";
+  const pageUrl = getCanonicalUrl(pagePath, locale);
+  const languages = getHreflangLanguages(pagePath);
 
-  const title = t("metadata.title") || "";
-  const description = t("metadata.description") || "";
+  // 使用与 /5-minute-timer 页面相同的 SEO 信息
+  const translationKey = getTimerTranslationKey('5-minute-timer');
+  const title = t(`clock.page_description.timer_pages.${translationKey}.title`);
+  const description = t(`clock.page_description.timer_pages.${translationKey}.description`);
 
   return {
     title: {
@@ -40,6 +43,7 @@ export async function generateMetadata({
     keywords: t("metadata.keywords") || "",
     alternates: {
       canonical: pageUrl,
+      languages: languages,
     },
     robots: {
       index: true,
@@ -88,7 +92,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const messages = await getMessages();
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
 
   return (
     <NextIntlClientProvider messages={messages}>

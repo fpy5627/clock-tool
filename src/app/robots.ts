@@ -9,7 +9,7 @@ import { MetadataRoute } from "next";
  * @returns {MetadataRoute.Robots} robots.txt 配置对象
  */
 export default function robots(): MetadataRoute.Robots {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://timero.ai";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
 
   return {
     rules: [

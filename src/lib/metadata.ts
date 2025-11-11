@@ -1,3 +1,5 @@
+import { locales } from "@/i18n/locale";
+
 /**
  * Generate canonical URL for a given path and locale
  * @param path - The path without locale prefix (e.g., '/countdown', '/posts/my-slug')
@@ -5,7 +7,7 @@
  * @returns The canonical URL
  */
 export function getCanonicalUrl(path: string, locale: string): string {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   
   if (locale === "en") {
@@ -13,6 +15,31 @@ export function getCanonicalUrl(path: string, locale: string): string {
   }
   
   return `${webUrl}/${locale}${cleanPath}`;
+}
+
+/**
+ * Generate hreflang languages object for Next.js Metadata API
+ * @param path - The path without locale prefix (e.g., '/countdown', '/posts/my-slug')
+ * @returns Object with locale keys and their URLs
+ */
+export function getHreflangLanguages(path: string): Record<string, string> {
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  
+  const languages: Record<string, string> = {};
+  
+  for (const locale of locales) {
+    if (locale === "en") {
+      languages[locale] = `${webUrl}${cleanPath}`;
+    } else {
+      languages[locale] = `${webUrl}/${locale}${cleanPath}`;
+    }
+  }
+  
+  // Add x-default pointing to the default locale (English)
+  languages["x-default"] = `${webUrl}${cleanPath}`;
+  
+  return languages;
 }
 
 /**

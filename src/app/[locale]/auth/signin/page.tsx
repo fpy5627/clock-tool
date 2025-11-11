@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAuthEnabled } from "@/lib/auth";
 import { Metadata } from "next";
-import { getCanonicalUrl } from "@/lib/metadata";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -12,9 +12,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
 
+  const pagePath = '/auth/signin';
   return {
     alternates: {
-      canonical: getCanonicalUrl('/auth/signin', locale),
+      canonical: getCanonicalUrl(pagePath, locale),
+      languages: getHreflangLanguages(pagePath),
     },
   };
 }

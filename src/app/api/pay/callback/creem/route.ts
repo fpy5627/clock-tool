@@ -51,7 +51,7 @@ export async function GET(req: Request) {
   }
 
   // Build full redirect URL with locale
-  const baseUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
+  const baseUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
   const fullRedirectUrl = locale === "en" 
     ? `${baseUrl}${redirectUrl}`
     : `${baseUrl}/${locale}${redirectUrl}`;

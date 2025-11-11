@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import CountdownPage from '../countdown/page';
-import { getCanonicalUrl, getTimerTranslationKey } from '@/lib/metadata';
+import { getCanonicalUrl, getHreflangLanguages, getTimerTranslationKey } from '@/lib/metadata';
 import { getTranslations } from 'next-intl/server';
 import { setRequestLocale } from 'next-intl/server';
 
@@ -14,12 +14,14 @@ export async function generateMetadata({
   
   const t = await getTranslations();
   const translationKey = getTimerTranslationKey('45-second-timer');
+  const pagePath = '/45-second-timer';
   
   return {
     title: t(`clock.page_description.timer_pages.${translationKey}.title`),
     description: t(`clock.page_description.timer_pages.${translationKey}.description`),
     alternates: {
-      canonical: getCanonicalUrl('/45-second-timer', locale),
+      canonical: getCanonicalUrl(pagePath, locale),
+      languages: getHreflangLanguages(pagePath),
     },
   };
 }

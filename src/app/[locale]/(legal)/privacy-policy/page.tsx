@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Markdown from "@/components/markdown";
 import { Metadata } from "next";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -10,17 +11,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations("legal.privacy_policy");
   
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "";
-  let canonicalUrl = `${webUrl}/privacy-policy`;
-  if (locale !== "en") {
-    canonicalUrl = `${webUrl}/${locale}/privacy-policy`;
-  }
+  const pagePath = "/privacy-policy";
+  const canonicalUrl = getCanonicalUrl(pagePath, locale);
+  const languages = getHreflangLanguages(pagePath);
   
   return {
     title: t("title"),
     description: t("description"),
     alternates: {
       canonical: canonicalUrl,
+      languages: languages,
     },
   };
 }
