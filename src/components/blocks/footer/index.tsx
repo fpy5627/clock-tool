@@ -23,7 +23,7 @@ export default function Footer({ footer }: { footer: FooterType }) {
                     {footer.brand.logo && (
                       <img
                         src={footer.brand.logo.src}
-                        alt={footer.brand.logo.alt || footer.brand.title}
+                        alt=""
                         className="h-11"
                         style={{ background: 'transparent' }}
                       />
@@ -46,7 +46,11 @@ export default function Footer({ footer }: { footer: FooterType }) {
                   {footer.social.items?.map((item, i) => (
                     <li key={i} className="font-medium hover:text-primary">
                       {item.url ? (
-                        <a href={item.url} target={item.target}>
+                        <a 
+                          href={item.url} 
+                          target={item.target}
+                          aria-label={item.title || (item.url.includes('mailto:') ? 'Contact us via email' : 'Follow us on social media')}
+                        >
                           {item.icon && (
                             <Icon name={item.icon} className="size-4" />
                           )}

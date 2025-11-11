@@ -10,7 +10,7 @@ export function baseOptions(locale: string): BaseLayoutProps {
         <>
           <Image
             src="/logo.svg"
-            alt="Timero Logo"
+            alt=""
             width={28}
             height={28}
             className=""

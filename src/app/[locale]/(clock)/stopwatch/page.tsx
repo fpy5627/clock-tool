@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Bell, BellOff, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Globe, Menu, Languages } from 'lucide-react';
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
@@ -654,7 +655,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {notificationEnabled ? '通知开' : '通知关'}
+                      {notificationEnabled ? t('buttons.notification_on') : t('buttons.notification_off')}
                     </span>
                   </motion.button>
                   
@@ -679,7 +680,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {soundEnabled ? '声音开' : '声音关'}
+                      {soundEnabled ? t('buttons.sound_on') : t('buttons.sound_off')}
                     </span>
                   </motion.button>
                   
@@ -723,7 +724,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {theme === 'dark' ? '白天模式' : '夜晚模式'}
+                      {theme === 'dark' ? t('buttons.light_mode') : t('buttons.dark_mode')}
                     </span>
                   </motion.button>
                   
@@ -731,7 +732,20 @@ export default function HomePage() {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={toggleFullscreen}
+                    onClick={() => {
+                      // 移动端点击全屏按钮后，立即关闭设置菜单和移动端菜单
+                      if (typeof window !== 'undefined' && window.innerWidth < 640) {
+                        // 使用 flushSync 强制同步更新，确保菜单立即关闭
+                        flushSync(() => {
+                          setShowSettingsPanel(false);
+                          setShowMobileMenu(false);
+                        });
+                        // 立即执行全屏切换
+                        toggleFullscreen();
+                      } else {
+                        toggleFullscreen();
+                      }
+                    }}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       theme === 'dark'
                         ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
@@ -786,7 +800,7 @@ export default function HomePage() {
                       <Languages className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {locale === 'zh' ? 'English' : '中文'}
+                      {locale === 'zh' ? t('buttons.english') : t('buttons.chinese')}
                     </span>
                   </motion.button>
                 </div>
@@ -813,7 +827,20 @@ export default function HomePage() {
           onThemeToggle={handleThemeToggle}
           showSettingsPanel={showSettingsPanel}
           onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-          onFullscreenToggle={toggleFullscreen}
+          onFullscreenToggle={() => {
+            // 移动端点击全屏按钮后，立即关闭设置菜单和移动端菜单
+            if (typeof window !== 'undefined' && window.innerWidth < 640) {
+              // 使用 flushSync 强制同步更新，确保菜单立即关闭
+              flushSync(() => {
+                setShowSettingsPanel(false);
+                setShowMobileMenu(false);
+              });
+              // 立即执行全屏切换
+              toggleFullscreen();
+            } else {
+              toggleFullscreen();
+            }
+          }}
           t={t}
           onMouseEnter={() => { isHoveringControls.current = true; }}
           onMouseLeave={() => { isHoveringControls.current = false; }}

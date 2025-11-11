@@ -92,7 +92,7 @@ export default function VerticalSidebar({
 
   // 根据是否全屏决定样式
   const containerClassName = isFullscreen
-    ? "fixed top-1 sm:top-6 left-1 sm:left-6 flex gap-0.5 sm:gap-3 z-50 flex-wrap max-w-[70%] sm:max-w-none"
+    ? "hidden sm:flex fixed top-6 left-6 gap-3 z-50 flex-wrap max-w-none"
     : "hidden sm:flex fixed top-20 sm:top-24 left-2 sm:left-4 gap-0.5 sm:gap-2 flex-wrap max-w-[50%] sm:max-w-none z-40";
 
   const buttonClassName = isFullscreen

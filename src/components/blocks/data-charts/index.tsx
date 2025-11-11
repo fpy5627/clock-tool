@@ -115,7 +115,7 @@ export default function DataCharts({
             <SelectTrigger
               className="flex w-40 **:data-[slot=select-value]:block **:data-[slot=select-value]:truncate @[767px]/card:hidden"
               size="sm"
-              aria-label="Select a value"
+              aria-label="Select time range"
             >
               <SelectValue placeholder="Last 3 months" />
             </SelectTrigger>

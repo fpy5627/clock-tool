@@ -64,26 +64,6 @@ function normalizeIpInfo(data: any, source: string): IpInfo | null {
 
     // 根据不同API的返回格式进行标准化
     switch (source) {
-      case 'ip-api.com':
-      case 'demo.ip-api.com':
-        if (data.status === 'success' || data.status === 'fail') {
-          if (data.status === 'fail') return null;
-          info.ip = data.query || data.ip;
-          info.country = data.country;
-          info.countryCode = data.countryCode;
-          info.region = data.region;
-          info.regionName = data.regionName;
-          info.city = data.city;
-          info.timezone = data.timezone;
-          info.latitude = data.lat;
-          info.longitude = data.lon;
-          info.isp = data.isp;
-          info.org = data.org;
-          info.as = data.as;
-          return info;
-        }
-        return null;
-
       case 'ipapi.co':
         info.ip = data.ip;
         info.country = data.country_name;
@@ -248,15 +228,6 @@ interface ApiConfig {
 
 const IP_INFO_APIS: ApiConfig[] = [
   // 支持查询指定IP的API
-  {
-    name: 'ip-api.com',
-    url: (ip, lang) => {
-      const langParam = lang ? `&lang=${lang}` : '';
-      const ipParam = ip ? `&ip=${ip}` : '';
-      return `http://ip-api.com/json/?fields=status,message,country,countryCode,region,regionName,city,timezone,lat,lon,isp,org,as,query${langParam}${ipParam}`;
-    },
-    supportsIpQuery: true,
-  },
   {
     name: 'ipapi.co',
     url: (ip) => {

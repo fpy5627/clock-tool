@@ -295,6 +295,16 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
               <button
                 onClick={() => handleSoundSelect(sound.id)}
                 className="flex-1 text-left"
+                aria-label={`${(() => {
+                  const translationKey = `sounds.${sound.id.replace(/-/g, "_")}`;
+                  const translated = t(translationKey);
+                  const soundName = translated === translationKey 
+                    ? (locale === "zh" ? sound.name : sound.nameEn)
+                    : translated;
+                  return isSelected 
+                    ? `${soundName} (${t("settings_panel.notification_sound")}, ${locale === "zh" ? "已选择" : "selected"})`
+                    : `${locale === "zh" ? "选择" : "Select"} ${soundName}`;
+                })()}`}
               >
                 <div className="flex items-center gap-2">
                   <div
@@ -382,7 +392,23 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
                     ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
-                title={playingSoundId === sound.id ? "停止播放" : t("settings_panel.sound_preview")}
+                title={playingSoundId === sound.id ? (locale === "zh" ? "停止播放" : "Stop playing") : t("settings_panel.sound_preview")}
+                aria-label={playingSoundId === sound.id 
+                  ? `${locale === "zh" ? "停止播放" : "Stop playing"} ${(() => {
+                      const translationKey = `sounds.${sound.id.replace(/-/g, "_")}`;
+                      const translated = t(translationKey);
+                      return translated === translationKey 
+                        ? (locale === "zh" ? sound.name : sound.nameEn)
+                        : translated;
+                    })()}`
+                  : `${t("settings_panel.sound_preview")} ${(() => {
+                      const translationKey = `sounds.${sound.id.replace(/-/g, "_")}`;
+                      const translated = t(translationKey);
+                      return translated === translationKey 
+                        ? (locale === "zh" ? sound.name : sound.nameEn)
+                        : translated;
+                    })()}`
+                }
               >
                 {playingSoundId === sound.id ? (
                   <VolumeX className="w-4 h-4" />
@@ -403,6 +429,7 @@ export const NotificationSoundSelector: FC<NotificationSoundSelectorProps> = ({
                 ? "bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-300"
                 : "bg-gray-50 border-gray-200 hover:bg-gray-100 text-gray-700"
             }`}
+            aria-label={isExpanded ? t("settings_panel.show_less") : t("settings_panel.show_more")}
           >
             <span className="text-sm font-medium">
               {isExpanded ? t("settings_panel.show_less") : t("settings_panel.show_more")}

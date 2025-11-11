@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Maximize, Volume2, VolumeX, Settings, X, Timer, Clock, Sun, Moon, Cloud, CloudRain, CloudSnow, CloudDrizzle, Cloudy, AlarmClock, Plus, Trash2, Globe, MapPin, Search, Languages, Menu, Bell, BellOff } from 'lucide-react';
 import { NotificationSoundSelector } from '@/components/ui/NotificationSoundSelector';
@@ -948,7 +949,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {notificationEnabled ? '通知开' : '通知关'}
+                      {notificationEnabled ? t('buttons.notification_on') : t('buttons.notification_off')}
                     </span>
                   </motion.button>
                   
@@ -973,7 +974,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {soundEnabled ? '声音开' : '声音关'}
+                      {soundEnabled ? t('buttons.sound_on') : t('buttons.sound_off')}
                     </span>
                   </motion.button>
                   
@@ -1017,7 +1018,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {theme === 'dark' ? '白天模式' : '夜晚模式'}
+                      {theme === 'dark' ? t('buttons.light_mode') : t('buttons.dark_mode')}
                     </span>
                   </motion.button>
                   
@@ -1025,7 +1026,20 @@ export default function HomePage() {
                   <motion.button
                     whileHover={{ scale: 1.03, y: -2 }}
                     whileTap={{ scale: 0.97 }}
-                    onClick={toggleFullscreen}
+                    onClick={() => {
+                      // 移动端点击全屏按钮后，立即关闭设置菜单和移动端菜单
+                      if (typeof window !== 'undefined' && window.innerWidth < 640) {
+                        // 使用 flushSync 强制同步更新，确保菜单立即关闭
+                        flushSync(() => {
+                          setShowSettingsPanel(false);
+                          setShowMobileMenu(false);
+                        });
+                        // 立即执行全屏切换
+                        toggleFullscreen();
+                      } else {
+                        toggleFullscreen();
+                      }
+                    }}
                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all duration-200 ${
                       theme === 'dark'
                         ? 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
@@ -1080,7 +1094,7 @@ export default function HomePage() {
                       <Languages className="w-5 h-5" />
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {locale === 'zh' ? 'English' : '中文'}
+                      {locale === 'zh' ? t('buttons.english') : t('buttons.chinese')}
                     </span>
                   </motion.button>
                 </div>
@@ -1114,7 +1128,20 @@ export default function HomePage() {
           onThemeToggle={handleThemeToggle}
           showSettingsPanel={showSettingsPanel}
           onSettingsToggle={() => setShowSettingsPanel(!showSettingsPanel)}
-          onFullscreenToggle={toggleFullscreen}
+          onFullscreenToggle={() => {
+            // 移动端点击全屏按钮后，立即关闭设置菜单和移动端菜单
+            if (typeof window !== 'undefined' && window.innerWidth < 640) {
+              // 使用 flushSync 强制同步更新，确保菜单立即关闭
+              flushSync(() => {
+                setShowSettingsPanel(false);
+                setShowMobileMenu(false);
+              });
+              // 立即执行全屏切换
+              toggleFullscreen();
+            } else {
+              toggleFullscreen();
+            }
+          }}
           t={t}
           onMouseEnter={() => { isHoveringControls.current = true; }}
           onMouseLeave={() => { isHoveringControls.current = false; }}
@@ -1125,7 +1152,7 @@ export default function HomePage() {
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-4 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center flex-1 h-full gap-4 sm:gap-6 md:gap-8'}`}
+          className={`w-full flex flex-col items-center ${!isFullscreen ? 'pt-4 sm:pt-0 sm:mt-20 md:mt-24 lg:mt-28' : 'justify-center items-center'}`}
         >
           {/* 日期和天气显示 - 非全屏时显示 */}
           <WeatherDateDisplay
@@ -1160,7 +1187,9 @@ export default function HomePage() {
             }
             timeUpText={timeLeft === 0 ? t('timer.time_up') : undefined}
             showTimeUpText={timeLeft === 0}
-            className={isFullscreen ? 'mb-2 sm:mb-4 md:mb-6 lg:mb-8' : 'mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8'}
+            className={isFullscreen 
+              ? 'mb-12 sm:mb-16 md:mb-20 lg:mb-24'
+              : 'mt-8 sm:-mt-8 md:-mt-8 lg:-mt-8'}
             style={isFullscreen ? { maxHeight: '100%', overflow: 'visible', width: '100%', maxWidth: '100vw' } : {}}
           />
 
@@ -1222,7 +1251,7 @@ export default function HomePage() {
             t={t}
             onMouseEnter={() => { isHoveringControls.current = true; }}
             onMouseLeave={() => { isHoveringControls.current = false; }}
-            className={isFullscreen ? '!mt-0 sm:!mt-2 md:!mt-4' : (mode === 'timer' ? 'mt-10 sm:mt-8 md:mt-12' : 'mt-6 sm:mt-8 md:mt-12')}
+            className={isFullscreen ? '' : (mode === 'timer' ? 'mt-10 sm:mt-8 md:mt-12' : 'mt-6 sm:mt-8 md:mt-12')}
           />
 
           {/* 移动端全屏模式下的退出全屏按钮 */}

@@ -3034,7 +3034,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {notificationEnabled ? '通知开' : '通知关'}
+                      {notificationEnabled ? t('buttons.notification_on') : t('buttons.notification_off')}
                     </span>
                   </motion.button>
                   
@@ -3059,7 +3059,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {soundEnabled ? '声音开' : '声音关'}
+                      {soundEnabled ? t('buttons.sound_on') : t('buttons.sound_off')}
                     </span>
                   </motion.button>
                   
@@ -3103,7 +3103,7 @@ export default function HomePage() {
                       )}
                     </div>
                     <span className="text-xs font-semibold text-center leading-tight">
-                      {theme === 'dark' ? '白天模式' : '夜晚模式'}
+                      {theme === 'dark' ? t('buttons.light_mode') : t('buttons.dark_mode')}
                     </span>
                   </motion.button>
                   

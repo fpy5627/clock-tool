@@ -281,7 +281,15 @@
       "menu": "Menu",
       "add_alarm": "Add Alarm",
       "cancel": "Cancel",
-      "confirm": "Confirm"
+      "confirm": "Confirm",
+      "notification_on": "Notifications On",
+      "notification_off": "Notifications Off",
+      "sound_on": "Sound On",
+      "sound_off": "Sound Off",
+      "light_mode": "Light Mode",
+      "dark_mode": "Dark Mode",
+      "chinese": "中文",
+      "english": "English"
     },
     "tooltips": {
       "close_sound": "Mute",
@@ -523,6 +531,104 @@
           "Free and easy-to-use world clock",
           "No registration required"
         ]
+      },
+      "timer_pages": {
+        "10_second_timer": {
+          "title": "10 Second Timer - Online Countdown Timer",
+          "description": "Free online 10 second timer. Simple and easy-to-use countdown timer for 10 seconds with alarm sound."
+        },
+        "20_second_timer": {
+          "title": "20 Second Timer - Online Countdown Timer",
+          "description": "Free online 20 second timer. Simple and easy-to-use countdown timer for 20 seconds with alarm sound."
+        },
+        "30_second_timer": {
+          "title": "30 Second Timer - Online Countdown Timer",
+          "description": "Free online 30 second timer. Simple and easy-to-use countdown timer for 30 seconds with alarm sound."
+        },
+        "45_second_timer": {
+          "title": "45 Second Timer - Online Countdown Timer",
+          "description": "Free online 45 second timer. Simple and easy-to-use countdown timer for 45 seconds with alarm sound."
+        },
+        "60_second_timer": {
+          "title": "60 Second Timer - Online Countdown Timer",
+          "description": "Free online 60 second timer. Simple and easy-to-use countdown timer for 60 seconds with alarm sound."
+        },
+        "90_second_timer": {
+          "title": "90 Second Timer - Online Countdown Timer",
+          "description": "Free online 90 second timer. Simple and easy-to-use countdown timer for 90 seconds with alarm sound."
+        },
+        "1_minute_timer": {
+          "title": "1 Minute Timer - Online Countdown Timer",
+          "description": "Free online 1 minute timer. Simple and easy-to-use countdown timer for 1 minute with alarm sound."
+        },
+        "2_minute_timer": {
+          "title": "2 Minute Timer - Online Countdown Timer",
+          "description": "Free online 2 minute timer. Simple and easy-to-use countdown timer for 2 minutes with alarm sound."
+        },
+        "3_minute_timer": {
+          "title": "3 Minute Timer - Online Countdown Timer",
+          "description": "Free online 3 minute timer. Simple and easy-to-use countdown timer for 3 minutes with alarm sound."
+        },
+        "5_minute_timer": {
+          "title": "5 Minute Timer - Online Countdown Timer",
+          "description": "Free online 5 minute timer. Simple and easy-to-use countdown timer for 5 minutes with alarm sound."
+        },
+        "10_minute_timer": {
+          "title": "10 Minute Timer - Online Countdown Timer",
+          "description": "Free online 10 minute timer. Simple and easy-to-use countdown timer for 10 minutes with alarm sound."
+        },
+        "15_minute_timer": {
+          "title": "15 Minute Timer - Online Countdown Timer",
+          "description": "Free online 15 minute timer. Simple and easy-to-use countdown timer for 15 minutes with alarm sound."
+        },
+        "20_minute_timer": {
+          "title": "20 Minute Timer - Online Countdown Timer",
+          "description": "Free online 20 minute timer. Simple and easy-to-use countdown timer for 20 minutes with alarm sound."
+        },
+        "25_minute_timer": {
+          "title": "25 Minute Timer - Pomodoro Timer Online",
+          "description": "Free online 25 minute timer. Perfect for Pomodoro technique. Simple countdown timer for 25 minutes with alarm sound."
+        },
+        "30_minute_timer": {
+          "title": "30 Minute Timer - Online Countdown Timer",
+          "description": "Free online 30 minute timer. Simple and easy-to-use countdown timer for 30 minutes with alarm sound."
+        },
+        "40_minute_timer": {
+          "title": "40 Minute Timer - Online Countdown Timer",
+          "description": "Free online 40 minute timer. Simple and easy-to-use countdown timer for 40 minutes with alarm sound."
+        },
+        "45_minute_timer": {
+          "title": "45 Minute Timer - Online Countdown Timer",
+          "description": "Free online 45 minute timer. Simple and easy-to-use countdown timer for 45 minutes with alarm sound."
+        },
+        "60_minute_timer": {
+          "title": "60 Minute Timer - Online Countdown Timer",
+          "description": "Free online 60 minute timer. Simple and easy-to-use countdown timer for 60 minutes with alarm sound."
+        },
+        "1_hour_timer": {
+          "title": "1 Hour Timer - Online Countdown Timer",
+          "description": "Free online 1 hour timer. Simple and easy-to-use countdown timer for 1 hour with alarm sound."
+        },
+        "2_hour_timer": {
+          "title": "2 Hour Timer - Online Countdown Timer",
+          "description": "Free online 2 hour timer. Simple and easy-to-use countdown timer for 2 hours with alarm sound."
+        },
+        "4_hour_timer": {
+          "title": "4 Hour Timer - Online Countdown Timer",
+          "description": "Free online 4 hour timer. Simple and easy-to-use countdown timer for 4 hours with alarm sound."
+        },
+        "8_hour_timer": {
+          "title": "8 Hour Timer - Online Countdown Timer",
+          "description": "Free online 8 hour timer. Simple and easy-to-use countdown timer for 8 hours with alarm sound."
+        },
+        "12_hour_timer": {
+          "title": "12 Hour Timer - Online Countdown Timer",
+          "description": "Free online 12 hour timer. Simple and easy-to-use countdown timer for 12 hours with alarm sound."
+        },
+        "16_hour_timer": {
+          "title": "16 Hour Timer - Online Countdown Timer",
+          "description": "Free online 16 hour timer. Simple and easy-to-use countdown timer for 16 hours with alarm sound."
+        }
       }
     }
   },

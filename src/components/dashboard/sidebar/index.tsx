@@ -57,7 +57,7 @@ export default function DashboardSidebar({
                 {sidebar.brand?.logo && (
                   <Image
                     src={sidebar.brand?.logo?.src as any}
-                    alt={sidebar.brand?.title as string}
+                    alt=""
                     width={28}
                     height={28}
                     className="rounded-full"

@@ -125,7 +125,15 @@ export default function ClockToolbar({
       <AnimatePresence>
         {isFullscreen && showControls && (
           <>
-            {/* 全屏模式下隐藏模式切换图标 */}
+            {/* 左上角：模式切换 - PC端全屏模式显示 */}
+            <VerticalSidebar
+              currentMode={mode}
+              isFullscreen={true}
+              showControls={showControls}
+              onMouseEnter={onMouseEnter}
+              onMouseLeave={onMouseLeave}
+            />
+
             {/* 右上角：功能按钮 - 全屏模式使用公共组件 */}
             <ClockControlButtons
               theme={theme}

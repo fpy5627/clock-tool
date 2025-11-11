@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import CountdownPage from '../countdown/page';
-import { getCanonicalUrl } from '@/lib/metadata';
+import { getCanonicalUrl, getTimerTranslationKey } from '@/lib/metadata';
+import { getTranslations } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 
 export async function generateMetadata({
   params,
@@ -8,10 +10,14 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  setRequestLocale(locale);
+  
+  const t = await getTranslations();
+  const translationKey = getTimerTranslationKey('45-minute-timer');
   
   return {
-    title: '45 Minute Timer - Online Countdown Timer',
-    description: 'Free online 45 minute timer. Simple and easy-to-use countdown timer for 45 minutes with alarm sound.',
+    title: t(`clock.page_description.timer_pages.${translationKey}.title`),
+    description: t(`clock.page_description.timer_pages.${translationKey}.description`),
     alternates: {
       canonical: getCanonicalUrl('/45-minute-timer', locale),
     },

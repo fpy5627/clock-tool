@@ -39,7 +39,7 @@ export default async function SignInPage({
       <div className="flex w-full max-w-sm flex-col gap-6">
         <a href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="flex h-6 w-6 items-center justify-center rounded-md border text-primary-foreground">
-            <img src="/logo.svg" alt="Timero" className="size-4" style={{ background: 'transparent' }} />
+            <img src="/logo.svg" alt="" className="size-4" style={{ background: 'transparent' }} />
           </div>
           {process.env.NEXT_PUBLIC_PROJECT_NAME}
         </a>

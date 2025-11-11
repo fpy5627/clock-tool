@@ -25,6 +25,7 @@ export default function ({ social }: { social: SocialType }) {
                 href={item.url as any}
                 target={item.target || "_self"}
                 className="cursor-pointer"
+                aria-label={item.title || (item.url?.includes('mailto:') ? 'Contact us via email' : 'Follow us on social media')}
               >
                 {item.icon && <Icon name={item.icon} className="text-xl" />}
               </Link>

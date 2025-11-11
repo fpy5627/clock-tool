@@ -64,6 +64,7 @@ export default function TimerControlButtons({
   onMouseLeave,
   className = '',
 }: TimerControlButtonsProps) {
+
   return (
     <AnimatePresence>
       {showControls && (
@@ -74,12 +75,9 @@ export default function TimerControlButtons({
           transition={{ duration: 0.3 }}
           className={`flex flex-nowrap justify-center items-center gap-1.5 sm:gap-2 md:gap-3 lg:gap-4 relative z-10 ${
             isFullscreen 
-              ? 'px-2 pb-8 sm:pb-12 md:pb-16 lg:pb-20 w-full' 
+              ? 'px-2 w-full' 
               : 'mt-6 sm:mt-8 md:mt-12'
           } ${className}`}
-          style={isFullscreen && !className.match(/mt-|!mt-/) ? {
-            marginTop: 'auto'
-          } : {}}
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
@@ -127,6 +125,7 @@ export default function TimerControlButtons({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onReset}
+            aria-label={t('buttons.reset')}
             className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
               isFullscreen 
                 ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
@@ -147,6 +146,7 @@ export default function TimerControlButtons({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onSettings}
+              aria-label={t('buttons.settings')}
               className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
                 isFullscreen 
                   ? 'px-4 py-2 sm:px-8 sm:py-4 md:px-10 md:py-5 lg:px-12 lg:py-6 text-sm sm:text-lg md:text-xl' 
