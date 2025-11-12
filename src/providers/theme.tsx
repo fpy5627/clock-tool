@@ -4,9 +4,14 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { ReactNode, useEffect } from "react";
 import { useLocale } from "next-intl";
 import { isAuthEnabled } from "@/lib/auth";
-import SignModal from "@/components/sign/modal";
+import dynamic from "next/dynamic";
 import Analytics from "@/components/analytics";
 import Adsense from "./adsense";
+
+// 延迟加载 SignModal（只在需要时加载）
+const SignModal = dynamic(() => import("@/components/sign/modal"), {
+  ssr: false,
+});
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const locale = useLocale();
