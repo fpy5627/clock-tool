@@ -1,13 +1,26 @@
 import { locales } from "@/i18n/locale";
 
 /**
+ * Get the production web URL, ensuring it's never localhost
+ * @returns The production web URL
+ */
+function getProductionWebUrl(): string {
+  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  // Ensure we never use localhost in production builds
+  if (webUrl.includes("localhost") || webUrl.includes("127.0.0.1")) {
+    return "https://clock.toolina.com";
+  }
+  return webUrl;
+}
+
+/**
  * Generate canonical URL for a given path and locale
  * @param path - The path without locale prefix (e.g., '/countdown', '/posts/my-slug')
  * @param locale - The locale string (e.g., 'en', 'zh')
  * @returns The canonical URL
  */
 export function getCanonicalUrl(path: string, locale: string): string {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  const webUrl = getProductionWebUrl();
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   
   if (locale === "en") {
@@ -23,7 +36,7 @@ export function getCanonicalUrl(path: string, locale: string): string {
  * @returns Object with locale keys and their URLs
  */
 export function getHreflangLanguages(path: string): Record<string, string> {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  const webUrl = getProductionWebUrl();
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
   
   const languages: Record<string, string> = {};

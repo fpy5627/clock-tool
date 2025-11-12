@@ -9,7 +9,11 @@ import { MetadataRoute } from "next";
  * @returns {MetadataRoute.Robots} robots.txt 配置对象
  */
 export default function robots(): MetadataRoute.Robots {
-  const webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  // Ensure we never use localhost in robots.txt
+  let webUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  if (webUrl.includes("localhost") || webUrl.includes("127.0.0.1")) {
+    webUrl = "https://clock.toolina.com";
+  }
 
   return {
     rules: [
