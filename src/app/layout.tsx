@@ -3,6 +3,14 @@ import "@/app/globals.css";
 import { getLocale, setRequestLocale } from "next-intl/server";
 import { locales } from "@/i18n/locale";
 import { cn } from "@/lib/utils";
+import { Rajdhani } from "next/font/google";
+
+const rajdhani = Rajdhani({
+  weight: ["300", "400", "500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-rajdhani",
+});
 
 export default async function RootLayout({
   children,
@@ -16,7 +24,7 @@ export default async function RootLayout({
   const googleAdsenseCode = process.env.NEXT_PUBLIC_GOOGLE_ADCODE || "";
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning className={rajdhani.variable}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         {googleAdsenseCode && (
@@ -24,11 +32,6 @@ export default async function RootLayout({
         )}
 
         <link rel="icon" href="/favicon.ico" />
-        
-        {/* Rajdhani Font - 超粗方正字体 */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

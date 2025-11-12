@@ -143,6 +143,7 @@ interface Alarm {
 
 export default function HomePage() {
   const t = useTranslations('clock');
+  const tMetadata = useTranslations('metadata');
   const locale = useLocale();
   const params = useParams();
   const router = useRouter();
@@ -2888,6 +2889,8 @@ export default function HomePage() {
       
       {/* 内容层 */}
       <div className="relative z-10 flex flex-col flex-1">
+      {/* SEO H1 标签 - 对屏幕阅读器和搜索引擎可见，但视觉上隐藏 */}
+      <h1 className="sr-only">{tMetadata('title')}</h1>
       {/* 移动端顶部菜单栏和导航栏 - 只在移动端显示 */}
       {!isFullscreen && (
         <div className={`sm:hidden fixed top-0 left-0 right-0 w-full z-40 ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-white/80'} backdrop-blur-sm`}>

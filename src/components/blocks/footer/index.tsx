@@ -23,7 +23,7 @@ export default function Footer({ footer }: { footer: FooterType }) {
                     {footer.brand.logo && (
                       <img
                         src={footer.brand.logo.src}
-                        alt=""
+                        alt={footer.brand?.title || "Timero Logo"}
                         className="h-11"
                         style={{ background: 'transparent' }}
                       />

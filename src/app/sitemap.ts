@@ -10,10 +10,7 @@ const staticRoutes = [
   "/stopwatch",
   "/alarm",
   "/world-clock",
-  "/pricing",
   "/faq",
-  "/showcase",
-  "/posts",
   "/terms-of-service",
   "/privacy-policy",
 ];
@@ -117,19 +114,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // 生成博客文章的sitemap条目
-  const blogPosts = await getBlogPosts();
-  for (const post of blogPosts) {
-    const path = `/posts/${post.slug}`;
-    const url = getCanonicalUrl(path, post.locale);
-    
-    sitemapEntries.push({
-      url,
-      lastModified: post.updated_at || now,
-      changeFrequency: "monthly",
-      priority: 0.6,
-    });
-  }
+  // 生成博客文章的sitemap条目（已隐藏）
+  // const blogPosts = await getBlogPosts();
+  // for (const post of blogPosts) {
+  //   const path = `/posts/${post.slug}`;
+  //   const url = getCanonicalUrl(path, post.locale);
+  //   
+  //   sitemapEntries.push({
+  //     url,
+  //     lastModified: post.updated_at || now,
+  //     changeFrequency: "monthly",
+  //     priority: 0.6,
+  //   });
+  // }
 
   // 生成文档页面的sitemap条目
   const docsPages = await getDocsPages();

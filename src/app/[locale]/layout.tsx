@@ -11,7 +11,7 @@ import { ThemeProvider } from "@/providers/theme";
 import { Toaster } from "sonner";
 import { StructuredData } from "@/components/structured-data";
 import { ProgressBar } from "@/components/ui/ProgressBar";
-import { getCanonicalUrl, getHreflangLanguages, getTimerTranslationKey } from "@/lib/metadata";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export async function generateMetadata({
   params,
@@ -29,10 +29,9 @@ export async function generateMetadata({
   const pageUrl = getCanonicalUrl(pagePath, locale);
   const languages = getHreflangLanguages(pagePath);
 
-  // 使用与 /5-minute-timer 页面相同的 SEO 信息
-  const translationKey = getTimerTranslationKey('5-minute-timer');
-  const title = t(`clock.page_description.timer_pages.${translationKey}.title`);
-  const description = t(`clock.page_description.timer_pages.${translationKey}.description`);
+  // 使用根页面的 SEO 信息
+  const title = t("metadata.title");
+  const description = t("metadata.description");
 
   return {
     title: {
