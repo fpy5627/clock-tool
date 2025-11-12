@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "NODE_NO_WARNINGS=1 next start",
     "lint": "next lint",
-    "analyze": "ANALYZE=true pnpm build",
+    "analyze": "cross-env ANALYZE=true pnpm build",
     "docker:build": "docker build -f Dockerfile -t timero-clock-tool:latest .",
     "db:generate": "npx drizzle-kit generate --config=src/db/config.ts",
     "db:migrate": "npx drizzle-kit migrate --config=src/db/config.ts",

@@ -35,6 +35,7 @@ const nextConfig = {
     } : false,
   },
   // 优化包导入，减少未使用的代码
+  // 这是 Next.js 推荐的优化方式，会自动进行 tree-shaking 和代码分割
   experimental: {
     optimizePackageImports: [
       '@radix-ui/react-accordion',
@@ -48,58 +49,15 @@ const nextConfig = {
       'framer-motion',
     ],
   },
-  // Webpack 配置优化
-  webpack: (config, { isServer, dev }) => {
-    if (!isServer && !dev) {
-      // 优化客户端包分割
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // 将大型库单独打包
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]/,
-              priority: 20,
-              minChunks: 1,
-            },
-            // UI 组件库单独打包
-            radixUI: {
-              name: 'radix-ui',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/]@radix-ui[\\/]/,
-              priority: 30,
-            },
-            // 图标库单独打包
-            icons: {
-              name: 'icons',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/](lucide-react|@tabler\/icons-react|react-icons)[\\/]/,
-              priority: 25,
-            },
-            // 工具库单独打包
-            utils: {
-              name: 'utils',
-              chunks: 'all',
-              test: /[\\/]node_modules[\\/](moment|clsx|tailwind-merge|class-variance-authority)[\\/]/,
-              priority: 15,
-            },
-          },
-        },
-      };
-    }
-    return config;
-  },
+  // 移除自定义 webpack splitChunks 配置
+  // Next.js 的默认代码分割策略已经足够优化，自定义配置可能导致 vendor 包过大
 };
 
 // Make sure experimental mdx flag is enabled
 const configWithMDX = {
   ...nextConfig,
   experimental: {
+    ...nextConfig.experimental,
     mdxRs: true,
   },
 };
