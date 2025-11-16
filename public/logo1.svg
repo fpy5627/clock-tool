@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer circle with gap at top (modern style) -->
+  <path d="M 256 56 A 200 200 0 1 1 256 456 A 200 200 0 1 1 256 56" 
+        fill="none" 
+        stroke="url(#grad1)" 
+        stroke-width="20" 
+        stroke-linecap="round"/>
+  
+  <!-- 12 o'clock mark (emphasized) -->
+  <line x1="256" y1="56" x2="256" y2="96" stroke="#3b82f6" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- 3, 6, 9 o'clock marks -->
+  <line x1="456" y1="256" x2="416" y2="256" stroke="#60a5fa" stroke-width="8" stroke-linecap="round"/>
+  <line x1="256" y1="456" x2="256" y2="416" stroke="#60a5fa" stroke-width="8" stroke-linecap="round"/>
+  <line x1="56" y1="256" x2="96" y2="256" stroke="#60a5fa" stroke-width="8" stroke-linecap="round"/>
+  
+  <!-- Hour hand (short, pointing to 10) -->
+  <line x1="256" y1="256" x2="196" y2="170" stroke="#2563eb" stroke-width="16" stroke-linecap="round"/>
+  
+  <!-- Minute hand (long, pointing to 2) -->
+  <line x1="256" y1="256" x2="340" y2="172" stroke="#3b82f6" stroke-width="12" stroke-linecap="round"/>
+  
+  <!-- Center circle -->
+  <circle cx="256" cy="256" r="18" fill="#3b82f6"/>
+  <circle cx="256" cy="256" r="10" fill="#60a5fa"/>
+</svg>

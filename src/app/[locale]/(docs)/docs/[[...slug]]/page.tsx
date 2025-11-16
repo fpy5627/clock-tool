@@ -8,6 +8,7 @@ import {
 import { notFound } from "next/navigation";
 import { createRelativeLink } from "fumadocs-ui/mdx";
 import { getMDXComponents } from "@/mdx-components";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
 
 export default async function DocsContentPage(props: {
   params: Promise<{ slug?: string[]; locale?: string }>;
@@ -52,8 +53,18 @@ export async function generateMetadata(props: {
   const page = source.getPage(params.slug, params.locale);
   if (!page) notFound();
 
+  const slugPath = params.slug ? params.slug.join("/") : "";
+  const pagePath = `/docs${slugPath ? `/${slugPath}` : ""}`;
+  const locale = params.locale || "en";
+  const canonicalUrl = getCanonicalUrl(pagePath, locale);
+  const languages = getHreflangLanguages(pagePath);
+
   return {
     title: page.data.title,
     description: page.data.description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: languages,
+    },
   };
 }

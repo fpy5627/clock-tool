@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { signIn } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export default function SignForm({
   className,
@@ -104,13 +105,13 @@ export default function SignForm({
       </Card>
       <div className="text-balance text-center text-xs text-muted-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-primary  ">
         By clicking continue, you agree to our{" "}
-        <a href="/terms-of-service" target="_blank">
+        <Link href="/terms-of-service" target="_blank">
           Terms of Service
-        </a>{" "}
+        </Link>{" "}
         and{" "}
-        <a href="/privacy-policy" target="_blank">
+        <Link href="/privacy-policy" target="_blank">
           Privacy Policy
-        </a>
+        </Link>
         .
       </div>
     </div>

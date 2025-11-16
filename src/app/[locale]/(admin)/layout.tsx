@@ -7,9 +7,12 @@ import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
   children,
+  params,
 }: {
   children: ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const userInfo = await getUserInfo();
   if (!userInfo || !userInfo.email) {
     redirect("/auth/signin");
@@ -22,10 +25,10 @@ export default async function AdminLayout({
 
   const sidebar: Sidebar = {
     brand: {
-      title: "ShipAny",
+      title: "Timero",
       logo: {
-        src: "/logo.png",
-        alt: "ShipAny",
+        src: "/logo.svg",
+        alt: "Timero",
       },
       url: "/admin",
     },
@@ -66,22 +69,10 @@ export default async function AdminLayout({
     bottomNav: {
       items: [
         {
-          title: "Documents",
-          url: "https://docs.shipany.ai",
+          title: "Home",
+          url: "/",
           target: "_blank",
-          icon: "RiFileTextLine",
-        },
-        {
-          title: "Blocks",
-          url: "https://shipany.ai/blocks",
-          target: "_blank",
-          icon: "RiDashboardLine",
-        },
-        {
-          title: "Showcases",
-          url: "https://shipany.ai/showcase",
-          target: "_blank",
-          icon: "RiAppsLine",
+          icon: "RiHomeLine",
         },
       ],
     },
@@ -92,24 +83,6 @@ export default async function AdminLayout({
           url: "/",
           target: "_blank",
           icon: "RiHomeLine",
-        },
-        {
-          title: "Github",
-          url: "https://github.com/shipanyai/shipany-template-one",
-          target: "_blank",
-          icon: "RiGithubLine",
-        },
-        {
-          title: "Discord",
-          url: "https://discord.gg/HQNnrzjZQS",
-          target: "_blank",
-          icon: "RiDiscordLine",
-        },
-        {
-          title: "X",
-          url: "https://x.com/shipanyai",
-          target: "_blank",
-          icon: "RiTwitterLine",
         },
       ],
     },

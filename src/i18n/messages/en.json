@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "Ship Any AI SaaS Startups in hours | ShipAny",
-    "description": "ShipAny is a NextJS boilerplate for building AI SaaS startups, Ship Fast with a variety of templates and components.",
-    "keywords": "ShipAny, AI SaaS Boilerplate, NextJS Boilerplate"
+    "title": "Timero - Free Online Timer, Stopwatch, Alarm & World Clock | Time Management Tool",
+    "description": "Free online timer tool featuring 5 minute timer, 10 minute timer, and 15 minute timer. Set custom countdown timers (10s-16h), use precise stopwatch with lap timer, multi-alarm system, and world clock. Perfect for productivity, workouts, cooking, and time tracking. No signup required.",
+    "keywords": "5 minute timer, 10 minute timer, 15 minute timer, online timer, countdown timer, stopwatch, alarm clock, world clock, time management, Pomodoro timer, workout timer, cooking timer, free timer, online stopwatch, digital clock, time tracking, productivity timer, interval timer, lap timer, multi-alarm, timezone converter, world time, Timero"
   },
   "user": {
     "sign_in": "Sign In",
@@ -34,7 +34,7 @@
   },
   "my_orders": {
     "title": "My Orders",
-    "description": "orders paid with ShipAny.",
+    "description": "orders paid with Timero.",
     "no_orders": "No orders found",
     "tip": "",
     "activate_order": "Activate Order",
@@ -89,7 +89,7 @@
   },
   "blog": {
     "title": "Blog",
-    "description": "News, resources, and updates about ShipAny",
+    "description": "News, resources, and updates about Timero",
     "read_more_text": "Read More"
   },
   "my_invites": {
@@ -100,7 +100,7 @@
     "edit_invite_link": "Edit Invite Link",
     "copy_invite_link": "Copy Invite Link",
     "invite_code": "Invite Code",
-    "invite_tip": "Invite 1 friend to buy ShipAny, reward $50.",
+    "invite_tip": "Invite 1 friend to buy Timero, reward $50.",
     "invite_balance": "Invite Reward Balance",
     "total_invite_count": "Total Invite Count",
     "total_paid_count": "Total Paid Count",
@@ -108,7 +108,7 @@
     "update_invite_code": "Set Invite Code",
     "update_invite_code_tip": "Input your custom invite code",
     "update_invite_button": "Save",
-    "no_orders": "You can't invite others before you bought ShipAny",
+    "no_orders": "You can't invite others before you bought Timero",
     "no_affiliates": "You're not allowed to invite others, please contact us to apply for permission.",
     "table": {
       "invite_time": "Invite Time",
@@ -126,7 +126,522 @@
     "submit": "Submit",
     "loading": "Submitting...",
     "contact_tip": "Other ways to contact us",
-    "rating_tip": "How do you feel about ShipAny?",
+    "rating_tip": "How do you feel about Timero?",
     "placeholder": "Leave your words here..."
+  },
+  "clock": {
+    "presets": {
+      "10s": "10 Second Timer",
+      "20s": "20 Second Timer",
+      "30s": "30 Second Timer",
+      "45s": "45 Second Timer",
+      "60s": "60 Second Timer",
+      "90s": "90 Second Timer",
+      "1min": "1 Minute Timer",
+      "2min": "2 Minute Timer",
+      "3min": "3 Minute Timer",
+      "5min": "5 Minute Timer",
+      "10min": "10 Minute Timer",
+      "15min": "15 Minute Timer",
+      "20min": "20 Minute Timer",
+      "25min": "25 Minute Timer",
+      "30min": "30 Minute Timer",
+      "40min": "40 Minute Timer",
+      "45min": "45 Minute Timer",
+      "60min": "60 Minute Timer",
+      "1hour": "1 Hour Timer",
+      "2hour": "2 Hour Timer",
+      "4hour": "4 Hour Timer",
+      "8hour": "8 Hour Timer",
+      "12hour": "12 Hour Timer",
+      "16hour": "16 Hour Timer"
+    },
+    "sounds": {
+      "night_sky": "Night Sky",
+      "shining_stars": "Shining Stars",
+      "sunrise": "Sunrise",
+      "sunset": "Sunset",
+      "meditation": "Meditation",
+      "distant_serene": "Distant Serene",
+      "emerald_lotus_pond": "Emerald Lotus Pond",
+      "moonlit_lotus": "Moonlit Lotus",
+      "rippling_water": "Rippling Water",
+      "faint_light": "Faint Light",
+      "bathing_earth": "Bathing the Earth",
+      "jungle_morning": "Jungle Morning Scene",
+      "silver_clad": "Silver-clad",
+      "elegant_tranquil": "Elegant and Tranquil",
+      "midsummer_beach": "Midsummer Beach",
+      "midsummer_night": "Midsummer Night",
+      "ice_snow_day": "Ice and Snow Day",
+      "winter_snow_falling": "Winter Snow Falling",
+      "primeval_rainforest": "Primeval Rainforest",
+      "rain_nourishes_all": "Rain Nourishes All Things",
+      "bell": "Bell",
+      "arabian_mystery_harp": "Arabian Mystery Harp",
+      "clear_announce_tones": "Clear Announce Tones",
+      "happy_bells": "Happy Bells",
+      "melodical_flute_music": "Melodical Flute Music",
+      "positive": "Positive",
+      "software_interface_back": "Interface Return Sound",
+      "software_interface_remove": "Interface Delete Sound",
+      "urgent_simple_tone_loop": "Urgent Alert Sound",
+      "wrong_answer_fail": "Error Alert Sound",
+      "serene_solo_piano_airy_synth_pad_alpha_wave_v2": "Serene Solo Piano with Airy Synth Pad and Gentle Alpha Wave V2",
+      "peaceful_piano_instrumental_studying_focus": "Peaceful Piano Instrumental for Studying and Focus",
+      "pulse_synthwave_dude": "Pulse Synthwave Dude"
+    },
+    "sound_descriptions": {
+      "bell": "Clear bell sound, suitable for reminders and notifications",
+      "arabian_mystery_harp": "Mysterious and elegant harp sound effect, suitable for special scene reminders",
+      "clear_announce_tones": "Clear and loud announcement sound effect, suitable for important notifications",
+      "happy_bells": "Cheerful bell sound, suitable for success or completion prompts",
+      "melodical_flute_music": "Beautiful flute melody, gentle and not harsh",
+      "positive": "Positive and uplifting sound, suitable for encouragement and affirmation",
+      "software_interface_back": "Software interface style return sound effect",
+      "software_interface_remove": "Software interface style delete sound effect",
+      "urgent_simple_tone_loop": "Urgent loop alert sound, suitable for important reminders",
+      "wrong_answer_fail": "Error or failure alert sound, suitable for reminding of operation errors",
+      "serene_solo_piano_airy_synth_pad_alpha_wave_v2": "Serene solo piano with airy synth pad and gentle Alpha Wave V2, suitable for focus and relaxation",
+      "peaceful_piano_instrumental_studying_focus": "Peaceful piano instrumental, suitable for studying and focus",
+      "pulse_synthwave_dude": "Pulse synthwave, suitable for sports and energetic scenes"
+    },
+    "colors": {
+      "blue": "Blue",
+      "purple": "Purple",
+      "green": "Green",
+      "orange": "Orange",
+      "pink": "Pink",
+      "cyan": "Cyan",
+      "red": "Cherry Red",
+      "magenta": "Magenta",
+      "indigo": "Indigo",
+      "yellow": "Bright Yellow",
+      "lime": "Lime",
+      "teal": "Teal",
+      "white": "White",
+      "black": "Black",
+      "sunset": "Sunset",
+      "ocean": "Ocean",
+      "forest": "Forest",
+      "aurora": "Aurora",
+      "fire": "Fire",
+      "candy": "Candy"
+    },
+    "cities": {
+      "beijing": "Beijing",
+      "hongkong": "Hong Kong",
+      "tokyo": "Tokyo",
+      "seoul": "Seoul",
+      "singapore": "Singapore",
+      "sydney": "Sydney",
+      "dubai": "Dubai",
+      "moscow": "Moscow",
+      "london": "London",
+      "paris": "Paris",
+      "newyork": "New York",
+      "losangeles": "Los Angeles",
+      "chicago": "Chicago",
+      "greenwich": "Greenwich",
+      "mumbai": "Mumbai"
+    },
+    "countries": {
+      "china": "China",
+      "japan": "Japan",
+      "korea": "South Korea",
+      "singapore": "Singapore",
+      "australia": "Australia",
+      "uae": "UAE",
+      "russia": "Russia",
+      "uk": "UK",
+      "france": "France",
+      "usa": "USA",
+      "india": "India"
+    },
+    "weekdays": {
+      "sunday": "Sun",
+      "monday": "Mon",
+      "tuesday": "Tue",
+      "wednesday": "Wed",
+      "thursday": "Thu",
+      "friday": "Fri",
+      "saturday": "Sat"
+    },
+    "modes": {
+      "timer": "Timer",
+      "stopwatch": "Stopwatch",
+      "alarm": "Alarm",
+      "worldclock": "World Clock"
+    },
+    "buttons": {
+      "start": "Start",
+      "pause": "Pause",
+      "reset": "Reset",
+      "settings": "Settings",
+      "menu": "Menu",
+      "add_alarm": "Add Alarm",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "notification_on": "Notifications On",
+      "notification_off": "Notifications Off",
+      "sound_on": "Sound On",
+      "sound_off": "Sound Off",
+      "light_mode": "Light Mode",
+      "dark_mode": "Dark Mode",
+      "chinese": "中文",
+      "english": "English"
+    },
+    "tooltips": {
+      "close_sound": "Mute",
+      "open_sound": "Unmute",
+      "close_notification": "Turn off notifications",
+      "open_notification": "Turn on notifications",
+      "switch_to_light": "Switch to light mode",
+      "switch_to_dark": "Switch to dark mode",
+      "fullscreen": "Fullscreen",
+      "exit_fullscreen": "Exit fullscreen",
+      "custom_time": "Custom time"
+    },
+    "notifications": {
+      "timer_end": "⏰ Timer Finished",
+      "timer_end_desc": "Your timer has completed!",
+      "alarm_title": "Alarm",
+      "alarm_closed": "Alarm dismissed",
+      "alarm_snooze": "Alarm snoozed",
+      "alarm_exists": "Alarm already exists for this time",
+      "alarm_success": "{preset} alarm set successfully",
+      "alarm_success_desc": "Will remind you at {time}",
+      "alarm_exists_desc": "Alarm already set for {time}",
+      "ring_duration": "Duration: {duration}",
+      "snooze_desc": "Duration: {duration}, will remind again in 5 minutes"
+    },
+    "timer": {
+      "time_up": "Time's Up!",
+      "progress": "Progress",
+      "quick_settings": "Quick Settings",
+      "second_timers": "Second Timers",
+      "minute_timers": "Minute Timers",
+      "hour_timers": "Hour Timers"
+    },
+    "alarm": {
+      "no_alarms": "No alarms yet, click button below to add",
+      "add_alarm": "Add Alarm",
+      "edit_alarm": "Edit Alarm",
+      "hour": "Hour",
+      "minute": "Minute",
+      "label": "Label (Optional)",
+      "label_placeholder": "e.g.: Wake up, Exercise",
+      "repeat": "Repeat",
+      "repeat_once": "Once",
+      "repeat_daily": "Daily",
+      "repeat_weekdays": "Weekdays",
+      "repeat_weekends": "Weekends",
+      "quick_add": "Quick Add",
+      "set_specific_time": "Set Specific Time",
+      "morning_hours": "Morning Hours (AM)",
+      "afternoon_evening_hours": "Afternoon/Evening Hours (PM)",
+      "time_now": "Time's up",
+      "snooze_label": "Snooze",
+      "snooze_button": "Remind in 5 minutes",
+      "ringing": "Ringing for {duration}",
+      "click_expand": "Click to expand",
+      "click_collapse": "Click to collapse",
+      "minute_unit": "minute",
+      "minutes_unit": "minutes",
+      "second_unit": "second",
+      "seconds_unit": "seconds",
+      "hour_unit": "hour",
+      "hours_unit": "hours",
+      "presets": {
+        "1min": "1 Minute Alarm",
+        "3min": "3 Minute Alarm",
+        "5min": "5 Minute Alarm",
+        "15min": "15 Minute Alarm",
+        "30min": "30 Minute Alarm",
+        "1hour": "1 Hour Alarm"
+      },
+      "fullscreen_add_alarm_hint": "Click the settings button in the top right to add alarm",
+      "fullscreen_edit_alarm_hint": "Click alarm time to edit settings"
+    },
+    "worldclock": {
+      "local_time": "Local time",
+      "time_diff": "{diff} hours",
+      "today": "Today",
+      "more": "More",
+      "add_timezone": "Add Timezone",
+      "search_placeholder": "Search city or timezone...",
+      "no_results": "No results found",
+      "select": "Select",
+      "remove": "Remove",
+      "search_mode": "Search & Select",
+      "manual_mode": "Manual Input",
+      "city_name": "City Name",
+      "city_placeholder": "e.g., Beijing",
+      "country_name": "Country/Region",
+      "country_placeholder": "e.g., China",
+      "timezone_label": "Timezone",
+      "timezone_placeholder": "e.g., Asia/Shanghai",
+      "add_custom": "Add Custom Timezone",
+      "timezone_hint": "Please enter IANA timezone identifier",
+      "required_fields": "Please fill in all required fields",
+      "common_timezone_references": "Common Timezone References:",
+      "timezone_reference_shanghai": "Asia/Shanghai",
+      "timezone_reference_newyork": "America/New_York",
+      "timezone_reference_london": "Europe/London",
+      "timezone_reference_tokyo": "Asia/Tokyo",
+      "timezone_reference_sydney": "Australia/Sydney"
+    },
+    "settings_panel": {
+      "title": "Settings",
+      "theme_color": "Theme Color",
+      "sound": "Sound",
+      "notification_sound": "Notification Sound",
+      "sound_preview": "Preview",
+      "most_popular": "Most Popular",
+      "usage_count": "Used {count} times",
+      "show_more": "More",
+      "show_less": "Show Less",
+      "show_progress": "Show progress bar",
+      "show_weather_icon": "Show weather icon",
+      "show_temperature": "Show temperature",
+      "show_date": "Show date",
+      "show_weekday": "Show weekday",
+      "background_customization": "Background Customization",
+      "default": "Default",
+      "color": "Color",
+      "image": "Image",
+      "dark_colors": "Dark Colors",
+      "light_colors": "Light Colors",
+      "gradient_colors": "Gradient Colors",
+      "light_mode_unavailable": "Unavailable in light mode",
+      "dark_mode_unavailable": "Unavailable in dark mode",
+      "small_card_color": "Small card color",
+      "large_small_card_different": "(Large card and small card have different colors)",
+      "upload_image": "Upload Image",
+      "image_history": "Image History",
+      "apply_to_all_pages": "Apply to all pages",
+      "apply_to_current_page": "Apply to current page",
+      "image_overlay_opacity": "Image overlay opacity",
+      "image_position": "Image position",
+      "horizontal": "Horizontal",
+      "vertical": "Vertical",
+      "remove_from_history": "Remove from history",
+      "no_image_history": "No image history",
+      "confirm_background_change": "Confirm Background Change",
+      "confirm_color_change": "Confirm Color Change",
+      "background_type_change_desc": "Do you want to apply this background to all pages or just the current page?",
+      "color_change_desc": "Do you want to apply this color to all pages or just the current page?",
+      "apply_to_all": "Apply to all pages",
+      "apply_to_current": "Apply to current page only",
+      "cancel": "Cancel",
+      "reset_all_pages": "All pages have been reset to default state",
+      "background_applied_all": "Background has been applied to all pages",
+      "history_image_applied_all": "Historical image has been applied to all pages",
+      "history_image_applied_current": "Historical image has been applied to {pageName} page, other pages restored to default background ({themeText})",
+      "click_to_select_image": "Click to select image",
+      "supported_formats": "Supports JPG, PNG, GIF formats",
+      "change_image": "Change image",
+      "image_processing_failed": "Image processing failed, please try again",
+      "invalid_timezone_format": "Invalid timezone format, please enter a valid IANA timezone identifier",
+      "timezone_added": "Added {cityName}",
+      "restore_defaults": "Restore Defaults",
+      "restore_defaults_desc": "Automatically detect and restore default theme based on your IP address time",
+      "restoring_defaults": "Restoring default settings...",
+      "defaults_restored": "Default settings restored",
+      "confirm_modify_color": "Confirm Color Modification",
+      "preview_new_color": "Preview new color:",
+      "modify_small_cards_question": "Do you want to modify the color of small cards at the same time?",
+      "yes_modify_together": "Yes, modify together",
+      "no_only_large_card": "No, only modify large cards",
+      "current_background_color": "Current background color",
+      "color_applied_all": "Applied to all functional pages",
+      "color_applied_current": "Applied to {pageName} page only",
+      "custom_color": "Custom color",
+      "apply_solid_color_background": "Apply Solid Color Background",
+      "select_application_scope": "Select application scope:",
+      "all_functional_pages": "All functional pages",
+      "current_functional_page_only": "Current functional page only",
+      "all_pages_use_this_background": "Timer, stopwatch, alarm, world clock all use this background",
+      "only_this_page_uses_this_background": "Only {pageName} page uses this background",
+      "background_applied_to_page": "Background has been applied to {pageName} page",
+      "background_applied_to_current_page": "Background has been applied to {pageName} page only, other pages restored to default background ({themeText})",
+      "light_mode": "Light mode",
+      "dark_mode": "Dark mode",
+      "theme_color_confirm_title": "Set Theme Color",
+      "theme_color_confirm_message": "Please select application scope:",
+      "theme_color_applied": "Theme color {colorName} has been applied",
+      "color_preview": "Preview new color:",
+      "modify_large_card": "Modify large card color",
+      "modify_small_card": "Modify small card color",
+      "modify_both_cards": "Modify both cards together",
+      "worldclock_color_confirm_message": "Please select which card to modify:"
+    },
+    "modals": {
+      "custom_timer": "Custom Timer",
+      "set_stopwatch": "Set Stopwatch Time",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "seconds": "Seconds",
+      "timer_completed": "Timer Completed",
+      "overtime": "Overtime",
+      "got_it": "Got It"
+    },
+    "page_description": {
+      "alarm": {
+        "title": "Free Online Alarm Clock - Set Multiple Alarms with Custom Labels",
+        "description": "Set timer for 1 minute. Wake me up in 1 minute. Set the alarm for 1 minute from now. It is a free and easy-to-use alarm clock. Create multiple alarms with custom labels, set repeat schedules (once, daily, weekdays, weekends), and choose from various notification sounds. Perfect for waking up, reminders, and time management. No signup required - start using immediately.",
+        "features": [
+          "Set multiple alarms with custom labels",
+          "Choose repeat schedules: once, daily, weekdays, or weekends",
+          "Select from various notification sounds",
+          "Free and easy-to-use alarm clock",
+          "No registration required"
+        ]
+      },
+      "countdown": {
+        "title": "Free Online Countdown Timer - Set Custom Timers from 10 Seconds to 16 Hours",
+        "description_template": "Set timer for {time}. Wake me up in {time}. Set the alarm for {time} from now. It is a free and easy-to-use countdown timer. Set the hour, minute, and second for the online countdown timer, and start it. Alternatively, you can set the date and time to count till (or from) the event. Start {time} timer. Perfect for productivity, workouts, cooking, and time tracking. Choose from preset timers or set custom time. No signup required.",
+        "description": "Set the hour, minute, and second for the online countdown timer, and start it. Alternatively, you can set the date and time to count till (or from) the event. Start 1 minute timer. It is a free and easy-to-use countdown timer. Perfect for productivity, workouts, cooking, and time tracking. Choose from preset timers or set custom time. No signup required.",
+        "features": [
+          "Set custom timers from 10 seconds to 16 hours",
+          "Choose from preset timers (1 minute, 5 minutes, 10 minutes, etc.)",
+          "Custom time settings with hours, minutes, and seconds",
+          "Free and easy-to-use countdown timer",
+          "No registration required"
+        ]
+      },
+      "stopwatch": {
+        "title": "Free Online Stopwatch - Precise Time Tracking with Lap Functionality",
+        "description": "Start the stopwatch to track elapsed time with precision. Use the lap timer to measure multiple intervals. It is a free and easy-to-use stopwatch. Perfect for workouts, sports, cooking, and any activity that requires time tracking. No signup required - start timing immediately.",
+        "features": [
+          "Precise time tracking with millisecond accuracy",
+          "Lap timer functionality for measuring intervals",
+          "Start, pause, and reset controls",
+          "Free and easy-to-use stopwatch",
+          "No registration required"
+        ]
+      },
+      "worldclock": {
+        "title": "Free Online World Clock - View Multiple Timezones Simultaneously",
+        "description": "View time across multiple timezones simultaneously. Add custom cities and timezones to track time around the world. It is a free and easy-to-use world clock. Perfect for international meetings, travel planning, and staying connected with global teams. No signup required.",
+        "features": [
+          "View multiple timezones simultaneously",
+          "Add custom cities and timezones",
+          "See local time and time differences",
+          "Free and easy-to-use world clock",
+          "No registration required"
+        ]
+      },
+      "timer_pages": {
+        "10_second_timer": {
+          "title": "10 Second Timer - Online Countdown Timer",
+          "description": "Free online 10 second timer. Simple and easy-to-use countdown timer for 10 seconds with alarm sound."
+        },
+        "20_second_timer": {
+          "title": "20 Second Timer - Online Countdown Timer",
+          "description": "Free online 20 second timer. Simple and easy-to-use countdown timer for 20 seconds with alarm sound."
+        },
+        "30_second_timer": {
+          "title": "30 Second Timer - Online Countdown Timer",
+          "description": "Free online 30 second timer. Simple and easy-to-use countdown timer for 30 seconds with alarm sound."
+        },
+        "45_second_timer": {
+          "title": "45 Second Timer - Online Countdown Timer",
+          "description": "Free online 45 second timer. Simple and easy-to-use countdown timer for 45 seconds with alarm sound."
+        },
+        "60_second_timer": {
+          "title": "60 Second Timer - Online Countdown Timer",
+          "description": "Free online 60 second timer. Simple and easy-to-use countdown timer for 60 seconds with alarm sound."
+        },
+        "90_second_timer": {
+          "title": "90 Second Timer - Online Countdown Timer",
+          "description": "Free online 90 second timer. Simple and easy-to-use countdown timer for 90 seconds with alarm sound."
+        },
+        "1_minute_timer": {
+          "title": "1 Minute Timer - Online Countdown Timer",
+          "description": "Free online 1 minute timer. Simple and easy-to-use countdown timer for 1 minute with alarm sound."
+        },
+        "2_minute_timer": {
+          "title": "2 Minute Timer - Online Countdown Timer",
+          "description": "Free online 2 minute timer. Simple and easy-to-use countdown timer for 2 minutes with alarm sound."
+        },
+        "3_minute_timer": {
+          "title": "3 Minute Timer - Online Countdown Timer",
+          "description": "Free online 3 minute timer. Simple and easy-to-use countdown timer for 3 minutes with alarm sound."
+        },
+        "5_minute_timer": {
+          "title": "5 Minute Timer - Online Countdown Timer",
+          "description": "Free online 5 minute timer. Simple and easy-to-use countdown timer for 5 minutes with alarm sound."
+        },
+        "10_minute_timer": {
+          "title": "10 Minute Timer - Online Countdown Timer",
+          "description": "Free online 10 minute timer. Simple and easy-to-use countdown timer for 10 minutes with alarm sound."
+        },
+        "15_minute_timer": {
+          "title": "15 Minute Timer - Online Countdown Timer",
+          "description": "Free online 15 minute timer. Simple and easy-to-use countdown timer for 15 minutes with alarm sound."
+        },
+        "20_minute_timer": {
+          "title": "20 Minute Timer - Online Countdown Timer",
+          "description": "Free online 20 minute timer. Simple and easy-to-use countdown timer for 20 minutes with alarm sound."
+        },
+        "25_minute_timer": {
+          "title": "25 Minute Timer - Pomodoro Timer Online",
+          "description": "Free online 25 minute timer. Perfect for Pomodoro technique. Simple countdown timer for 25 minutes with alarm sound."
+        },
+        "30_minute_timer": {
+          "title": "30 Minute Timer - Online Countdown Timer",
+          "description": "Free online 30 minute timer. Simple and easy-to-use countdown timer for 30 minutes with alarm sound."
+        },
+        "40_minute_timer": {
+          "title": "40 Minute Timer - Online Countdown Timer",
+          "description": "Free online 40 minute timer. Simple and easy-to-use countdown timer for 40 minutes with alarm sound."
+        },
+        "45_minute_timer": {
+          "title": "45 Minute Timer - Online Countdown Timer",
+          "description": "Free online 45 minute timer. Simple and easy-to-use countdown timer for 45 minutes with alarm sound."
+        },
+        "60_minute_timer": {
+          "title": "60 Minute Timer - Online Countdown Timer",
+          "description": "Free online 60 minute timer. Simple and easy-to-use countdown timer for 60 minutes with alarm sound."
+        },
+        "1_hour_timer": {
+          "title": "1 Hour Timer - Online Countdown Timer",
+          "description": "Free online 1 hour timer. Simple and easy-to-use countdown timer for 1 hour with alarm sound."
+        },
+        "2_hour_timer": {
+          "title": "2 Hour Timer - Online Countdown Timer",
+          "description": "Free online 2 hour timer. Simple and easy-to-use countdown timer for 2 hours with alarm sound."
+        },
+        "4_hour_timer": {
+          "title": "4 Hour Timer - Online Countdown Timer",
+          "description": "Free online 4 hour timer. Simple and easy-to-use countdown timer for 4 hours with alarm sound."
+        },
+        "8_hour_timer": {
+          "title": "8 Hour Timer - Online Countdown Timer",
+          "description": "Free online 8 hour timer. Simple and easy-to-use countdown timer for 8 hours with alarm sound."
+        },
+        "12_hour_timer": {
+          "title": "12 Hour Timer - Online Countdown Timer",
+          "description": "Free online 12 hour timer. Simple and easy-to-use countdown timer for 12 hours with alarm sound."
+        },
+        "16_hour_timer": {
+          "title": "16 Hour Timer - Online Countdown Timer",
+          "description": "Free online 16 hour timer. Simple and easy-to-use countdown timer for 16 hours with alarm sound."
+        }
+      }
+    }
+  },
+  "legal": {
+    "privacy_policy": {
+      "title": "Privacy Policy",
+      "description": "Privacy Policy for Timero",
+      "content": "# Privacy Policy for Timero\n\n## Introduction\n\nWelcome to Timero, a **free online time management tool** that combines countdown timer, stopwatch, alarm clock, and world clock features. Your privacy is of utmost importance to us. This privacy policy explains how we collect, use, and protect your information when you use our services.\n\n**Important**: Timero's core features (timer, stopwatch, alarm, and world clock) are completely **free to use and require no registration**. You can use all these features without creating an account or providing any personal information. Your timer settings, alarms, and preferences are stored locally in your browser.\n\n## Information We Collect\n\n### Core Features (No Registration Required)\n\nWhen you use Timero's core features without registering:\n\n- **Local Storage**: Your timer presets, alarm settings, world clock configurations, theme preferences, and sound selections are stored locally in your browser using browser local storage. This data never leaves your device.\n- **No Personal Data**: We do not collect any personal information when you use the core features.\n- **No Tracking**: We do not track your usage or behavior when using the free features.\n\n### Technical Information\n\nWe may automatically collect minimal technical information:\n\n- **Browser Information**: Browser type and version to ensure compatibility\n- **Device Information**: Device type (desktop, mobile, tablet) for optimization\n- **Basic Analytics**: Anonymous usage statistics to improve service quality (only for website visitors, not for core feature usage)\n\n## Cookies and Local Storage\n\nTimero uses:\n\n- **Local Storage**: To save your preferences, alarms, and timer settings directly in your browser\n- **Session Cookies**: For maintaining your session if you choose to create an account\n- **Analytics Cookies**: Anonymous usage statistics to improve our website (can be disabled in browser settings)\n\nYou can disable cookies in your browser settings, though this may affect account functionality.\n\n## Data Storage and Security\n\n- **Local Data**: All core feature data (timers, alarms, preferences) is stored locally in your browser and never transmitted to our servers.\n- **Account Data**: If you create an account, your account information is stored securely on our servers with encryption and access controls.\n- **Security Measures**: We implement industry-standard security measures including encryption, secure connections (HTTPS), and access controls.\n- **No Guarantee**: While we take security seriously, no method of electronic storage or transmission is 100% secure.\n\n## Information Sharing and Disclosure\n\nWe **do not sell, trade, or rent** your personal information. We only share information in the following limited circumstances:\n\n- **Legal Requirements**: To comply with legal obligations or respond to lawful requests from authorities\n- **Service Providers**: With trusted third-party service providers who assist in operating our website (e.g., hosting, analytics), subject to strict confidentiality agreements\n- **Protection**: To protect our rights, property, or safety, or that of our users\n\n## Your Rights\n\n- **Access**: You can access and manage your local browser data at any time through your browser settings\n- **Deletion**: You can delete your local data by clearing your browser's local storage\n- **Account Data**: If you have an account, you can request access to, modification of, or deletion of your account data by contacting us\n- **Opt-Out**: You can choose not to create an account and use only the free features\n\n## Changes to This Policy\n\nWe may update this privacy policy from time to time. We will notify you of significant changes by posting the updated policy on this page. The \"Last Updated\" date will be revised accordingly. Your continued use of Timero after changes are posted constitutes acceptance of the updated policy.\n\n## Contact Us\n\nIf you have any questions, concerns, or requests regarding this privacy policy or our data practices, please contact us:\n\n**Email**: service@toolina.com\n\nThank you for trusting Timero with your time management needs!"
+    },
+    "terms_of_service": {
+      "title": "Terms of Service",
+      "description": "Terms of Service for Timero",
+      "content": "# Terms of Service for Timero\n\n## Introduction and Acceptance of Terms\n\nWelcome to **Timero**, a free online time management tool that combines countdown timer (10 seconds to 16 hours), precise stopwatch with lap functionality, multi-alarm system, and world clock features. By accessing or using Timero, you agree to be bound by these Terms of Service. If you do not agree with any of these terms, please do not use our service.\n\n**Key Points**:\n- Timero's core features are **completely free** and **require no registration**\n- You can use timer, stopwatch, alarm, and world clock features without creating an account\n- Your settings and preferences are stored locally in your browser\n- Account creation is optional for accessing advanced features\n\n## Description of Service\n\nTimero provides users with a comprehensive time management platform:\n\n- **Countdown Timer**: Set custom timers from 10 seconds to 16 hours, with preset options and custom time settings\n- **Stopwatch**: Precise time tracking with lap functionality for measuring performance and activities\n- **Alarm Clock**: Set multiple alarms with custom labels, repeat schedules (once, daily, weekdays, weekends), and notification sounds\n- **World Clock**: View time across multiple timezones simultaneously with custom city support\n- **Customization**: Personalize theme colors, backgrounds, notification sounds, and interface settings\n- **Cross-Platform**: Works seamlessly on desktop, tablet, and mobile devices with responsive design\n\n## Free Use and Optional Accounts\n\n1. **Free Features**: All core time management features are available free of charge and require no registration. You can use timer, stopwatch, alarms, and world clock immediately without creating an account.\n\n2. **Optional Account Creation**: Account creation is optional and may be required only for:\n   - Advanced features (if any are introduced)\n   - API access (if available)\n   - Cloud synchronization (if available)\n   - Premium features (if offered)\n\n3. **Account Security** (if you create an account):\n   - You are responsible for maintaining the confidentiality of your account credentials\n   - You are responsible for all activities that occur under your account\n   - You agree to notify us immediately of any unauthorized use of your account\n\n## Acceptable Use\n\nYou agree to use Timero in accordance with all applicable local, state, national, and international laws and regulations. You agree not to:\n\n- Use the service for any illegal or unauthorized purpose\n- Interfere with or disrupt the security or performance of the service\n- Attempt to reverse engineer, decompile, or disassemble the service\n- Use automated systems to access the service in a manner that sends more requests than a human could reasonably produce\n- Transmit any malicious code, viruses, or harmful content\n- Violate any third-party rights, including intellectual property rights\n\n## Intellectual Property Rights\n\nAll content provided through Timero, including but not limited to software, design, documentation, logos, and trademarks, is protected under copyright and intellectual property law. The copyright owner of Timero is **Timero Team**.\n\n- You acknowledge that you do not own the underlying technology or intellectual property that makes up the Timero service\n- You agree to respect the intellectual property rights of Timero and any third parties\n- You may use Timero for personal or commercial time management purposes, but the Timero platform and its underlying technology remain the property of Timero Team\n- You may not copy, modify, distribute, sell, or lease any part of the Timero service without explicit written permission\n\n## Privacy and Data Collection\n\nTimero respects your privacy. For detailed information about how we collect, use, and protect your information, please refer to our [Privacy Policy](/privacy-policy).\n\nKey points:\n- Core features work without collecting personal information\n- Your timer settings, alarms, and preferences are stored locally in your browser\n- Account information (if you choose to create an account) is collected only as necessary to provide account-related features\n- We do not sell, trade, or rent your personal information\n\n## Service Availability and Modifications\n\n- **Availability**: We strive to keep Timero available 24/7, but we do not guarantee uninterrupted access. The service may be temporarily unavailable due to maintenance, updates, or unforeseen circumstances.\n- **Modifications**: We reserve the right to modify, suspend, or discontinue any aspect of the service at any time, with or without notice.\n- **Feature Changes**: We may add, modify, or remove features at our discretion.\n\n## Pricing (if applicable)\n\n- **Free Features**: Core features (timer, stopwatch, alarm, world clock) are free and will remain free\n- **Premium Features** (if offered): Any premium features will be clearly marked, and pricing will be disclosed before purchase\n- **Refunds**: Refund policies, if applicable, will be clearly stated at the time of purchase\n- **Price Changes**: If we introduce paid features, we reserve the right to change pricing with reasonable notice\n\n## Disclaimer of Warranties\n\nThe service is provided on an **\"as is\"** and **\"as available\"** basis. To the fullest extent permitted by law:\n\n- We make no warranties or representations about the accuracy, reliability, availability, or suitability of the service\n- We disclaim all warranties, express or implied, including but not limited to implied warranties of merchantability, fitness for a particular purpose, and non-infringement\n- We do not warrant that the service will be uninterrupted, error-free, or free from viruses or other harmful components\n- We are not responsible for any loss of data stored locally in your browser\n\n## Limitation of Liability\n\nTo the fullest extent permitted by applicable law:\n\n- Timero shall not be liable for any direct, indirect, incidental, special, consequential, or punitive damages\n- This includes, but is not limited to, damages for loss of profits, goodwill, use, data, or other intangible losses resulting from:\n  - Your use or inability to use the service\n  - Any errors or omissions in the service\n  - Any interruption or cessation of the service\n  - Any deletion, corruption, or failure to store any content or data\n\n## Indemnification\n\nYou agree to indemnify, defend, and hold harmless Timero, its affiliates, and their respective officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including reasonable attorneys' fees) arising from:\n\n- Your use of the service\n- Your violation of these Terms of Service\n- Your violation of any third-party rights\n- Any content you submit or transmit through the service\n\n## Termination\n\n- **By You**: You may stop using Timero at any time. If you have an account, you may delete it at any time.\n- **By Us**: We reserve the right to suspend or terminate your access to the service (or any part thereof) at our sole discretion, with or without notice, for conduct that we believe violates these Terms or is harmful to other users, us, or third parties, or for any other reason.\n\n## Governing Law and Dispute Resolution\n\nThese Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which Timero operates, without regard to its conflict of law provisions.\n\nFor users in the European Union, this does not affect your rights under applicable EU consumer protection laws.\n\nAny disputes arising from these Terms or the service should first be addressed through direct communication with us at service@toolina.com.\n\n## Changes to These Terms\n\nWe reserve the right to update or modify these Terms of Service at any time. We will notify users of significant changes by:\n\n- Posting the updated terms on this page\n- Updating the \"Last Updated\" date\n- For registered users, we may send an email notification (if email addresses are on file)\n\nYour continued use of Timero after changes are posted constitutes acceptance of the updated terms. If you do not agree with the changes, you should discontinue use of the service.\n\n## Severability\n\nIf any provision of these Terms is found to be unenforceable or invalid, that provision will be limited or eliminated to the minimum extent necessary, and the remaining provisions will remain in full force and effect.\n\n## Contact Information\n\nIf you have any questions about these Terms of Service, please contact us:\n\n**Email**: service@toolina.com\n\n## Acknowledgment\n\nBy using Timero, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service. Thank you for choosing Timero for your time management needs!"
+    }
   }
 }

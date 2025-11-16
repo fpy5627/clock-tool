@@ -16,6 +16,14 @@ import moment from "moment";
 import useOneTapLogin from "@/hooks/useOneTapLogin";
 import { useSession } from "next-auth/react";
 import { isAuthEnabled, isGoogleOneTapEnabled } from "@/lib/auth";
+import { notifySoundMetaList } from "@/lib/notify-sound";
+
+/**
+ * 全局提示音KEY，localStorage用于存取用户偏好
+ */
+const NOTIFY_SOUND_KEY = "notifySoundId";
+// 默认音效ID（与notify-sound.ts首个保持一致）
+const DEFAULT_NOTIFY_SOUND = notifySoundMetaList[0]?.id || "bell";
 
 const AppContext = createContext({} as ContextValue);
 
@@ -32,6 +40,24 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   const [showFeedback, setShowFeedback] = useState<boolean>(false);
+
+  // ========== 新增：提示音全局状态逻辑 ===========
+  // 通知音效当前选中值
+  const [notifySoundId, setNotifySoundIdState] = useState<string>(DEFAULT_NOTIFY_SOUND);
+  // 变更并持久化到localStorage
+  const setNotifySoundId = (id: string) => {
+    setNotifySoundIdState(id);
+    try {
+      localStorage.setItem(NOTIFY_SOUND_KEY, id);
+    } catch {}
+  };
+  // 初次加载从本地恢复用户上次选择
+  useEffect(() => {
+    const cached = localStorage.getItem(NOTIFY_SOUND_KEY);
+    if (cached && cached !== notifySoundId) {
+      setNotifySoundIdState(cached);
+    }
+  }, []);
 
   const fetchUserInfo = async function () {
     try {
@@ -123,6 +149,9 @@ export const AppContextProvider = ({ children }: { children: ReactNode }) => {
         setUser,
         showFeedback,
         setShowFeedback,
+        // ========== 新增全局提示音字段 ===========
+        notifySoundId,
+        setNotifySoundId,
       }}
     >
       {children}

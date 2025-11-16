@@ -1,6 +1,7 @@
 import { redirect } from "@/i18n/navigation";
 import { newStripeClient } from "@/integrations/stripe";
 import { handleCheckoutSession } from "@/services/stripe";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -31,8 +32,16 @@ export async function GET(req: Request) {
     redirectUrl = process.env.NEXT_PUBLIC_PAY_FAIL_URL || "/";
   }
 
-  redirect({
-    href: redirectUrl,
-    locale: locale,
+  // Build full redirect URL with locale
+  const baseUrl = process.env.NEXT_PUBLIC_WEB_URL || "https://clock.toolina.com";
+  const fullRedirectUrl = locale === "en" 
+    ? `${baseUrl}${redirectUrl}`
+    : `${baseUrl}/${locale}${redirectUrl}`;
+
+  // Use NextResponse.redirect to add X-Robots-Tag header
+  return NextResponse.redirect(fullRedirectUrl, {
+    headers: {
+      "X-Robots-Tag": "noindex, nofollow",
+    },
   });
 }

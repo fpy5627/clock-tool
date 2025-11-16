@@ -17,6 +17,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY . .
+ENV NEXT_OUTPUT_STANDALONE=true
 RUN pnpm build
 
 # Production image, copy all the files and run next

@@ -74,9 +74,14 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse({
+    const response = result.toDataStreamResponse({
       sendReasoning: true,
     });
+    
+    // Add X-Robots-Tag header to stream response
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    
+    return response;
   } catch (err) {
     console.log("gen text stream failed:", err);
     return respErr("gen text stream failed");

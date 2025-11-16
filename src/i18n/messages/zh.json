@@ -1,8 +1,8 @@
 {
   "metadata": {
-    "title": "几小时内构建任何 AI SaaS 创业项目 | ShipAny",
-    "description": "ShipAny 是一个用于构建 AI SaaS 创业项目的 NextJS 模板，提供各种模板和组件，帮助您快速启动。",
-    "keywords": "ShipAny, AI SaaS 模板, NextJS 模板"
+    "title": "Timero - 免费在线计时器、秒表、闹钟与世界时间 | 时间管理工具",
+    "description": "免费在线计时工具，提供5分钟计时器、10分钟计时器和15分钟计时器。支持自定义倒计时器（10秒-16小时）、精确秒表（支持圈数计时）、多闹钟系统和世界时间。完美适用于生产力提升、健身、烹饪和时间追踪。无需注册。",
+    "keywords": "5分钟计时器, 10分钟计时器, 15分钟计时器, 在线计时器, 倒计时器, 秒表, 闹钟, 世界时间, 时间管理, 番茄工作法, 健身计时器, 烹饪计时器, 免费计时器, 在线秒表, 数字时钟, 时间追踪, 生产力工具, 间歇计时器, 圈数计时, 多闹钟, 时区转换器, 世界时间, Timero"
   },
   "user": {
     "sign_in": "登录",
@@ -34,7 +34,7 @@
   },
   "my_orders": {
     "title": "我的订单",
-    "description": "在 ShipAny 上购买的订单。",
+    "description": "在 Timero 上购买的订单。",
     "no_orders": "未找到订单",
     "tip": "",
     "activate_order": "激活订单",
@@ -89,7 +89,7 @@
   },
   "blog": {
     "title": "博客",
-    "description": "关于 ShipAny 的新闻、资源和更新",
+    "description": "关于 Timero 的新闻、资源和更新",
     "read_more_text": "阅读更多"
   },
   "my_invites": {
@@ -100,7 +100,7 @@
     "edit_invite_link": "编辑邀请链接",
     "copy_invite_link": "复制邀请链接",
     "invite_code": "邀请码",
-    "invite_tip": "每邀请 1 位朋友购买 ShipAny，奖励 $50。",
+    "invite_tip": "每邀请 1 位朋友购买 Timero，奖励 $50。",
     "invite_balance": "邀请奖励余额",
     "total_invite_count": "总邀请人数",
     "total_paid_count": "已充值人数",
@@ -108,7 +108,7 @@
     "update_invite_code": "设置邀请码",
     "update_invite_code_tip": "输入你的自定义邀请码",
     "update_invite_button": "保存",
-    "no_orders": "你需要先购买过 ShipAny 才能邀请朋友",
+    "no_orders": "你需要先购买过 Timero 才能邀请朋友",
     "no_affiliates": "你暂无邀请朋友的权限，请联系我们申请开通。",
     "table": {
       "invite_time": "邀请时间",
@@ -126,7 +126,522 @@
     "submit": "提交",
     "loading": "提交中...",
     "contact_tip": "其他联系方式",
-    "rating_tip": "您对 ShipAny 的看法如何？",
+    "rating_tip": "您对 Timero 的看法如何？",
     "placeholder": "在这里留下您的反馈..."
+  },
+  "clock": {
+    "presets": {
+      "10s": "10秒计时器",
+      "20s": "20秒计时器",
+      "30s": "30秒计时器",
+      "45s": "45秒计时器",
+      "60s": "60秒计时器",
+      "90s": "90秒计时器",
+      "1min": "1分钟计时器",
+      "2min": "2分钟计时器",
+      "3min": "3分钟计时器",
+      "5min": "5分钟计时器",
+      "10min": "10分钟计时器",
+      "15min": "15分钟计时器",
+      "20min": "20分钟计时器",
+      "25min": "25分钟计时器",
+      "30min": "30分钟计时器",
+      "40min": "40分钟计时器",
+      "45min": "45分钟计时器",
+      "60min": "60分钟计时器",
+      "1hour": "1小时计时器",
+      "2hour": "2小时计时器",
+      "4hour": "4小时计时器",
+      "8hour": "8小时计时器",
+      "12hour": "12小时计时器",
+      "16hour": "16小时计时器"
+    },
+    "sounds": {
+      "night_sky": "夜空",
+      "shining_stars": "闪耀的星",
+      "sunrise": "日出",
+      "sunset": "日落",
+      "meditation": "冥思",
+      "distant_serene": "悠远",
+      "emerald_lotus_pond": "翠绿荷塘",
+      "moonlit_lotus": "月下荷花",
+      "rippling_water": "水波荡漾",
+      "faint_light": "微光",
+      "bathing_earth": "沐浴大地",
+      "jungle_morning": "丛林晨景",
+      "silver_clad": "银装素裹",
+      "elegant_tranquil": "优雅恬静",
+      "midsummer_beach": "盛夏海边",
+      "midsummer_night": "仲夏的夜",
+      "ice_snow_day": "冰雪天",
+      "winter_snow_falling": "冬雪飘落",
+      "primeval_rainforest": "原始雨林",
+      "rain_nourishes_all": "雨润万物",
+      "bell": "铃铛",
+      "arabian_mystery_harp": "阿拉伯神秘竖琴",
+      "clear_announce_tones": "清晰公告音",
+      "happy_bells": "快乐铃声",
+      "melodical_flute_music": "旋律长笛",
+      "positive": "积极提示音",
+      "software_interface_back": "界面返回音",
+      "software_interface_remove": "界面删除音",
+      "urgent_simple_tone_loop": "紧急提示音",
+      "wrong_answer_fail": "错误提示音",
+      "serene_solo_piano_airy_synth_pad_alpha_wave_v2": "宁静钢琴阿尔法波V2",
+      "peaceful_piano_instrumental_studying_focus": "专注学习钢琴",
+      "pulse_synthwave_dude": "脉冲合成波"
+    },
+    "sound_descriptions": {
+      "bell": "清脆的铃铛声，适合提醒和通知",
+      "arabian_mystery_harp": "神秘优雅的竖琴音效，适合特殊场景提醒",
+      "clear_announce_tones": "清晰响亮的公告音效，适合重要通知",
+      "happy_bells": "欢快的铃声，适合成功或完成提示",
+      "melodical_flute_music": "优美的长笛旋律，温和不刺耳",
+      "positive": "积极向上的提示音，适合鼓励和肯定",
+      "software_interface_back": "软件界面风格的返回音效",
+      "software_interface_remove": "软件界面风格的删除音效",
+      "urgent_simple_tone_loop": "紧急循环提示音，适合重要提醒",
+      "wrong_answer_fail": "错误或失败提示音，适合提醒操作错误",
+      "serene_solo_piano_airy_synth_pad_alpha_wave_v2": "宁静的独奏钢琴与空灵合成器垫和温和阿尔法波V2，适合专注和放松",
+      "peaceful_piano_instrumental_studying_focus": "宁静的钢琴器乐，适合学习和专注",
+      "pulse_synthwave_dude": "脉冲合成波，适合运动和活力场景"
+    },
+    "colors": {
+      "blue": "蓝色",
+      "purple": "紫色",
+      "green": "绿色",
+      "orange": "橙色",
+      "pink": "粉色",
+      "cyan": "青色",
+      "red": "樱桃红",
+      "magenta": "洋红",
+      "indigo": "靛蓝",
+      "yellow": "亮黄色",
+      "lime": "青柠绿",
+      "teal": "蓝绿色",
+      "white": "白色",
+      "black": "黑色",
+      "sunset": "日落渐变",
+      "ocean": "海洋渐变",
+      "forest": "森林渐变",
+      "aurora": "极光渐变",
+      "fire": "火焰渐变",
+      "candy": "糖果渐变"
+    },
+    "cities": {
+      "beijing": "北京",
+      "hongkong": "香港",
+      "tokyo": "东京",
+      "seoul": "首尔",
+      "singapore": "新加坡",
+      "sydney": "悉尼",
+      "dubai": "迪拜",
+      "moscow": "莫斯科",
+      "london": "伦敦",
+      "paris": "巴黎",
+      "newyork": "纽约",
+      "losangeles": "洛杉矶",
+      "chicago": "芝加哥",
+      "greenwich": "格林尼治",
+      "mumbai": "孟买"
+    },
+    "countries": {
+      "china": "中国",
+      "japan": "日本",
+      "korea": "韩国",
+      "singapore": "新加坡",
+      "australia": "澳大利亚",
+      "uae": "阿联酋",
+      "russia": "俄罗斯",
+      "uk": "英国",
+      "france": "法国",
+      "usa": "美国",
+      "india": "印度"
+    },
+    "weekdays": {
+      "sunday": "周日",
+      "monday": "周一",
+      "tuesday": "周二",
+      "wednesday": "周三",
+      "thursday": "周四",
+      "friday": "周五",
+      "saturday": "周六"
+    },
+    "modes": {
+      "timer": "倒计时",
+      "stopwatch": "秒表",
+      "alarm": "闹钟",
+      "worldclock": "世界时间"
+    },
+    "buttons": {
+      "start": "开始",
+      "pause": "暂停",
+      "reset": "重置",
+      "settings": "设置",
+      "menu": "菜单",
+      "add_alarm": "添加闹钟",
+      "cancel": "取消",
+      "confirm": "确定",
+      "notification_on": "通知开",
+      "notification_off": "通知关",
+      "sound_on": "声音开",
+      "sound_off": "声音关",
+      "light_mode": "白天模式",
+      "dark_mode": "夜晚模式",
+      "chinese": "中文",
+      "english": "English"
+    },
+    "tooltips": {
+      "close_sound": "关闭声音",
+      "open_sound": "开启声音",
+      "close_notification": "关闭桌面通知",
+      "open_notification": "开启桌面通知",
+      "switch_to_light": "切换到明亮模式",
+      "switch_to_dark": "切换到夜间模式",
+      "fullscreen": "全屏模式",
+      "exit_fullscreen": "退出全屏",
+      "custom_time": "自定义时间"
+    },
+    "notifications": {
+      "timer_end": "⏰ 倒计时结束",
+      "timer_end_desc": "您设定的倒计时已完成！",
+      "alarm_title": "闹钟",
+      "alarm_closed": "闹钟已关闭",
+      "alarm_snooze": "已设置稍后提醒",
+      "alarm_exists": "该时间的闹钟已存在",
+      "alarm_success": "{preset}闹钟设置成功",
+      "alarm_success_desc": "将在 {time} 提醒您",
+      "alarm_exists_desc": "{time} 的闹钟已设置",
+      "ring_duration": "响铃时长：{duration}",
+      "snooze_desc": "响铃时长：{duration}，将在5分钟后再次提醒"
+    },
+    "timer": {
+      "time_up": "时间到！",
+      "progress": "进度",
+      "quick_settings": "快捷设置",
+      "second_timers": "秒级计时器",
+      "minute_timers": "分钟级计时器",
+      "hour_timers": "小时级计时器"
+    },
+    "alarm": {
+      "no_alarms": "暂无闹钟，点击下方按钮添加",
+      "add_alarm": "添加闹钟",
+      "edit_alarm": "编辑闹钟",
+      "hour": "小时",
+      "minute": "分钟",
+      "label": "标签（可选）",
+      "label_placeholder": "例如：起床、运动",
+      "repeat": "重复",
+      "repeat_once": "单次",
+      "repeat_daily": "每天",
+      "repeat_weekdays": "工作日",
+      "repeat_weekends": "周末",
+      "quick_add": "快捷设置",
+      "set_specific_time": "设置具体时间",
+      "morning_hours": "上午时间段",
+      "afternoon_evening_hours": "下午/晚上时间段",
+      "time_now": "时间到了",
+      "snooze_label": "稍后提醒",
+      "snooze_button": "5分钟后提醒",
+      "ringing": "已响铃 {duration}",
+      "click_expand": "点击展开查看完整内容",
+      "click_collapse": "点击收起",
+      "minute_unit": "分钟",
+      "minutes_unit": "分钟",
+      "second_unit": "秒",
+      "seconds_unit": "秒",
+      "hour_unit": "小时",
+      "hours_unit": "小时",
+      "presets": {
+        "1min": "1分钟闹钟",
+        "3min": "3分钟闹钟",
+        "5min": "5分钟闹钟",
+        "15min": "15分钟闹钟",
+        "30min": "30分钟闹钟",
+        "1hour": "1小时闹钟"
+      },
+      "fullscreen_add_alarm_hint": "点击右上角设置按钮添加闹钟",
+      "fullscreen_edit_alarm_hint": "点击闹钟时间可编辑设置"
+    },
+    "worldclock": {
+      "local_time": "本地时间",
+      "time_diff": "{diff}小时",
+      "today": "今天",
+      "more": "更多",
+      "add_timezone": "添加时区",
+      "search_placeholder": "搜索城市或时区...",
+      "no_results": "未找到结果",
+      "select": "选择",
+      "remove": "删除",
+      "search_mode": "搜索选择",
+      "manual_mode": "手动输入",
+      "city_name": "城市名称",
+      "city_placeholder": "例如：北京",
+      "country_name": "国家/地区",
+      "country_placeholder": "例如：中国",
+      "timezone_label": "时区",
+      "timezone_placeholder": "例如：Asia/Shanghai",
+      "add_custom": "添加自定义时区",
+      "timezone_hint": "请输入 IANA 时区标识符",
+      "required_fields": "请填写所有必填字段",
+      "common_timezone_references": "常用时区参考：",
+      "timezone_reference_shanghai": "亚洲/上海: Asia/Shanghai",
+      "timezone_reference_newyork": "美国/纽约: America/New_York",
+      "timezone_reference_london": "欧洲/伦敦: Europe/London",
+      "timezone_reference_tokyo": "亚洲/东京: Asia/Tokyo",
+      "timezone_reference_sydney": "澳洲/悉尼: Australia/Sydney"
+    },
+    "settings_panel": {
+      "title": "设置",
+      "theme_color": "主题颜色",
+      "sound": "提示音",
+      "notification_sound": "铃声选择",
+      "sound_preview": "试听",
+      "most_popular": "最受欢迎",
+      "usage_count": "使用{count}次",
+      "show_more": "更多",
+      "show_less": "收起",
+      "show_progress": "显示进度条",
+      "show_weather_icon": "显示天气图标",
+      "show_temperature": "显示气温",
+      "show_date": "显示日期",
+      "show_weekday": "显示周几",
+      "background_customization": "背景自定义",
+      "default": "默认",
+      "color": "纯色",
+      "image": "图片",
+      "dark_colors": "深色系",
+      "light_colors": "浅色系",
+      "gradient_colors": "渐变色系",
+      "light_mode_unavailable": "白天模式不可用",
+      "dark_mode_unavailable": "夜晚模式不可用",
+      "small_card_color": "小卡片颜色",
+      "large_small_card_different": "(大卡片与小卡片颜色不同)",
+      "upload_image": "上传图片",
+      "image_history": "图片历史",
+      "apply_to_all_pages": "应用到所有页面",
+      "apply_to_current_page": "仅应用到当前页面",
+      "image_overlay_opacity": "图片遮罩不透明度",
+      "image_position": "图片位置",
+      "horizontal": "水平",
+      "vertical": "垂直",
+      "remove_from_history": "从历史中移除",
+      "no_image_history": "暂无图片历史",
+      "confirm_background_change": "确认背景更改",
+      "confirm_color_change": "确认颜色更改",
+      "background_type_change_desc": "您希望将此背景应用到所有页面还是仅当前页面？",
+      "color_change_desc": "您希望将此颜色应用到所有页面还是仅当前页面？",
+      "apply_to_all": "应用到所有页面",
+      "apply_to_current": "仅应用到当前页面",
+      "cancel": "取消",
+      "reset_all_pages": "已重置所有功能页面到默认状态",
+      "background_applied_all": "背景已应用到所有功能页面",
+      "history_image_applied_all": "历史图片已应用到所有功能页面",
+      "history_image_applied_current": "历史图片已应用到{pageName}页面，其他页面已恢复默认背景（{themeText}）",
+      "click_to_select_image": "点击选择图片",
+      "supported_formats": "支持 JPG、PNG、GIF 格式",
+      "change_image": "更换图片",
+      "image_processing_failed": "图片处理失败，请重试",
+      "invalid_timezone_format": "时区格式无效，请输入正确的 IANA 时区标识符",
+      "timezone_added": "已添加 {cityName}",
+      "restore_defaults": "恢复默认",
+      "restore_defaults_desc": "根据您的IP地址时间自动判断并恢复到默认主题",
+      "restoring_defaults": "正在恢复默认设置...",
+      "defaults_restored": "已恢复默认设置",
+      "confirm_modify_color": "确认修改颜色",
+      "preview_new_color": "预览新颜色：",
+      "modify_small_cards_question": "是否同时修改小卡片的颜色？",
+      "yes_modify_together": "是，一起修改",
+      "no_only_large_card": "否，只改大卡片",
+      "current_background_color": "当前背景颜色",
+      "color_applied_all": "已应用到所有功能页面",
+      "color_applied_current": "仅应用到{pageName}页面",
+      "custom_color": "自定义颜色",
+      "apply_solid_color_background": "应用纯色背景",
+      "select_application_scope": "选择应用范围：",
+      "all_functional_pages": "所有功能页面",
+      "current_functional_page_only": "仅当前功能页面",
+      "all_pages_use_this_background": "计时器、秒表、闹钟、世界时间都使用此背景",
+      "only_this_page_uses_this_background": "只在{pageName}页面使用此背景",
+      "background_applied_to_page": "背景已应用到{pageName}功能页面",
+      "background_applied_to_current_page": "当前背景仅应用到{pageName}页面，其他页面已恢复默认背景（{themeText}）",
+      "light_mode": "白天模式",
+      "dark_mode": "夜间模式",
+      "theme_color_confirm_title": "设置主题颜色",
+      "theme_color_confirm_message": "请选择应用范围：",
+      "theme_color_applied": "主题颜色 {colorName} 已应用",
+      "color_preview": "预览新颜色：",
+      "modify_large_card": "修改大卡片颜色",
+      "modify_small_card": "修改小卡片颜色",
+      "modify_both_cards": "大卡片小卡片一起修改",
+      "worldclock_color_confirm_message": "请选择要修改的卡片："
+    },
+    "modals": {
+      "custom_timer": "自定义倒计时",
+      "set_stopwatch": "设置秒表时间",
+      "hours": "小时",
+      "minutes": "分钟",
+      "seconds": "秒",
+      "timer_completed": "倒计时已完成",
+      "overtime": "已超时",
+      "got_it": "知道了"
+    },
+    "page_description": {
+      "alarm": {
+        "title": "免费在线闹钟 - 设置多个带自定义标签的闹钟",
+        "description": "设置1分钟计时器。1分钟后叫醒我。从现在开始设置1分钟的闹钟。这是一款免费且易于使用的闹钟。创建多个带自定义标签的闹钟，设置重复计划（单次、每天、工作日、周末），并从多种通知音效中选择。非常适合起床、提醒和时间管理。无需注册 - 立即开始使用。",
+        "features": [
+          "设置多个带自定义标签的闹钟",
+          "选择重复计划：单次、每天、工作日或周末",
+          "从多种通知音效中选择",
+          "免费且易于使用的闹钟",
+          "无需注册"
+        ]
+      },
+      "countdown": {
+        "title": "免费在线倒计时器 - 设置10秒至16小时的自定义计时器",
+        "description_template": "设置{time}计时器。{time}后叫醒我。从现在开始设置{time}的闹钟。这是一款免费且易于使用的倒计时器。设置在线倒计时器的小时、分钟和秒，然后启动它。或者，您可以设置日期和时间以倒计时到（或从）事件。启动{time}计时器。非常适合生产力提升、健身、烹饪和时间追踪。从预设计时器中选择或设置自定义时间。无需注册。",
+        "description": "设置在线倒计时器的小时、分钟和秒，然后启动它。或者，您可以设置日期和时间以倒计时到（或从）事件。启动1分钟计时器。这是一款免费且易于使用的倒计时器。非常适合生产力提升、健身、烹饪和时间追踪。从预设计时器中选择或设置自定义时间。无需注册。",
+        "features": [
+          "设置10秒至16小时的自定义计时器",
+          "从预设计时器中选择（1分钟、5分钟、10分钟等）",
+          "自定义时间设置，包括小时、分钟和秒",
+          "免费且易于使用的倒计时器",
+          "无需注册"
+        ]
+      },
+      "stopwatch": {
+        "title": "免费在线秒表 - 精确时间追踪，支持圈数功能",
+        "description": "启动秒表以精确追踪经过的时间。使用圈数计时器测量多个间隔。这是一款免费且易于使用的秒表。非常适合健身、运动、烹饪和任何需要时间追踪的活动。无需注册 - 立即开始计时。",
+        "features": [
+          "精确时间追踪，毫秒级精度",
+          "圈数计时器功能，用于测量间隔",
+          "开始、暂停和重置控制",
+          "免费且易于使用的秒表",
+          "无需注册"
+        ]
+      },
+      "worldclock": {
+        "title": "免费在线世界时钟 - 同时查看多个时区",
+        "description": "同时查看多个时区的时间。添加自定义城市和时区以追踪世界各地的时间。这是一款免费且易于使用的世界时钟。非常适合国际会议、旅行计划和与全球团队保持联系。无需注册。",
+        "features": [
+          "同时查看多个时区",
+          "添加自定义城市和时区",
+          "查看本地时间和时差",
+          "免费且易于使用的世界时钟",
+          "无需注册"
+        ]
+      },
+      "timer_pages": {
+        "10_second_timer": {
+          "title": "10秒计时器 - 在线倒计时器",
+          "description": "免费在线10秒计时器。简单易用的10秒倒计时器，带提示音。"
+        },
+        "20_second_timer": {
+          "title": "20秒计时器 - 在线倒计时器",
+          "description": "免费在线20秒计时器。简单易用的20秒倒计时器，带提示音。"
+        },
+        "30_second_timer": {
+          "title": "30秒计时器 - 在线倒计时器",
+          "description": "免费在线30秒计时器。简单易用的30秒倒计时器，带提示音。"
+        },
+        "45_second_timer": {
+          "title": "45秒计时器 - 在线倒计时器",
+          "description": "免费在线45秒计时器。简单易用的45秒倒计时器，带提示音。"
+        },
+        "60_second_timer": {
+          "title": "60秒计时器 - 在线倒计时器",
+          "description": "免费在线60秒计时器。简单易用的60秒倒计时器，带提示音。"
+        },
+        "90_second_timer": {
+          "title": "90秒计时器 - 在线倒计时器",
+          "description": "免费在线90秒计时器。简单易用的90秒倒计时器，带提示音。"
+        },
+        "1_minute_timer": {
+          "title": "1分钟计时器 - 在线倒计时器",
+          "description": "免费在线1分钟计时器。简单易用的1分钟倒计时器，带提示音。"
+        },
+        "2_minute_timer": {
+          "title": "2分钟计时器 - 在线倒计时器",
+          "description": "免费在线2分钟计时器。简单易用的2分钟倒计时器，带提示音。"
+        },
+        "3_minute_timer": {
+          "title": "3分钟计时器 - 在线倒计时器",
+          "description": "免费在线3分钟计时器。简单易用的3分钟倒计时器，带提示音。"
+        },
+        "5_minute_timer": {
+          "title": "5分钟计时器 - 在线倒计时器",
+          "description": "免费在线5分钟计时器。简单易用的5分钟倒计时器，带提示音。"
+        },
+        "10_minute_timer": {
+          "title": "10分钟计时器 - 在线倒计时器",
+          "description": "免费在线10分钟计时器。简单易用的10分钟倒计时器，带提示音。"
+        },
+        "15_minute_timer": {
+          "title": "15分钟计时器 - 在线倒计时器",
+          "description": "免费在线15分钟计时器。简单易用的15分钟倒计时器，带提示音。"
+        },
+        "20_minute_timer": {
+          "title": "20分钟计时器 - 在线倒计时器",
+          "description": "免费在线20分钟计时器。简单易用的20分钟倒计时器，带提示音。"
+        },
+        "25_minute_timer": {
+          "title": "25分钟计时器 - 番茄工作法计时器",
+          "description": "免费在线25分钟计时器。完美适用于番茄工作法。简单易用的25分钟倒计时器，带提示音。"
+        },
+        "30_minute_timer": {
+          "title": "30分钟计时器 - 在线倒计时器",
+          "description": "免费在线30分钟计时器。简单易用的30分钟倒计时器，带提示音。"
+        },
+        "40_minute_timer": {
+          "title": "40分钟计时器 - 在线倒计时器",
+          "description": "免费在线40分钟计时器。简单易用的40分钟倒计时器，带提示音。"
+        },
+        "45_minute_timer": {
+          "title": "45分钟计时器 - 在线倒计时器",
+          "description": "免费在线45分钟计时器。简单易用的45分钟倒计时器，带提示音。"
+        },
+        "60_minute_timer": {
+          "title": "60分钟计时器 - 在线倒计时器",
+          "description": "免费在线60分钟计时器。简单易用的60分钟倒计时器，带提示音。"
+        },
+        "1_hour_timer": {
+          "title": "1小时计时器 - 在线倒计时器",
+          "description": "免费在线1小时计时器。简单易用的1小时倒计时器，带提示音。"
+        },
+        "2_hour_timer": {
+          "title": "2小时计时器 - 在线倒计时器",
+          "description": "免费在线2小时计时器。简单易用的2小时倒计时器，带提示音。"
+        },
+        "4_hour_timer": {
+          "title": "4小时计时器 - 在线倒计时器",
+          "description": "免费在线4小时计时器。简单易用的4小时倒计时器，带提示音。"
+        },
+        "8_hour_timer": {
+          "title": "8小时计时器 - 在线倒计时器",
+          "description": "免费在线8小时计时器。简单易用的8小时倒计时器，带提示音。"
+        },
+        "12_hour_timer": {
+          "title": "12小时计时器 - 在线倒计时器",
+          "description": "免费在线12小时计时器。简单易用的12小时倒计时器，带提示音。"
+        },
+        "16_hour_timer": {
+          "title": "16小时计时器 - 在线倒计时器",
+          "description": "免费在线16小时计时器。简单易用的16小时倒计时器，带提示音。"
+        }
+      }
+    }
+  },
+  "legal": {
+    "privacy_policy": {
+      "title": "隐私政策",
+      "description": "Timero 隐私政策",
+      "content": "# Timero 隐私政策\n\n## 介绍\n\n欢迎使用 Timero，这是一款**免费在线时间管理工具**，集成了倒计时器、秒表、闹钟和世界时钟功能。您的隐私对我们至关重要。本隐私政策说明了我们如何收集、使用和保护您在使用我们服务时的信息。\n\n**重要提示**：Timero 的核心功能（计时器、秒表、闹钟和世界时钟）**完全免费且无需注册**。您可以在不创建账户或不提供任何个人信息的情况下使用所有这些功能。您的计时器设置、闹钟和偏好设置存储在您的浏览器本地。\n\n## 我们收集的信息\n\n### 核心功能（无需注册）\n\n当您未注册使用 Timero 的核心功能时：\n\n- **本地存储**：您的计时器预设、闹钟设置、世界时钟配置、主题偏好和声音选择存储在您浏览器的本地存储中。这些数据永远不会离开您的设备。\n- **无个人数据**：使用核心功能时，我们不收集任何个人信息。\n- **无跟踪**：使用免费功能时，我们不跟踪您的使用情况或行为。\n\n### 技术信息\n\n我们可能会自动收集最少的技术信息：\n\n- **浏览器信息**：浏览器类型和版本，以确保兼容性\n- **设备信息**：设备类型（桌面、移动设备、平板电脑）以进行优化\n- **基本分析**：匿名使用统计，以改善服务质量（仅用于网站访问者，不用于核心功能使用）\n\n## Cookie 和本地存储\n\nTimero 使用：\n\n- **本地存储**：直接在浏览器中保存您的偏好、闹钟和计时器设置\n- **会话 Cookie**：如果您选择创建账户，用于维持您的会话\n- **分析 Cookie**：匿名使用统计以改善我们的网站（可在浏览器设置中禁用）\n\n您可以在浏览器设置中禁用 Cookie，但这可能会影响账户功能。\n\n## 数据存储和安全\n\n- **本地数据**：所有核心功能数据（计时器、闹钟、偏好）存储在您的浏览器本地，永远不会传输到我们的服务器。\n- **账户数据**：如果您创建账户，您的账户信息将安全地存储在我们的服务器上，采用加密和访问控制。\n- **安全措施**：我们实施行业标准的安全措施，包括加密、安全连接（HTTPS）和访问控制。\n- **无保证**：虽然我们非常重视安全，但没有任何电子存储或传输方法是 100% 安全的。\n\n## 信息共享和披露\n\n我们**不出售、交易或出租**您的个人信息。我们仅在以下有限情况下共享信息：\n\n- **法律要求**：为遵守法律义务或响应当局的合法请求\n- **服务提供商**：与协助我们运营网站的受信任第三方服务提供商（例如托管、分析）共享，但须遵守严格的保密协议\n- **保护**：为保护我们的权利、财产或安全，或我们的用户或他人的权利、财产或安全\n\n## 您的权利\n\n- **访问**：您可以随时通过浏览器设置访问和管理您的本地浏览器数据\n- **删除**：您可以通过清除浏览器的本地存储来删除您的本地数据\n- **账户数据**：如果您有账户，您可以联系我们请求访问、修改或删除您的账户数据\n- **退出**：您可以选择不创建账户，仅使用免费功能\n\n## 政策变更\n\n我们可能会不时更新本隐私政策。我们将在本页面上发布更新的政策以通知您重大变更。\"最后更新\"日期将相应修订。在发布变更后继续使用 Timero 即表示您接受更新的政策。\n\n## 联系我们\n\n如果您对本隐私政策或我们的数据实践有任何问题、疑虑或请求，请联系我们：\n\n**电子邮件**：service@toolina.com\n\n感谢您信任 Timero 的时间管理需求！"
+    },
+    "terms_of_service": {
+      "title": "服务条款",
+      "description": "Timero 服务条款",
+      "content": "# Timero 服务条款\n\n## 介绍和接受条款\n\n欢迎使用 **Timero**，这是一款免费在线时间管理工具，集成了倒计时器（10秒至16小时）、精确秒表（带圈数功能）、多闹钟系统和世界时钟功能。通过访问或使用 Timero，您同意受这些服务条款的约束。如果您不同意其中任何条款，请不要使用我们的服务。\n\n**要点**：\n- Timero 的核心功能**完全免费**且**无需注册**\n- 您可以在不创建账户的情况下使用计时器、秒表、闹钟和世界时钟功能\n- 您的设置和偏好存储在您的浏览器本地\n- 账户创建是可选的，用于访问高级功能\n\n## 服务描述\n\nTimero 为用户提供全面的时间管理平台：\n\n- **倒计时器**：设置从 10 秒到 16 小时的自定义计时器，支持预设选项和自定义时间设置\n- **秒表**：精确的时间追踪，带圈数功能，用于测量表现和活动\n- **闹钟**：设置多个闹钟，支持自定义标签、重复计划（单次、每天、工作日、周末）和通知音效\n- **世界时钟**：同时查看多个时区的时间，支持自定义城市\n- **定制化**：个性化主题颜色、背景、通知音效和界面设置\n- **跨平台**：在桌面、平板和移动设备上无缝运行，采用响应式设计\n\n## 免费使用和可选账户\n\n1. **免费功能**：所有核心时间管理功能均免费提供，无需注册。您可以立即使用计时器、秒表、闹钟和世界时钟，无需创建账户。\n\n2. **可选账户创建**：账户创建是可选的，仅在以下情况下可能需要：\n   - 高级功能（如果引入）\n   - API 访问（如果可用）\n   - 云同步（如果可用）\n   - 高级功能（如果提供）\n\n3. **账户安全**（如果您创建账户）：\n   - 您有责任维护账户凭据的机密性\n   - 您对您账户下发生的所有活动负责\n   - 您同意立即通知我们任何未经授权使用您的账户\n\n## 可接受使用\n\n您同意按照所有适用的地方、州、国家和国际法律法规使用 Timero。您同意不：\n\n- 将服务用于任何非法或未经授权的目的\n- 干扰或破坏服务的安全性或性能\n- 试图逆向工程、反编译或反汇编服务\n- 使用自动化系统以超出人类合理产生的方式访问服务\n- 传输任何恶意代码、病毒或有害内容\n- 侵犯任何第三方权利，包括知识产权\n\n## 知识产权\n\n通过 Timero 提供的所有内容，包括但不限于软件、设计、文档、徽标和商标，均受版权和知识产权法保护。Timero 的版权所有者是 **Timero 团队**。\n\n- 您承认您不拥有构成 Timero 服务的基础技术或知识产权\n- 您同意尊重 Timero 和任何第三方的知识产权\n- 您可以将 Timero 用于个人或商业时间管理目的，但 Timero 平台及其基础技术仍然是 Timero 团队的财产\n- 未经明确书面许可，您不得复制、修改、分发、出售或租赁 Timero 服务的任何部分\n\n## 隐私和数据收集\n\nTimero 尊重您的隐私。有关我们如何收集、使用和保护您的信息的详细信息，请参阅我们的[隐私政策](/privacy-policy)。\n\n要点：\n- 核心功能在使用时不收集个人信息\n- 您的计时器设置、闹钟和偏好存储在您的浏览器本地\n- 账户信息（如果您选择创建账户）仅在必要时收集，以提供账户相关功能\n- 我们不出售、交易或出租您的个人信息\n\n## 服务可用性和修改\n\n- **可用性**：我们努力保持 Timero 全天候可用，但我们不保证不间断访问。服务可能因维护、更新或不可预见的情况而暂时不可用。\n- **修改**：我们保留随时修改、暂停或停止服务任何方面的权利，无论是否通知。\n- **功能变更**：我们可自行决定添加、修改或删除功能。\n\n## 定价（如适用）\n\n- **免费功能**：核心功能（计时器、秒表、闹钟、世界时钟）是免费的，并将保持免费\n- **高级功能**（如提供）：任何高级功能将明确标记，定价将在购买前披露\n- **退款**：如适用，退款政策将在购买时明确说明\n- **价格变更**：如果我们引入付费功能，我们保留在合理通知的情况下更改定价的权利\n\n## 免责声明\n\n服务按**\"原样\"**和**\"可用\"**的基础提供。在法律允许的最大范围内：\n\n- 我们不对服务的准确性、可靠性、可用性或适用性做出任何保证或陈述\n- 我们免除所有明示或暗示的保证，包括但不限于适销性、特定用途适用性和非侵权的暗示保证\n- 我们不保证服务将不间断、无错误或免于病毒或其他有害组件\n- 我们不对存储在您浏览器本地的任何数据丢失负责\n\n## 责任限制\n\n在法律允许的最大范围内：\n\n- Timero 不对任何直接、间接、偶然、特殊、后果性或惩罚性损害承担责任\n- 这包括但不限于因以下原因导致的利润、商誉、使用、数据或其他无形损失：\n  - 您使用或无法使用服务\n  - 服务中的任何错误或遗漏\n  - 服务的任何中断或停止\n  - 任何内容或数据的删除、损坏或存储失败\n\n## 赔偿\n\n您同意赔偿、辩护并使 Timero、其关联公司及其各自的官员、董事、员工和代理免于因以下原因而产生的任何索赔、损害、损失、责任和费用（包括合理的律师费）：\n\n- 您使用服务\n- 您违反这些服务条款\n- 您侵犯任何第三方权利\n- 您通过服务提交或传输的任何内容\n\n## 终止\n\n- **由您**：您可以随时停止使用 Timero。如果您有账户，您可以随时删除它。\n- **由我们**：我们保留自行决定暂停或终止您访问服务（或任何部分）的权利，无论是否通知，如果我们认为行为违反这些条款或对其他用户、我们或第三方有害，或因任何其他原因。\n\n## 适用法律和争议解决\n\n这些条款应受 Timero 运营所在司法管辖区的法律管辖并根据其解释，不考虑其法律冲突条款。\n\n对于欧盟用户，这不影响您根据适用的欧盟消费者保护法享有的权利。\n\n因这些条款或服务产生的任何争议应首先通过与我们直接沟通解决：service@toolina.com\n\n## 条款变更\n\n我们保留随时更新或修改这些服务条款的权利。我们将通过以下方式通知用户重大变更：\n\n- 在本页面上发布更新的条款\n- 更新\"最后更新\"日期\n- 对于注册用户，我们可能会发送电子邮件通知（如果有电子邮件地址存档）\n\n在发布变更后继续使用 Timero 即表示您接受更新的条款。如果您不同意这些变更，您应该停止使用服务。\n\n## 可分割性\n\n如果这些条款的任何规定被发现不可执行或无效，该规定将被限制或消除到最小必要程度，其余规定将保持完全有效。\n\n## 联系信息\n\n如果您对这些服务条款有任何问题，请联系我们：\n\n**电子邮件**：service@toolina.com\n\n## 确认\n\n使用 Timero 即表示您已阅读、理解并同意受这些服务条款的约束。感谢您选择 Timero 来满足您的时间管理需求！"
+    }
   }
 }

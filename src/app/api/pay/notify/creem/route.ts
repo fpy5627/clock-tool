@@ -54,7 +54,12 @@ export async function POST(req: Request) {
     console.log("creem notify failed: ", e);
     return Response.json(
       { error: `handle creem notify failed: ${e.message}` },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      }
     );
   }
 }

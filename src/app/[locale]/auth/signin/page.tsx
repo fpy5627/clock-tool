@@ -2,6 +2,24 @@ import SignForm from "@/components/sign/form";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { isAuthEnabled } from "@/lib/auth";
+import { Metadata } from "next";
+import { getCanonicalUrl, getHreflangLanguages } from "@/lib/metadata";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+
+  const pagePath = '/auth/signin';
+  return {
+    alternates: {
+      canonical: getCanonicalUrl(pagePath, locale),
+      languages: getHreflangLanguages(pagePath),
+    },
+  };
+}
 
 export default async function SignInPage({
   searchParams,
@@ -23,7 +41,7 @@ export default async function SignInPage({
       <div className="flex w-full max-w-sm flex-col gap-6">
         <a href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="flex h-6 w-6 items-center justify-center rounded-md border text-primary-foreground">
-            <img src="/logo.png" alt="logo" className="size-4" />
+            <img src="/logo.svg" alt="" className="size-4" style={{ background: 'transparent' }} />
           </div>
           {process.env.NEXT_PUBLIC_PROJECT_NAME}
         </a>
