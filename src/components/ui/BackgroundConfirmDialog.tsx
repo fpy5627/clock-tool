@@ -247,7 +247,7 @@ export default function BackgroundConfirmDialog({
             }`}
           >
             <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
-              {isImageBackground ? '应用背景图片' : t('settings_panel.apply_solid_color_background')}
+              {isImageBackground ? t('settings_panel.apply_background_image') : t('settings_panel.apply_solid_color_background')}
             </h3>
             
             {/* 预览区域 */}
@@ -260,7 +260,7 @@ export default function BackgroundConfirmDialog({
                     className="w-full h-32 object-cover rounded-lg mb-3"
                   />
                   <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                    选择应用范围：
+                    {t('settings_panel.select_application_scope')}
                   </p>
                 </>
               ) : (
@@ -286,13 +286,10 @@ export default function BackgroundConfirmDialog({
                 </div>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
-                    {isImageBackground ? '所有页面' : t('settings_panel.all_functional_pages')}
+                    {isImageBackground ? t('settings_panel.all_pages') : t('settings_panel.all_functional_pages')}
                   </p>
                   <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
-                    {isImageBackground 
-                      ? '计时器、秒表、闹钟、世界时间都使用此背景'
-                      : t('settings_panel.all_pages_use_this_background')
-                    }
+                    {t('settings_panel.all_pages_use_this_background')}
                   </p>
                 </div>
               </div>
@@ -304,13 +301,10 @@ export default function BackgroundConfirmDialog({
                 </div>
                 <div className="flex-1">
                   <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
-                    {isImageBackground ? '仅当前页面' : t('settings_panel.current_functional_page_only')}
+                    {isImageBackground ? t('settings_panel.current_page_only') : t('settings_panel.current_functional_page_only')}
                   </p>
                   <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                    {isImageBackground
-                      ? `只在${mode === 'timer' ? '计时器' : mode === 'stopwatch' ? '秒表' : mode === 'alarm' ? '闹钟' : '世界时间'}页面使用此背景`
-                      : t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })
-                    }
+                    {t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })}
                   </p>
                 </div>
               </div>

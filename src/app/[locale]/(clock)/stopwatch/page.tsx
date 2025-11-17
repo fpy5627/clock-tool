@@ -2143,6 +2143,16 @@ export default function HomePage() {
           setPendingThemeColor(null);
         }}
         onConfirm={(colorId) => {
+          // 应用到当前页面（秒表）
+          setStopwatchColor(colorId);
+        }}
+        onConfirmToAll={(colorId) => {
+          // 应用到所有页面
+          localStorage.setItem('timer-timer-color', colorId);
+          localStorage.setItem('timer-stopwatch-color', colorId);
+          localStorage.setItem('timer-alarm-color', colorId);
+          localStorage.setItem('timer-worldclock-color', colorId);
+          localStorage.setItem('timer-worldclock-smallcard-color', colorId);
           setStopwatchColor(colorId);
           // 触发自定义事件，通知其他页面更新颜色
           if (typeof window !== 'undefined') {

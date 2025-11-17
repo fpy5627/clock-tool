@@ -20,8 +20,10 @@ export interface ThemeColorConfirmDialogProps {
   mode: string;
   /** 关闭对话框的函数 */
   onClose: () => void;
-  /** 确认应用主题颜色的函数 */
+  /** 确认应用主题颜色到当前页面的函数 */
   onConfirm: (colorId: string) => void;
+  /** 确认应用主题颜色到所有页面的函数 */
+  onConfirmToAll: (colorId: string) => void;
 }
 
 /**
@@ -40,6 +42,7 @@ export default function ThemeColorConfirmDialog({
   mode,
   onClose,
   onConfirm,
+  onConfirmToAll,
 }: ThemeColorConfirmDialogProps) {
   if (!show || !pendingThemeColor) {
     return null;
@@ -52,9 +55,19 @@ export default function ThemeColorConfirmDialog({
   }
 
   /**
-   * 处理确认应用主题颜色
+   * 处理应用到所有页面
    */
-  const handleConfirm = () => {
+  const handleConfirmToAll = () => {
+    onConfirmToAll(pendingThemeColor);
+    onClose();
+    const colorName = t(`colors.${selectedColor.key}`);
+    toast.success(t('settings_panel.theme_color_applied', { colorName }));
+  };
+
+  /**
+   * 处理应用到当前页面
+   */
+  const handleConfirmToCurrent = () => {
     onConfirm(pendingThemeColor);
     onClose();
     const colorName = t(`colors.${selectedColor.key}`);
@@ -96,30 +109,74 @@ export default function ThemeColorConfirmDialog({
                     {t(`colors.${selectedColor.key}`)}
                   </p>
                   <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
-                    {t('settings_panel.theme_color_description')}
+                    {t('settings_panel.select_application_scope')}
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* 选项说明 */}
+            <div className={`mb-6 p-4 rounded-lg ${theme === 'dark' ? 'bg-blue-500/10' : 'bg-blue-50'}`}>
+              <div className="flex items-start gap-2 mb-3">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  theme === 'dark' ? 'bg-blue-500' : 'bg-blue-600'
+                }`}>
+                  <span className="text-white text-xs font-bold">1</span>
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${theme === 'dark' ? 'text-blue-300' : 'text-blue-700'}`}>
+                    {t('settings_panel.all_pages')}
+                  </p>
+                  <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-blue-400/70' : 'text-blue-600/70'}`}>
+                    {t('settings_panel.all_pages_use_this_background')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  theme === 'dark' ? 'bg-slate-600' : 'bg-gray-400'
+                }`}>
+                  <span className="text-white text-xs font-bold">2</span>
+                </div>
+                <div className="flex-1">
+                  <p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}>
+                    {t('settings_panel.current_page_only')}
+                  </p>
+                  <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}>
+                    {t('settings_panel.only_this_page_uses_this_background', { pageName: t(`modes.${mode}`) })}
                   </p>
                 </div>
               </div>
             </div>
             
             {/* 按钮组 */}
-            <div className="flex gap-3">
+            <div className="space-y-3">
               <button
-                onClick={handleConfirm}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                onClick={handleConfirmToAll}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                   theme === 'dark'
                     ? 'bg-blue-600 hover:bg-blue-700 text-white'
                     : 'bg-blue-500 hover:bg-blue-600 text-white'
                 }`}
               >
-                {t('settings_panel.confirm')}
+                {t('settings_panel.apply_to_all')}
               </button>
               <button
-                onClick={onClose}
-                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all ${
+                onClick={handleConfirmToCurrent}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
                   theme === 'dark'
                     ? 'bg-slate-700 hover:bg-slate-600 text-white'
                     : 'bg-gray-200 hover:bg-gray-300 text-gray-900'
+                }`}
+              >
+                {t('settings_panel.apply_to_current')}
+              </button>
+              <button
+                onClick={onClose}
+                className={`w-full py-2.5 px-4 rounded-lg font-medium transition-all ${
+                  theme === 'dark'
+                    ? 'bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-700'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300'
                 }`}
               >
                 {t('settings_panel.cancel')}

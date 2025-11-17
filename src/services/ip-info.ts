@@ -26,7 +26,7 @@ export interface IpInfoOptions {
   ip?: string;
   /** 语言设置，如 'zh-CN', 'en' */
   lang?: string;
-  /** 请求超时时间（毫秒），默认5000 */
+  /** 请求超时时间（毫秒），默认15000 */
   timeout?: number;
 }
 
@@ -35,7 +35,7 @@ export interface IpInfoOptions {
  */
 async function fetchWithTimeout(
   url: string,
-  timeout: number = 5000
+  timeout: number = 15000
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -384,7 +384,7 @@ function setCachedIpInfo(info: IpInfo): void {
 export async function getIpInfo(
   options: IpInfoOptions = {}
 ): Promise<IpInfo | null> {
-  const { ip, lang, timeout = 5000 } = options;
+  const { ip, lang, timeout = 15000 } = options;
 
   // 如果查询本机IP（未指定ip参数），先尝试从缓存读取（包含过期检查）
   if (!ip && typeof window !== 'undefined') {

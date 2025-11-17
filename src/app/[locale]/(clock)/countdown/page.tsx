@@ -2851,8 +2851,21 @@ export default function HomePage() {
           setPendingThemeColor(null);
         }}
         onConfirm={(colorId) => {
-          // Note: In timer mode, we only have timerColor
+          // 应用到当前页面（倒计时）
           setTimerColor(colorId);
+        }}
+        onConfirmToAll={(colorId) => {
+          // 应用到所有页面
+          localStorage.setItem('timer-timer-color', colorId);
+          localStorage.setItem('timer-stopwatch-color', colorId);
+          localStorage.setItem('timer-alarm-color', colorId);
+          localStorage.setItem('timer-worldclock-color', colorId);
+          localStorage.setItem('timer-worldclock-smallcard-color', colorId);
+          setTimerColor(colorId);
+          // 触发自定义事件，通知其他页面更新颜色
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('color-change'));
+          }
         }}
       />
       

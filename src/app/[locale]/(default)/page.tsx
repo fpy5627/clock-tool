@@ -2128,7 +2128,7 @@ export default function HomePage() {
         // 获取IP定位 (使用封装的IP信息服务，自动尝试多个接口，支持缓存)
         const locationData = await getIpInfo({
           lang: apiLang,
-          timeout: 3000,
+          timeout: 15000,
         });
         
         if (locationData) {
